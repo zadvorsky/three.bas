@@ -1,0 +1,19 @@
+{
+  "name": "three_bas",
+  "version": "0.0.0",
+  "authors": [
+    "szenia <s.zadvornykh@gmail.com>"
+  ],
+  "description": "THREE.js Buffer Animation System",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "three.js": "threejs#*"
+  }
+}

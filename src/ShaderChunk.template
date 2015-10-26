@@ -1,0 +1,4 @@
+THREE.BAS.ShaderChunk = {};
+<% _.forEach(chunks, function(chunk) { %>
+THREE.BAS.ShaderChunk["<%= chunk.name %>"] = "<%= chunk.content %>";
+<% }); %>
