@@ -1,4 +1,4 @@
-vec3 cubicBezier(vec3 p0, vec3 p1, vec3 c0, vec3 c1, float t)
+vec3 cubicBezier(vec3 p0, vec3 c0, vec3 c1, vec3 p1, float t)
 {
     vec3 tp;
     float tn = 1.0 - t;
