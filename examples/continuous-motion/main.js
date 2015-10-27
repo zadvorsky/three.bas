@@ -4,11 +4,12 @@ var mControls;
 
 var mScene;
 
-var mParticleCount = 500000;
+var mParticleCount = 100000; // <-- change this number!
 var mParticleSystem;
 
 var mTime = 0.0;
-var mDuration = 10;
+var mTimeStep = (1/60);
+var mDuration = 20;
 
 window.onload = function () {
   init();
@@ -24,72 +25,50 @@ function init() {
 }
 
 function initTHREE() {
-  mRenderer = new THREE.WebGLRenderer({antialias: false});
+  mRenderer = new THREE.WebGLRenderer({antialias: true});
   mRenderer.setSize(window.innerWidth, window.innerHeight);
 
   mContainer = document.getElementById('three-container');
   mContainer.appendChild(mRenderer.domElement);
 
   mCamera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 5000);
-  mCamera.position.set(0, 600, 800);
+  mCamera.position.set(0, 600, 600);
 
   mScene = new THREE.Scene();
 
-  //var ground = new THREE.Mesh(
-  //  new THREE.PlaneBufferGeometry(1200, 1200),
-  //  new THREE.MeshPhongMaterial({
-  //    color:0x888888
-  //  })
-  //);
-  //ground.rotation.x = Math.PI * 1.5;
-  //mScene.add(ground);
-
   var light;
 
-  //light = new THREE.SpotLight(0xffffff, 4, 1600, Math.PI * 0.15, 24, 2);
-  //light.position.set(0, 1000, 0);
   light = new THREE.PointLight(0xffffff, 4, 1000, 2);
   light.position.set(0, 400, 0);
   mScene.add(light);
-
-  //light = new THREE.DirectionalLight(0xffffff, 0.25);
-  //light.position.set(0, -1, 0);
-  //mScene.add(light);
 }
 
 function initControls() {
   mControls = new THREE.OrbitControls(mCamera, mRenderer.domElement);
-  //mControls.target.y = 300;
 }
 
 function initParticleSystem() {
-  //var prefabGeometry = new THREE.SphereGeometry(6, 2, 2, 0, 1, 1, 0.5);
   var prefabGeometry = new THREE.PlaneGeometry(4, 4);
   var bufferGeometry = new THREE.BAS.PrefabBufferGeometry(prefabGeometry, mParticleCount);
 
   bufferGeometry.computeVertexNormals();
 
   // generate additional geometry data
-  // used to calculate animation progress
   var aOffset = bufferGeometry.createAttribute('aOffset', 1);
-  // used to calculate position on bezier curve
-  // all start positions are (0,0,0), no need to fill that buffer, maybe remove it?
   var aStartPosition = bufferGeometry.createAttribute('aStartPosition', 3);
   var aControlPoint1 = bufferGeometry.createAttribute('aControlPoint1', 3);
   var aControlPoint2 = bufferGeometry.createAttribute('aControlPoint2', 3);
   var aEndPosition = bufferGeometry.createAttribute('aEndPosition', 3);
-  // rotation
   var aAxisAngle = bufferGeometry.createAttribute('aAxisAngle', 4);
-  // the 'color' attribute is used by three.js
   var aColor = bufferGeometry.createAttribute('color', 3);
 
   var i, j, offset;
 
-  // buffer delay duration
+  // buffer time offset
   var delay;
 
   for (i = 0, offset = 0; i < mParticleCount; i++) {
-    delay = i / mParticleCount * 12;
+    delay = i / mParticleCount * mDuration;
 
     for (j = 0; j < prefabGeometry.vertices.length; j++) {
       aOffset.array[offset++] = delay;
@@ -101,7 +80,7 @@ function initParticleSystem() {
 
   for (i = 0, offset = 0; i < mParticleCount; i++) {
     x = -1000;
-    y = -200;
+    y = 0;
     z = 0;
 
     for (j = 0; j < prefabGeometry.vertices.length; j++) {
@@ -114,9 +93,6 @@ function initParticleSystem() {
   // buffer control points
 
   for (i = 0, offset = 0; i < mParticleCount; i++) {
-    //x = THREE.Math.randFloatSpread(1000);
-    //y = THREE.Math.randFloat(0, 500);
-    //z = THREE.Math.randFloatSpread(1000);
     x = THREE.Math.randFloat(-400, 400);
     y = THREE.Math.randFloat(400, 600);
     z = THREE.Math.randFloat(-1200, -800);
@@ -129,9 +105,6 @@ function initParticleSystem() {
   }
 
   for (i = 0, offset = 0; i < mParticleCount; i++) {
-    //x = THREE.Math.randFloatSpread(1000);
-    //y = THREE.Math.randFloat(-500, 0);
-    //z = THREE.Math.randFloatSpread(1000);
     x = THREE.Math.randFloat(-400, 400);
     y = THREE.Math.randFloat(-600, -400);
     z = THREE.Math.randFloat(800, 1200);
@@ -147,7 +120,7 @@ function initParticleSystem() {
 
   for (i = 0, offset = 0; i < mParticleCount; i++) {
     x = 1000;
-    y = 200;
+    y = 0;
     z = 0;
 
     for (j = 0; j < prefabGeometry.vertices.length; j++) {
@@ -167,7 +140,7 @@ function initParticleSystem() {
     axis.z = THREE.Math.randFloatSpread(2);
     axis.normalize();
 
-    angle = Math.PI * THREE.Math.randInt(8, 16) + Math.PI * 0.5;
+    angle = Math.PI * THREE.Math.randInt(16, 32);
 
     for (j = 0; j < prefabGeometry.vertices.length; j++) {
       aAxisAngle.array[offset++] = axis.x;
@@ -242,6 +215,8 @@ function initParticleSystem() {
   );
 
   mParticleSystem = new THREE.Mesh(bufferGeometry, material);
+  // because the bounding box of the particle system does not reflect its on-screen size
+  // set this to false to prevent the whole thing from disappearing on certain angles
   mParticleSystem.frustumCulled = false;
 
   mScene.add(mParticleSystem);
@@ -251,7 +226,7 @@ function tick() {
   update();
   render();
 
-  mTime += (1 / 60);
+  mTime += mTimeStep;
   mTime %= mDuration;
 
   requestAnimationFrame(tick);
