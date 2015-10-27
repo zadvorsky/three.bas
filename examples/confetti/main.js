@@ -25,16 +25,14 @@ function init() {
 function initTHREE() {
   mRenderer = new THREE.WebGLRenderer({antialias: false});
   mRenderer.setSize(window.innerWidth, window.innerHeight);
-  //mRenderer.setClearColor(0xffffff);
 
   mContainer = document.getElementById('three-container');
   mContainer.appendChild(mRenderer.domElement);
 
-  mCamera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 10000);
+  mCamera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 5000);
   mCamera.position.set(0, 600, 800);
 
   mScene = new THREE.Scene();
-  //mScene.add(new THREE.GridHelper(1000, 100));
 
   var ground = new THREE.Mesh(
     new THREE.PlaneBufferGeometry(1200, 1200),
@@ -47,15 +45,15 @@ function initTHREE() {
 
   var light;
 
-  light = new THREE.SpotLight(0xffffff, 4, 1600, Math.PI * 0.15, 12, 2);
+  light = new THREE.SpotLight(0xffffff, 4, 1600, Math.PI * 0.15, 24, 2);
   light.position.set(0, 1000, 0);
 
-  //mScene.add(new THREE.SpotLightHelper(light));
   mScene.add(light);
 }
 
 function initControls() {
   mControls = new THREE.OrbitControls(mCamera, mRenderer.domElement);
+  mControls.target.y = 300;
 }
 
 function initParticleSystem() {
@@ -75,6 +73,7 @@ function initParticleSystem() {
   var aControlPoint2 = bufferGeometry.createAttribute('aControlPoint2', 3);
   var aEndPosition = bufferGeometry.createAttribute('aEndPosition', 3);
   var aAxisAngle = bufferGeometry.createAttribute('aAxisAngle', 4);
+  // the 'color' attribute is used by three.js
   var aColor = bufferGeometry.createAttribute('color', 3);
 
   // buffer delay duration
@@ -191,7 +190,8 @@ function initParticleSystem() {
       },
       shaderFunctions: [
         THREE.BAS.ShaderChunk['quaternion_rotation'],
-        THREE.BAS.ShaderChunk['cubic_bezier']
+        THREE.BAS.ShaderChunk['cubic_bezier'],
+        THREE.BAS.ShaderChunk['ease_out_cubic']
       ],
       shaderParameters: [
         'uniform float uTime;',
@@ -206,8 +206,7 @@ function initParticleSystem() {
         'float tDelay = aDelayDuration.x;',
         'float tDuration = aDelayDuration.y;',
         'float tTime = clamp(uTime - tDelay, 0.0, tDuration);',
-        //'float tProgress = ease(tTime, 0.0, 1.0, tDuration);',
-        'float tProgress = tTime / tDuration;',
+        'float tProgress = ease(tTime, 0.0, 1.0, tDuration);',
 
         'float angle = aAxisAngle.w * tProgress;',
         'vec4 tQuat = quatFromAxisAngle(aAxisAngle.xyz, angle);'
@@ -222,13 +221,12 @@ function initParticleSystem() {
     },
     // THREE.MeshPhongMaterial uniforms
     {
-      diffuse: 0xffffff, // color
-      specular: 0xFBE087,
       shininess: 4
     }
   );
 
   mParticleSystem = new THREE.Mesh(bufferGeometry, material);
+  mParticleSystem.frustumCulled = false;
 
   mScene.add(mParticleSystem);
 }
@@ -238,6 +236,7 @@ function tick() {
   render();
 
   mTime += (1 / 60);
+  mTime %= 12;
 
   requestAnimationFrame(tick);
 }
