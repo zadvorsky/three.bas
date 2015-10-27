@@ -16,10 +16,7 @@ window.onload = function () {
 function init() {
   initTHREE();
   initControls();
-
-  var d0 = performance.now();
   initParticleSystem();
-  console.log('initParticleSystem took', performance.now() - d0);
 
   requestAnimationFrame(tick);
   window.addEventListener('resize', resize, false);
@@ -60,31 +57,32 @@ function initControls() {
 }
 
 function initParticleSystem() {
-  var prefabGeometry = new THREE.SphereGeometry(5, 4, 4, 0, 1, 1, 0.5);
+  var prefabGeometry = new THREE.SphereGeometry(6, 2, 2, 0, 1, 1, 0.5);
   var bufferGeometry = new THREE.BAS.PrefabBufferGeometry(prefabGeometry, mParticleCount);
 
   bufferGeometry.computeVertexNormals();
 
   // generate additional geometry data
-
-  var i, j, offset;
-
+  // used to calculate animation progress
   var aDelayDuration = bufferGeometry.createAttribute('aDelayDuration', 2);
+  // used to calculate position on bezier curve
   // all start positions are (0,0,0), no need to fill that buffer, maybe remove it?
   var aStartPosition = bufferGeometry.createAttribute('aStartPosition', 3);
   var aControlPoint1 = bufferGeometry.createAttribute('aControlPoint1', 3);
   var aControlPoint2 = bufferGeometry.createAttribute('aControlPoint2', 3);
   var aEndPosition = bufferGeometry.createAttribute('aEndPosition', 3);
+  // rotation
   var aAxisAngle = bufferGeometry.createAttribute('aAxisAngle', 4);
   // the 'color' attribute is used by three.js
   var aColor = bufferGeometry.createAttribute('color', 3);
 
+  var i, j, offset;
+
   // buffer delay duration
   var delay;
   var duration;
-  offset = 0;
 
-  for (i = 0; i < mParticleCount; i++) {
+  for (i = 0, offset = 0; i < mParticleCount; i++) {
     delay = THREE.Math.randFloat(0, 4);
     duration = THREE.Math.randFloat(4, 8);
 
@@ -97,9 +95,7 @@ function initParticleSystem() {
   // buffer control points
   var x, y, z;
 
-  offset = 0;
-
-  for (i = 0; i < mParticleCount; i++) {
+  for (i = 0, offset = 0; i < mParticleCount; i++) {
     x = THREE.Math.randFloat(-100, 100);
     y = THREE.Math.randFloat(600, 1000);
     z = THREE.Math.randFloat(-100, 100);
@@ -111,9 +107,7 @@ function initParticleSystem() {
     }
   }
 
-  offset = 0;
-
-  for (i = 0; i < mParticleCount; i++) {
+  for (i = 0, offset = 0; i < mParticleCount; i++) {
     x = THREE.Math.randFloat(-800, 800);
     y = THREE.Math.randFloat(200, 1000);
     z = THREE.Math.randFloat(-800, 800);
@@ -126,9 +120,8 @@ function initParticleSystem() {
   }
 
   // buffer end positions
-  offset = 0;
 
-  for (i = 0; i < mParticleCount; i++) {
+  for (i = 0, offset = 0; i < mParticleCount; i++) {
     x = THREE.Math.randFloatSpread(1000);
     y = 0;
     z = THREE.Math.randFloatSpread(1000);
@@ -144,9 +137,7 @@ function initParticleSystem() {
   var axis = new THREE.Vector3();
   var angle = 0;
 
-  offset = 0;
-
-  for (i = 0; i < mParticleCount; i++) {
+  for (i = 0, offset = 0; i < mParticleCount; i++) {
     axis.x = THREE.Math.randFloatSpread(2);
     axis.y = THREE.Math.randFloatSpread(2);
     axis.z = THREE.Math.randFloatSpread(2);
@@ -166,9 +157,7 @@ function initParticleSystem() {
   var color = new THREE.Color();
   var h, s, l;
 
-  offset = 0;
-
-  for (i = 0; i < mParticleCount; i++) {
+  for (i = 0, offset = 0; i < mParticleCount; i++) {
     h = THREE.Math.randFloat(0.0, 1.0);
     s = THREE.Math.randFloat(0.75, 1.0);
     l = THREE.Math.randFloat(0.5, 0.6);
@@ -181,6 +170,7 @@ function initParticleSystem() {
       aColor.array[offset++] = color.b;
     }
   }
+
 
   var material = new THREE.BAS.PhongAnimationMaterial(
     // custom parameters & THREE.MeshPhongMaterial parameters
