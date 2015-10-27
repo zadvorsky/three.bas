@@ -4,7 +4,7 @@ var mControls;
 
 var mScene;
 
-var mParticleCount = 50000;
+var mParticleCount = 100000;
 var mParticleSystem;
 
 var mTime = 0.0;
@@ -16,7 +16,10 @@ window.onload = function () {
 function init() {
   initTHREE();
   initControls();
+
+  var d0 = performance.now();
   initParticleSystem();
+  console.log('initParticleSystem took', performance.now() - d0);
 
   requestAnimationFrame(tick);
   window.addEventListener('resize', resize, false);
