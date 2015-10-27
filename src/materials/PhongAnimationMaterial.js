@@ -20,6 +20,8 @@ THREE.BAS.PhongAnimationMaterial.prototype.constructor = THREE.BAS.PhongAnimatio
 THREE.BAS.PhongAnimationMaterial.prototype._concatVertexShader = function() {
     // based on THREE.ShaderLib.phong
     return [
+        "#define PHONG",
+
         "varying vec3 vViewPosition;",
 
         "#ifndef FLAT_SHADED",

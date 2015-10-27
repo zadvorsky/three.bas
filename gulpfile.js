@@ -32,7 +32,11 @@ gulp.task('build-glsl', function() {
 });
 
 gulp.task('watch-glsl', function() {
-    return gulp.watch([glslSourceDir], ['compile-glsl']);
+    return gulp.watch([glslSourceDir], ['build-glsl']);
+});
+
+gulp.task('watch-js', function() {
+  return gulp.watch([jsSources], ['build-js']);
 });
 
 function getFileContents(basePath) {
