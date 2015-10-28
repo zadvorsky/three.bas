@@ -224,6 +224,15 @@ function initParticleSystem() {
     }
   );
 
+  /**
+   vec3 tDelta = transformed - uPoint;
+   float tDistance = length(tDelta);
+   float tForce = min(200.0, tDistance) / 200.0;
+   tDelta /= tForce;
+   transformed += tDelta;
+   * @type {THREE.Mesh}
+   */
+
   mParticleSystem = new THREE.Mesh(bufferGeometry, material);
   // because the bounding box of the particle system does not reflect its on-screen size
   // set this to false to prevent the whole thing from disappearing on certain angles
