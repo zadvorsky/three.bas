@@ -50,7 +50,7 @@ function initControls() {
 }
 
 function initParticleSystem() {
-  var prefabGeometry = new THREE.DodecahedronGeometry(4);
+  var prefabGeometry = new THREE.PlaneGeometry(4, 4);
   var bufferGeometry = new THREE.BAS.PrefabBufferGeometry(prefabGeometry, mParticleCount);
 
   bufferGeometry.computeVertexNormals();
@@ -212,9 +212,11 @@ function initParticleSystem() {
 
         'vec3 tDelta = transformed - uPoint;',
         'float tDistance = length(tDelta);',
-        'float tForce = 1.0 - min(tDistance, 200.0) / 200.0;',
-        'tDelta *= tForce;',
-        'transformed += tDelta;'
+        'if (tDistance < 200.0) {',
+        ' float tForce = 1.0 - tDistance / 200.0;',
+        ' tDelta *= tForce;',
+        ' transformed += tDelta;',
+        '}'
       ]
     },
     // THREE.MeshPhongMaterial uniforms
