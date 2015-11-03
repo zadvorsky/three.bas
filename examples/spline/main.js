@@ -4,12 +4,12 @@ var mControls;
 
 var mScene;
 
-var mParticleCount = 1; // <-- change this number!
+var mParticleCount = 100000; // <-- change this number!
 var mParticleSystem;
 
 var mTime = 0.0;
 var mTimeStep = (1/60);
-var mDuration = 8;
+var mDuration = 1000;
 
 
 var mPathPoints = [];
@@ -46,20 +46,20 @@ function initTHREE() {
   mScene.add(light);
 
 
-  for (var i = 0; i < 8; i++) {
+  for (var i = 0; i < 512; i++) {
     mPathPoints.push(new THREE.Vector3(
-      THREE.Math.randFloatSpread(100),
-      THREE.Math.randFloatSpread(100),
-      THREE.Math.randFloatSpread(100)
+      THREE.Math.randFloatSpread(500),
+      THREE.Math.randFloatSpread(500),
+      THREE.Math.randFloatSpread(500)
     ));
   }
 
-  var path = new THREE.CatmullRomCurve3(mPathPoints);
-  var geom = new THREE.Geometry();
-  geom.vertices = path.getPoints(100);
-  var mat = new THREE.LineBasicMaterial(0xff0000);
-  var line = new THREE.Line(geom, mat);
-  mScene.add(line);
+  //var path = new THREE.CatmullRomCurve3(mPathPoints);
+  //var geom = new THREE.Geometry();
+  //geom.vertices = path.getPoints(100);
+  //var mat = new THREE.LineBasicMaterial(0xff0000);
+  //var line = new THREE.Line(geom, mat);
+  //mScene.add(line);
 }
 
 function initControls() {
@@ -67,7 +67,7 @@ function initControls() {
 }
 
 function initParticleSystem() {
-  var prefabGeometry = new THREE.DodecahedronGeometry(4);
+  var prefabGeometry = new THREE.DodecahedronGeometry(1);
   var bufferGeometry = new THREE.BAS.PrefabBufferGeometry(prefabGeometry, mParticleCount);
 
   bufferGeometry.computeVertexNormals();
@@ -149,25 +149,25 @@ function initParticleSystem() {
   //  }
   //}
   //
-  //// buffer axis angle
-  //var axis = new THREE.Vector3();
-  //var angle = 0;
-  //
-  //for (i = 0, offset = 0; i < mParticleCount; i++) {
-  //  axis.x = THREE.Math.randFloatSpread(2);
-  //  axis.y = THREE.Math.randFloatSpread(2);
-  //  axis.z = THREE.Math.randFloatSpread(2);
-  //  axis.normalize();
-  //
-  //  angle = Math.PI * THREE.Math.randInt(16, 32);
-  //
-  //  for (j = 0; j < prefabGeometry.vertices.length; j++) {
-  //    aAxisAngle.array[offset++] = axis.x;
-  //    aAxisAngle.array[offset++] = axis.y;
-  //    aAxisAngle.array[offset++] = axis.z;
-  //    aAxisAngle.array[offset++] = angle;
-  //  }
-  //}
+  // buffer axis angle
+  var axis = new THREE.Vector3();
+  var angle = 0;
+
+  for (i = 0, offset = 0; i < mParticleCount; i++) {
+    axis.x = THREE.Math.randFloatSpread(2);
+    axis.y = THREE.Math.randFloatSpread(2);
+    axis.z = THREE.Math.randFloatSpread(2);
+    axis.normalize();
+
+    angle = Math.PI * THREE.Math.randInt(64, 128);
+
+    for (j = 0; j < prefabGeometry.vertices.length; j++) {
+      aAxisAngle.array[offset++] = axis.x;
+      aAxisAngle.array[offset++] = axis.y;
+      aAxisAngle.array[offset++] = axis.z;
+      aAxisAngle.array[offset++] = angle;
+    }
+  }
 
   // buffer color
   var color = new THREE.Color();
@@ -201,6 +201,9 @@ function initParticleSystem() {
       vertexColors: THREE.VertexColors,
       shading: THREE.FlatShading,
       side: THREE.DoubleSide,
+      defines: {
+        PATH_LENGTH:mPathPoints.length
+      },
       uniforms: {
         uTime: {type: 'f', value: 0},
         uDuration: {type: 'f', value: mDuration},
@@ -213,7 +216,7 @@ function initParticleSystem() {
       shaderParameters: [
         'uniform float uTime;',
         'uniform float uDuration;',
-        'uniform vec3 uPath[8];',
+        'uniform vec3 uPath[PATH_LENGTH];',
         'attribute float aOffset;',
         'attribute vec3 aStartPosition;',
         'attribute vec3 aControlPoint1;',
@@ -223,22 +226,26 @@ function initParticleSystem() {
       ],
       shaderVertexInit: [
         'float tProgress = mod((uTime + aOffset), uDuration) / uDuration;',
-        'float tPoint = 7.0 * tProgress;',
-        'float tIndex = floor(tPoint);',
-        'float tWeight = tPoint - tIndex;'
+
+        'float angle = aAxisAngle.w * tProgress;',
+        'vec4 tQuat = quatFromAxisAngle(aAxisAngle.xyz, angle);'
         //'int tIndex = int(tPointBase);'
       ],
       shaderTransformNormal: [
       ],
       shaderTransformPosition: [
+        'transformed += vec3(8.0, 0.0, 0.0);',
+        'transformed = rotateVector(tQuat, transformed);',
+
+        'float tMax = float(PATH_LENGTH - 1);',
+        'float tPoint = tMax * tProgress;',
+        'float tIndex = floor(tPoint);',
+        'float tWeight = tPoint - tIndex;',
         'vec3 p0 = uPath[int(max(0.0, tIndex - 1.0))];',
         'vec3 p1 = uPath[int(tIndex)];',
-        'vec3 p2 = uPath[int(min(tIndex + 1.0, 7.0))];',
-        'vec3 p3 = uPath[int(min(tIndex + 2.0, 7.0))];',
+        'vec3 p2 = uPath[int(min(tIndex + 1.0, tMax))];',
+        'vec3 p3 = uPath[int(min(tIndex + 2.0, tMax))];',
         'transformed += catmullRom(p0, p1, p2, p3, tWeight);'
-
-        //'transformed = rotateVector(tQuat, transformed);',
-        //'transformed += cubicBezier(aStartPosition, aControlPoint1, aControlPoint2, aEndPosition, tProgress);'
       ]
     },
     // THREE.MeshPhongMaterial uniforms
