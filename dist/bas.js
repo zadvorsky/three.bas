@@ -4,6 +4,8 @@ THREE.BAS.ShaderChunk = {};
 
 THREE.BAS.ShaderChunk["animation_time"] = "float tDelay = aAnimation.x;\nfloat tDuration = aAnimation.y;\nfloat tTime = clamp(uTime - tDelay, 0.0, tDuration);\nfloat tProgress = ease(tTime, 0.0, 1.0, tDuration);\n";
 
+THREE.BAS.ShaderChunk["catmull-rom"] = "vec3 catmullRom(vec3 p0, vec3 p1, vec3 p2, vec3 p3, float t)\n{\n    vec3 v0 = (p2 - p0) * 0.5;\n    vec3 v1 = (p3 - p1) * 0.5;\n    float t2 = t * t;\n    float t3 = t * t * t;\n\n    return vec3((2.0 * p1 - 2.0 * p2 + v0 + v1) * t3 + (-3.0 * p1 + 3.0 * p2 - 2.0 * v0 - v1) * t2 + v0 * t + p1);\n}\n";
+
 THREE.BAS.ShaderChunk["cubic_bezier"] = "vec3 cubicBezier(vec3 p0, vec3 c0, vec3 c1, vec3 p1, float t)\n{\n    vec3 tp;\n    float tn = 1.0 - t;\n\n    tp.xyz = tn * tn * tn * p0.xyz + 3.0 * tn * tn * t * c0.xyz + 3.0 * tn * t * t * c1.xyz + t * t * t * p1.xyz;\n\n    return tp;\n}\n";
 
 THREE.BAS.ShaderChunk["ease_in_cubic"] = "float ease(float t, float b, float c, float d) {\n  return c*(t/=d)*t*t + b;\n}\n";
@@ -219,64 +221,65 @@ THREE.BAS.PrefabBufferGeometry.prototype.setAttribute2 = function (name, data) {
   this.geometry.attributes[name].needsUpdate = true;
 };
 
-THREE.BAS.BaseAnimationMaterial = function(parameters) {
-    THREE.ShaderMaterial.call(this);
+THREE.BAS.BaseAnimationMaterial = function (parameters) {
+  THREE.ShaderMaterial.call(this);
 
-    this.shaderFunctions = [];
-    this.shaderParameters = [];
-    this.shaderVertexInit = [];
-    this.shaderTransformNormal = [];
-    this.shaderTransformPosition = [];
+  this.shaderFunctions = [];
+  this.shaderParameters = [];
+  this.shaderVertexInit = [];
+  this.shaderTransformNormal = [];
+  this.shaderTransformPosition = [];
 
-    this.setValues(parameters);
+  this.setValues(parameters);
 };
 THREE.BAS.BaseAnimationMaterial.prototype = Object.create(THREE.ShaderMaterial.prototype);
 THREE.BAS.BaseAnimationMaterial.prototype.constructor = THREE.BAS.BaseAnimationMaterial;
 
 // abstract
-THREE.BAS.BaseAnimationMaterial.prototype._concatVertexShader = function() {
-    return '';
+THREE.BAS.BaseAnimationMaterial.prototype._concatVertexShader = function () {
+  return '';
 };
 
-THREE.BAS.BaseAnimationMaterial.prototype._concatFunctions = function() {
-    return this.shaderFunctions.join('\n');
+THREE.BAS.BaseAnimationMaterial.prototype._concatFunctions = function () {
+  return this.shaderFunctions.join('\n');
 };
-THREE.BAS.BaseAnimationMaterial.prototype._concatParameters = function() {
-    return this.shaderParameters.join('\n');
+THREE.BAS.BaseAnimationMaterial.prototype._concatParameters = function () {
+  return this.shaderParameters.join('\n');
 };
-THREE.BAS.BaseAnimationMaterial.prototype._concatVertexInit = function() {
-    return this.shaderVertexInit.join('\n');
+THREE.BAS.BaseAnimationMaterial.prototype._concatVertexInit = function () {
+  return this.shaderVertexInit.join('\n');
 };
-THREE.BAS.BaseAnimationMaterial.prototype._concatTransformNormal = function() {
-    return this.shaderTransformNormal.join('\n');
+THREE.BAS.BaseAnimationMaterial.prototype._concatTransformNormal = function () {
+  return this.shaderTransformNormal.join('\n');
 };
-THREE.BAS.BaseAnimationMaterial.prototype._concatTransformPosition = function() {
-    return this.shaderTransformPosition.join('\n');
+THREE.BAS.BaseAnimationMaterial.prototype._concatTransformPosition = function () {
+  return this.shaderTransformPosition.join('\n');
 };
 
 
-THREE.BAS.BaseAnimationMaterial.prototype.setUniformValues = function(values) {
-    for (var key in values) {
-        if (key in this.uniforms) {
-            var uniform = this.uniforms[key];
-            var value = values[key];
+THREE.BAS.BaseAnimationMaterial.prototype.setUniformValues = function (values) {
+  for (var key in values) {
+    if (key in this.uniforms) {
+      var uniform = this.uniforms[key];
+      var value = values[key];
 
-            // todo add matrix uniform types
-            switch (uniform.type) {
-                case 'c': // color
-                    uniform.value.set(value);
-                    break;
-                case 'v2': // vectors
-                case 'v3':
-                case 'v4':
-                    uniform.value.copy(value);
-                    break;
-                case 'f': // float
-                case 't': // texture
-                    uniform.value = value;
-            }
-        }
+      // todo add matrix uniform types
+      switch (uniform.type) {
+        case 'c': // color
+          uniform.value.set(value);
+          break;
+        case 'v2': // vectors
+        case 'v3':
+        case 'v4':
+          uniform.value.copy(value);
+          break;
+        case 'f': // float
+        case 't': // texture
+        default:
+          uniform.value = value;
+      }
     }
+  }
 };
 
 THREE.BAS.PhongAnimationMaterial = function(parameters, uniformValues) {
