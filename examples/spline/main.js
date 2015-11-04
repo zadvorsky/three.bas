@@ -4,15 +4,12 @@ var mControls;
 
 var mScene;
 
-var mParticleCount = 100000; // <-- change this number!
+var mParticleCount = 10000; // <-- change this number!
 var mParticleSystem;
 
 var mTime = 0.0;
 var mTimeStep = (1/60);
-var mDuration = 1000;
-
-
-var mPathPoints = [];
+var mDuration = 60;
 
 window.onload = function () {
   init();
@@ -35,7 +32,7 @@ function initTHREE() {
   mContainer.appendChild(mRenderer.domElement);
 
   mCamera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 5000);
-  mCamera.position.set(0, 0, 200);
+  mCamera.position.set(0, 0, 400);
 
   mScene = new THREE.Scene();
 
@@ -44,22 +41,6 @@ function initTHREE() {
   light = new THREE.PointLight(0xffffff, 4, 1000, 2);
   light.position.set(0, 0, 0);
   mScene.add(light);
-
-
-  for (var i = 0; i < 512; i++) {
-    mPathPoints.push(new THREE.Vector3(
-      THREE.Math.randFloatSpread(500),
-      THREE.Math.randFloatSpread(500),
-      THREE.Math.randFloatSpread(500)
-    ));
-  }
-
-  //var path = new THREE.CatmullRomCurve3(mPathPoints);
-  //var geom = new THREE.Geometry();
-  //geom.vertices = path.getPoints(100);
-  //var mat = new THREE.LineBasicMaterial(0xff0000);
-  //var line = new THREE.Line(geom, mat);
-  //mScene.add(line);
 }
 
 function initControls() {
@@ -74,10 +55,7 @@ function initParticleSystem() {
 
   // generate additional geometry data
   var aOffset = bufferGeometry.createAttribute('aOffset', 1);
-  var aStartPosition = bufferGeometry.createAttribute('aStartPosition', 3);
-  var aControlPoint1 = bufferGeometry.createAttribute('aControlPoint1', 3);
-  var aControlPoint2 = bufferGeometry.createAttribute('aControlPoint2', 3);
-  var aEndPosition = bufferGeometry.createAttribute('aEndPosition', 3);
+  var aPivot = bufferGeometry.createAttribute('aPivot', 3);
   var aAxisAngle = bufferGeometry.createAttribute('aAxisAngle', 4);
   var aColor = bufferGeometry.createAttribute('color', 3);
 
@@ -94,61 +72,21 @@ function initParticleSystem() {
     }
   }
 
-  //// buffer start positions
-  //var x, y, z;
-  //
-  //for (i = 0, offset = 0; i < mParticleCount; i++) {
-  //  x = -1000;
-  //  y = 0;
-  //  z = 0;
-  //
-  //  for (j = 0; j < prefabGeometry.vertices.length; j++) {
-  //    aStartPosition.array[offset++] = x;
-  //    aStartPosition.array[offset++] = y;
-  //    aStartPosition.array[offset++] = z;
-  //  }
-  //}
-  //
-  //// buffer control points
-  //
-  //for (i = 0, offset = 0; i < mParticleCount; i++) {
-  //  x = THREE.Math.randFloat(-400, 400);
-  //  y = THREE.Math.randFloat(400, 600);
-  //  z = THREE.Math.randFloat(-1200, -800);
-  //
-  //  for (j = 0; j < prefabGeometry.vertices.length; j++) {
-  //    aControlPoint1.array[offset++] = x;
-  //    aControlPoint1.array[offset++] = y;
-  //    aControlPoint1.array[offset++] = z;
-  //  }
-  //}
-  //
-  //for (i = 0, offset = 0; i < mParticleCount; i++) {
-  //  x = THREE.Math.randFloat(-400, 400);
-  //  y = THREE.Math.randFloat(-600, -400);
-  //  z = THREE.Math.randFloat(800, 1200);
-  //
-  //  for (j = 0; j < prefabGeometry.vertices.length; j++) {
-  //    aControlPoint2.array[offset++] = x;
-  //    aControlPoint2.array[offset++] = y;
-  //    aControlPoint2.array[offset++] = z;
-  //  }
-  //}
-  //
-  //// buffer end positions
-  //
-  //for (i = 0, offset = 0; i < mParticleCount; i++) {
-  //  x = 1000;
-  //  y = 0;
-  //  z = 0;
-  //
-  //  for (j = 0; j < prefabGeometry.vertices.length; j++) {
-  //    aEndPosition.array[offset++] = x;
-  //    aEndPosition.array[offset++] = y;
-  //    aEndPosition.array[offset++] = z;
-  //  }
-  //}
-  //
+  // buffer pivot
+  var pivot = new THREE.Vector3();
+
+  for (i = 0, offset = 0; i < mParticleCount; i++) {
+    pivot.x = THREE.Math.randFloatSpread(8);
+    pivot.y = THREE.Math.randFloatSpread(8);
+    pivot.z = THREE.Math.randFloatSpread(8);
+
+    for (j = 0; j < prefabGeometry.vertices.length; j++) {
+      aPivot.array[offset++] = pivot.x;
+      aPivot.array[offset++] = pivot.y;
+      aPivot.array[offset++] = pivot.z;
+    }
+  }
+
   // buffer axis angle
   var axis = new THREE.Vector3();
   var angle = 0;
@@ -187,12 +125,15 @@ function initParticleSystem() {
     }
   }
 
+  // buffer spline (uniform)
   var pathArray = [];
-  var point;
 
-  for (i = 0; i < mPathPoints.length; i++) {
-    point = mPathPoints[i];
-    pathArray.push(point.x, point.y, point.z);
+  for (i = 0; i < 16; i++) {
+    pathArray.push(
+      THREE.Math.randFloatSpread(500),
+      THREE.Math.randFloatSpread(500),
+      THREE.Math.randFloatSpread(500)
+    );
   }
 
   var material = new THREE.BAS.PhongAnimationMaterial(
@@ -202,7 +143,7 @@ function initParticleSystem() {
       shading: THREE.FlatShading,
       side: THREE.DoubleSide,
       defines: {
-        PATH_LENGTH:mPathPoints.length
+        PATH_LENGTH:pathArray.length / 3
       },
       uniforms: {
         uTime: {type: 'f', value: 0},
@@ -218,10 +159,7 @@ function initParticleSystem() {
         'uniform float uDuration;',
         'uniform vec3 uPath[PATH_LENGTH];',
         'attribute float aOffset;',
-        'attribute vec3 aStartPosition;',
-        'attribute vec3 aControlPoint1;',
-        'attribute vec3 aControlPoint2;',
-        'attribute vec3 aEndPosition;',
+        'attribute vec3 aPivot;',
         'attribute vec4 aAxisAngle;'
       ],
       shaderVertexInit: [
@@ -229,18 +167,19 @@ function initParticleSystem() {
 
         'float angle = aAxisAngle.w * tProgress;',
         'vec4 tQuat = quatFromAxisAngle(aAxisAngle.xyz, angle);'
-        //'int tIndex = int(tPointBase);'
       ],
       shaderTransformNormal: [
+        'objectNormal = rotateVector(tQuat, objectNormal);'
       ],
       shaderTransformPosition: [
-        'transformed += vec3(8.0, 0.0, 0.0);',
+        'transformed += aPivot;',
         'transformed = rotateVector(tQuat, transformed);',
 
         'float tMax = float(PATH_LENGTH - 1);',
         'float tPoint = tMax * tProgress;',
         'float tIndex = floor(tPoint);',
         'float tWeight = tPoint - tIndex;',
+        // had some trouble with float <-> int conversion, indices, and min()/max() functions..
         'vec3 p0 = uPath[int(max(0.0, tIndex - 1.0))];',
         'vec3 p1 = uPath[int(tIndex)];',
         'vec3 p2 = uPath[int(min(tIndex + 1.0, tMax))];',
