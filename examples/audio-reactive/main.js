@@ -3,19 +3,26 @@ var mCamera, mRenderer;
 var mControls;
 
 var mScene;
+var mLight;
 
-var mParticleCount = 25000; // <-- change this number!
+var mParticleCount = 500000; // <-- change this number!
 var mParticleSystem;
 
 var mTime = 0.0;
 var mTimeStep = (1/60);
 var mDuration = 120;
 
+var mPathLength = 32;
+
+var mAudioElement;
+var mAnalyser;
+
 window.onload = function () {
   init();
 };
 
 function init() {
+  initAudio();
   initTHREE();
   initControls();
   initParticleSystem();
@@ -24,34 +31,43 @@ function init() {
   window.addEventListener('resize', resize, false);
 }
 
+function initAudio() {
+  mAudioElement = document.getElementById('song');
+  mAudioElement.play();
+
+  mAnalyser = new SpectrumAnalyzer(mPathLength * 0.5, 0.75);
+  mAnalyser.setSource(mAudioElement);
+}
+
 function initTHREE() {
-  mRenderer = new THREE.WebGLRenderer({antialias: true});
+  mRenderer = new THREE.WebGLRenderer({antialias: false});
   mRenderer.setSize(window.innerWidth, window.innerHeight);
+  //mRenderer.setClearColor(0xffffff);
+  mRenderer.setClearColor(0x1B0914);
 
   mContainer = document.getElementById('three-container');
   mContainer.appendChild(mRenderer.domElement);
 
   mCamera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 5000);
-  mCamera.position.set(0, 0, 800);
+  mCamera.position.set(0, 0, 1000);
 
   mScene = new THREE.Scene();
 
-  var light;
-
-  light = new THREE.PointLight(0xffffff, 4, 1000, 2);
-  light.position.set(0, 300, 0);
-  mScene.add(light);
+  mLight = new THREE.PointLight(0xffffff, 1, 1200, 2);
+  mLight.position.set(0, 100, 0);
+  mScene.add(mLight);
 }
 
 function initControls() {
   mControls = new THREE.OrbitControls(mCamera, mRenderer.domElement);
+  mControls.autoRotate = true;
 }
 
 function initParticleSystem() {
-  var prefabGeometry = new THREE.PlaneGeometry(3, 3);
+  var prefabGeometry = new THREE.PlaneGeometry(4, 4);
   var bufferGeometry = new THREE.BAS.PrefabBufferGeometry(prefabGeometry, mParticleCount);
 
-  bufferGeometry.computeVertexNormals();
+  //bufferGeometry.computeVertexNormals();
 
   // generate additional geometry data
   var aOffset = bufferGeometry.createAttribute('aOffset', 1);
@@ -97,7 +113,7 @@ function initParticleSystem() {
     axis.z = THREE.Math.randFloatSpread(2);
     axis.normalize();
 
-    angle = Math.PI * THREE.Math.randInt(24, 32);
+    angle = Math.PI * THREE.Math.randInt(48, 64);
 
     for (j = 0; j < prefabGeometry.vertices.length; j++) {
       aAxisAngle.array[offset++] = axis.x;
@@ -128,39 +144,37 @@ function initParticleSystem() {
   // buffer spline (uniform)
   var pathArray = [];
   var radiusArray = [];
-  var length = 14;
+  var length = mPathLength;
   var x, y, z;
 
-  // first point
-  pathArray.push(-1000, 0, 0);
-  radiusArray.push(2);
+  for (i = 0; i < length; i++) {
+    if (!i) {
+      x = 0;
+      y = -1000;
+      z = 0;
+    }
+    else if (!(i - length + 1)) {
+      x = 0;
+      y = 1000;
+      z = 0;
+    }
+    else {
+      x = THREE.Math.randFloatSpread(800);
+      y = THREE.Math.randFloatSpread(400);
+      z = THREE.Math.randFloatSpread(800);
+    }
 
-  for (i = 1; i < length - 1; i++) {
-    x = -100 * (length * 0.5) + 100 * i;
-    y = THREE.Math.randFloat(50, 300) * (i % 2 ? 1 : -1);
-    z = THREE.Math.randFloatSpread(300);
-
-    pathArray.push(
-      x,
-      y,
-      z
-    );
-
-    radiusArray.push(
-      THREE.Math.randFloat(1, 32)
-    );
+    pathArray.push(x, y, z);
+    radiusArray.push(0);
   }
-
-  // last point
-  pathArray.push(1000, 0, 0);
-  radiusArray.push(2);
 
   var material = new THREE.BAS.PhongAnimationMaterial(
     // custom parameters & THREE.MeshPhongMaterial parameters
     {
       vertexColors: THREE.VertexColors,
       shading: THREE.FlatShading,
-      side: THREE.DoubleSide,
+      side: THREE.FrontSide,
+      fog: true,
       defines: {
         PATH_LENGTH:pathArray.length / 3
       },
@@ -168,7 +182,8 @@ function initParticleSystem() {
         uTime: {type: 'f', value: 0},
         uDuration: {type: 'f', value: mDuration},
         uPath: {type: 'fv', value: pathArray},
-        uRadius: {type: 'fv1', value: radiusArray}
+        uRadius: {type: 'fv1', value: radiusArray},
+        uRoundness: {type: 'v2', value: new THREE.Vector2(2, 2)}
       },
       shaderFunctions: [
         THREE.BAS.ShaderChunk['quaternion_rotation'],
@@ -179,6 +194,7 @@ function initParticleSystem() {
         'uniform float uDuration;',
         'uniform vec3 uPath[PATH_LENGTH];',
         'uniform float uRadius[PATH_LENGTH];',
+        'uniform vec2 uRoundness;',
         'attribute float aOffset;',
         'attribute vec3 aPivot;',
         'attribute vec4 aAxisAngle;'
@@ -198,32 +214,32 @@ function initParticleSystem() {
         'float tIndex = floor(tPoint);',
         'float tWeight = tPoint - tIndex;',
 
+        'int i0 = int(max(0.0, tIndex - 1.0));',
         'int i1 = int(tIndex);',
         'int i2 = int(min(tIndex + 1.0, tMax));',
-        'vec3 p0 = uPath[int(max(0.0, tIndex - 1.0))];',
+        'int i3 = int(min(tIndex + 2.0, tMax));',
+        'vec3 p0 = uPath[i0];',
         'vec3 p1 = uPath[i1];',
         'vec3 p2 = uPath[i2];',
-        'vec3 p3 = uPath[int(min(tIndex + 2.0, tMax))];',
-        // calculate radius (pivot scale?) by linearly interpolating between path values
-        'float radius = mix(uRadius[i1], uRadius[i2], tWeight);',
-        // pivot before rotation
+        'vec3 p3 = uPath[i3];',
+
+        'float radius = catmullRom(uRadius[i0], uRadius[i1], uRadius[i2], uRadius[i3], tWeight);',
         'transformed += aPivot * radius;',
-        // then rotation
+
         'transformed = rotateVector(tQuat, transformed);',
-        // then use catmull rom interpolation to get position on path
-        'transformed += catmullRom(p0, p1, p2, p3, tWeight);'
+
+        'transformed += catmullRom(p0, p1, p2, p3, uRoundness, tWeight);'
       ]
     },
     // THREE.MeshPhongMaterial uniforms
     {
-      shininess: 16,
-      specular: 0xffd700
+      shininess: 32,
+      specular: 0xffd700,
+      emissive: 0x1B0914
     }
   );
 
   mParticleSystem = new THREE.Mesh(bufferGeometry, material);
-  // because the bounding box of the particle system does not reflect its on-screen size
-  // set this to false to prevent the whole thing from disappearing on certain angles
   mParticleSystem.frustumCulled = false;
 
   mScene.add(mParticleSystem);
@@ -233,14 +249,46 @@ function tick() {
   update();
   render();
 
-  mTime += mTimeStep;
-  mTime %= mDuration;
-
   requestAnimationFrame(tick);
 }
 
 function update() {
   mControls.update();
+  mAnalyser.updateSample();
+
+  var uniform = mParticleSystem.material.uniforms['uRadius'].value;
+  var data = mAnalyser.frequencyByteData;
+
+  var i;
+
+  var dataArray = [];
+
+  for (i = data.length - 1; i >= 0; i--) {
+    dataArray.push(data[i]);
+  }
+
+  for (i = 0; i < data.length; i++) {
+    dataArray.push(data[i]);
+  }
+
+  for (i = 0; i < dataArray.length; i++) {
+    if (i && dataArray.length - i > 1) {
+      uniform[i] = Math.max(8, dataArray[i] / 255 * 48);
+    }
+    else {
+      uniform[i] = 128;
+    }
+  }
+
+  var a0 = mAnalyser.getAverageFloat() * 2 + 2;
+  var a1 = mAnalyser.getAverageFloat() * 2;
+
+  mParticleSystem.material.uniforms['uRoundness'].value.set(a0, a0);
+
+  mLight.intensity = a1 * a1;
+
+  mTime += mTimeStep;
+  mTime %= mDuration;
 
   mParticleSystem.material.uniforms['uTime'].value = mTime;
 }
@@ -255,3 +303,67 @@ function resize() {
 
   mRenderer.setSize(window.innerWidth, window.innerHeight);
 }
+
+/////////////////////////////////
+// Spectrum Analyser
+/////////////////////////////////
+
+// https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode
+function SpectrumAnalyzer(binCount, smoothingTimeConstant) {
+  var Context = window["AudioContext"] || window["webkitAudioContext"];
+
+  this.context = new Context();
+  this.analyzerNode = this.context.createAnalyser();
+
+  this.setBinCount(binCount);
+  this.setSmoothingTimeConstant(smoothingTimeConstant);
+}
+
+SpectrumAnalyzer.prototype = {
+  setSource: function (source) {
+    //this.source = source;
+    this.source = this.context.createMediaElementSource(source);
+    this.source.connect(this.analyzerNode);
+    this.analyzerNode.connect(this.context.destination);
+  },
+
+  setBinCount: function (binCount) {
+    this.binCount = binCount;
+    this.analyzerNode.fftSize = binCount * 2;
+
+    this.frequencyByteData = new Uint8Array(binCount); 	// frequency
+    this.timeByteData = new Uint8Array(binCount);		// waveform
+  },
+
+  setSmoothingTimeConstant: function (smoothingTimeConstant) {
+    this.analyzerNode.smoothingTimeConstant = smoothingTimeConstant;
+  },
+
+  getFrequencyData: function () {
+    return this.frequencyByteData;
+  },
+
+  getTimeData: function () {
+    return this.timeByteData;
+  },
+  // not save if out of bounds
+  getAverage: function (index, count) {
+    var total = 0;
+    var start = index || 0;
+    var end = start + (count || this.binCount);
+
+    for (var i = start; i < end; i++) {
+      total += this.frequencyByteData[i];
+    }
+
+    return total / (end - start);
+  },
+  getAverageFloat:function(index, count) {
+    return this.getAverage(index, count) / 255;
+  },
+
+  updateSample: function () {
+    this.analyzerNode.getByteFrequencyData(this.frequencyByteData);
+    this.analyzerNode.getByteTimeDomainData(this.timeByteData);
+  }
+};
