@@ -4,6 +4,7 @@ var mControls;
 
 var mScene;
 var mLight;
+var mLight2;
 
 var mParticleCount = 500000; // <-- change this number!
 var mParticleSystem;
@@ -27,13 +28,16 @@ function init() {
   initControls();
   initParticleSystem();
 
+  setTimeout(function() {
+    mAudioElement.play(0);
+  }, 200);
+
   requestAnimationFrame(tick);
   window.addEventListener('resize', resize, false);
 }
 
 function initAudio() {
   mAudioElement = document.getElementById('song');
-  mAudioElement.play();
 
   mAnalyser = new SpectrumAnalyzer(mPathLength * 0.5, 0.75);
   mAnalyser.setSource(mAudioElement);
@@ -49,18 +53,24 @@ function initTHREE() {
   mContainer.appendChild(mRenderer.domElement);
 
   mCamera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 5000);
-  mCamera.position.set(0, 0, 1000);
+  mCamera.position.set(0, 0, 1200);
 
   mScene = new THREE.Scene();
 
   mLight = new THREE.PointLight(0xffffff, 1, 1200, 2);
   mLight.position.set(0, 100, 0);
   mScene.add(mLight);
+
+  mLight2 = new THREE.DirectionalLight(0xff00ff, 0.25);
+  //mLight2.position.set(0, 1, 1);
+  mScene.add(mLight2);
 }
 
 function initControls() {
   mControls = new THREE.OrbitControls(mCamera, mRenderer.domElement);
   mControls.autoRotate = true;
+  mControls.enableZoom = false;
+  mControls.enablePan = false;
 }
 
 function initParticleSystem() {
@@ -70,7 +80,7 @@ function initParticleSystem() {
   //bufferGeometry.computeVertexNormals();
 
   // generate additional geometry data
-  var aOffset = bufferGeometry.createAttribute('aOffset', 1);
+  var aDelayDuration = bufferGeometry.createAttribute('aDelayDuration', 2);
   var aPivot = bufferGeometry.createAttribute('aPivot', 3);
   var aAxisAngle = bufferGeometry.createAttribute('aAxisAngle', 4);
   var aColor = bufferGeometry.createAttribute('color', 3);
@@ -79,12 +89,21 @@ function initParticleSystem() {
 
   // buffer time offset
   var delay;
+  var duration;
+  var prefabDelay = 0.0001;
+  var vertexDelay = 0.01;
+  var minDuration = 24.0;
+  var maxDuration = 42.0;
+
+  mDuration = maxDuration + prefabDelay * mParticleCount + vertexDelay * prefabGeometry.vertices.length;
 
   for (i = 0, offset = 0; i < mParticleCount; i++) {
-    delay = i / mParticleCount * mDuration;
+    delay = i * prefabDelay;
+    duration = THREE.Math.randFloat(minDuration, maxDuration);
 
     for (j = 0; j < prefabGeometry.vertices.length; j++) {
-      aOffset.array[offset++] = delay;
+      aDelayDuration.array[offset++] = delay + j * vertexDelay;
+      aDelayDuration.array[offset++] = duration;
     }
   }
 
@@ -128,7 +147,8 @@ function initParticleSystem() {
   var h, s, l;
 
   for (i = 0, offset = 0; i < mParticleCount; i++) {
-    h = i / mParticleCount;
+    //h = i / mParticleCount;
+    h = THREE.Math.randFloat(0.5, 1.00);
     s = THREE.Math.randFloat(0.5, 0.75);
     l = THREE.Math.randFloat(0.25, 0.5);
 
@@ -150,18 +170,18 @@ function initParticleSystem() {
   for (i = 0; i < length; i++) {
     if (!i) {
       x = 0;
-      y = -1000;
+      y = -1400;
       z = 0;
     }
     else if (!(i - length + 1)) {
       x = 0;
-      y = 1000;
+      y = 1200;
       z = 0;
     }
     else {
-      x = THREE.Math.randFloatSpread(800);
+      x = THREE.Math.randFloatSpread(600);
       y = THREE.Math.randFloatSpread(400);
-      z = THREE.Math.randFloatSpread(800);
+      z = THREE.Math.randFloatSpread(600);
     }
 
     pathArray.push(x, y, z);
@@ -173,34 +193,37 @@ function initParticleSystem() {
     {
       vertexColors: THREE.VertexColors,
       shading: THREE.FlatShading,
-      side: THREE.FrontSide,
+      side: THREE.DoubleSide,
       fog: true,
       defines: {
         PATH_LENGTH:pathArray.length / 3
       },
       uniforms: {
         uTime: {type: 'f', value: 0},
-        uDuration: {type: 'f', value: mDuration},
+        //uDuration: {type: 'f', value: mDuration},
         uPath: {type: 'fv', value: pathArray},
         uRadius: {type: 'fv1', value: radiusArray},
         uRoundness: {type: 'v2', value: new THREE.Vector2(2, 2)}
       },
       shaderFunctions: [
         THREE.BAS.ShaderChunk['quaternion_rotation'],
-        THREE.BAS.ShaderChunk['catmull-rom']
+        THREE.BAS.ShaderChunk['catmull-rom'],
+        THREE.BAS.ShaderChunk['ease_in_out_cubic']
       ],
       shaderParameters: [
         'uniform float uTime;',
-        'uniform float uDuration;',
         'uniform vec3 uPath[PATH_LENGTH];',
         'uniform float uRadius[PATH_LENGTH];',
         'uniform vec2 uRoundness;',
-        'attribute float aOffset;',
+        'attribute vec2 aDelayDuration;',
         'attribute vec3 aPivot;',
         'attribute vec4 aAxisAngle;'
       ],
       shaderVertexInit: [
-        'float tProgress = mod((uTime + aOffset), uDuration) / uDuration;',
+        'float tDelay = aDelayDuration.x;',
+        'float tDuration = aDelayDuration.y;',
+        'float tTime = clamp(uTime - tDelay, 0.0, tDuration);',
+        'float tProgress = tTime / tDuration;',
 
         'float angle = aAxisAngle.w * tProgress;',
         'vec4 tQuat = quatFromAxisAngle(aAxisAngle.xyz, angle);'
@@ -233,7 +256,7 @@ function initParticleSystem() {
     },
     // THREE.MeshPhongMaterial uniforms
     {
-      shininess: 32,
+      shininess: 16,
       specular: 0xffd700,
       emissive: 0x1B0914
     }
@@ -259,26 +282,41 @@ function update() {
   var uniform = mParticleSystem.material.uniforms['uRadius'].value;
   var data = mAnalyser.frequencyByteData;
 
+  var dataArray = [];
+  var cap = data.length * 0.5;
   var i;
 
-  var dataArray = [];
-
-  for (i = data.length - 1; i >= 0; i--) {
+  //for (i = cap - 1; i >= 0; i--) {
+  for (i = 0; i < cap; i++) {
     dataArray.push(data[i]);
   }
 
-  for (i = 0; i < data.length; i++) {
+  //for (i = cap - 1; i >= 0; i--) {
+  for (i = 0; i < cap; i++) {
     dataArray.push(data[i]);
   }
+
+  //for (i = cap - 1; i >= 0; i--) {
+  for (i = 0; i < cap; i++) {
+    dataArray.push(data[i]);
+  }
+
+  //for (i = cap - 1; i >= 0; i--) {
+  for (i = 0; i < cap; i++) {
+    dataArray.push(data[i]);
+  }
+
 
   for (i = 0; i < dataArray.length; i++) {
     if (i && dataArray.length - i > 1) {
-      uniform[i] = Math.max(8, dataArray[i] / 255 * 48);
+      var val = dataArray[i] / 255;
+      uniform[i] = Math.max(8, val * val * 64);
     }
     else {
       uniform[i] = 128;
     }
   }
+
 
   var a0 = mAnalyser.getAverageFloat() * 2 + 2;
   var a1 = mAnalyser.getAverageFloat() * 2;
@@ -286,11 +324,17 @@ function update() {
   mParticleSystem.material.uniforms['uRoundness'].value.set(a0, a0);
 
   mLight.intensity = a1 * a1;
+  mLight2.intensity = a1 * a1 * a1 * a1;
 
-  mTime += mTimeStep;
-  mTime %= mDuration;
+  //mTime += mTimeStep;// * a1;
+  //mTime %= mDuration;
+  var time = mAudioElement.currentTime || 0;
 
-  mParticleSystem.material.uniforms['uTime'].value = mTime;
+  mParticleSystem.material.uniforms['uTime'].value = time;
+  //if (mTime >= mDuration) {
+  //  mTime = 0;
+  //  mAudioElement.play(0);
+  //}
 }
 
 function render() {
