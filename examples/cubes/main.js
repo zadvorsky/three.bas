@@ -73,8 +73,6 @@ function initParticleSystem() {
   var aDelayDuration = bufferGeometry.createAttribute('aDelayDuration', 2);
   var aStartPosition = bufferGeometry.createAttribute('aStartPosition', 3);
   var aEndPosition = bufferGeometry.createAttribute('aEndPosition', 3);
-  var aAxisAngle = bufferGeometry.createAttribute('aAxisAngle', 4);
-  //var aColor = bufferGeometry.createAttribute('color', 3);
 
   var i, j, offset;
 
