@@ -2,18 +2,17 @@ var mContainer;
 var mCamera, mRenderer;
 var mControls;
 
+var mShadowColor = 0x13091B; //0x1B0914
+
 var mScene;
 var mLight;
 var mLight2;
 var mLight3;
 
-var mParticleCount = 500000; // <-- change this number!
+var mParticleCount = 250000;
 var mParticleSystem;
 
-var mTime = 0.0;
-var mTimeStep = (1/60);
-var mDuration = 120;
-
+var mDuration;
 var mPathLength = 32;
 
 var mAudioElement;
@@ -39,8 +38,10 @@ function init() {
 
 function initAudio() {
   mAudioElement = document.getElementById('song');
+  mAudioElement.src = 'song.mp3';
+  mAudioElement.loop = true;
 
-  mAnalyser = new SpectrumAnalyzer(mPathLength * 0.5, 0.75);
+  mAnalyser = new SpectrumAnalyzer(mPathLength * 0.5, 0.80);
   mAnalyser.setSource(mAudioElement);
 }
 
@@ -48,7 +49,7 @@ function initTHREE() {
   mRenderer = new THREE.WebGLRenderer({antialias: false});
   mRenderer.setSize(window.innerWidth, window.innerHeight);
   //mRenderer.setClearColor(0xffffff);
-  mRenderer.setClearColor(0x1B0914);
+  mRenderer.setClearColor(mShadowColor);
 
   mContainer = document.getElementById('three-container');
   mContainer.appendChild(mRenderer.domElement);
@@ -62,11 +63,11 @@ function initTHREE() {
   mLight.position.set(0, 0, 0);
   mScene.add(mLight);
 
-  mLight2 = new THREE.DirectionalLight(0xff00ff, 0.25);
+  mLight2 = new THREE.DirectionalLight(0xFF311F, 0.25);
   mLight2.position.set(0, 1, 1);
   mScene.add(mLight2);
 
-  mLight3 = new THREE.DirectionalLight(0x00ffff, 0.25);
+  mLight3 = new THREE.DirectionalLight(0x007A99, 0.25);
   mLight3.position.set(0, 1, -1);
   mScene.add(mLight3);
 }
@@ -96,14 +97,12 @@ function initParticleSystem() {
   // buffer time offset
   var delay;
   var duration;
-  var prefabDelay = 0.0001;
-  var vertexDelay = 0.0075;
+  var prefabDelay = 0.00015;
+  var vertexDelay = 0.0125;
   var minDuration = 32.0;
-  var maxDuration = 42.0;
+  var maxDuration = 56.0;
 
   mDuration = maxDuration + prefabDelay * mParticleCount + vertexDelay * prefabGeometry.vertices.length;
-
-  console.log(mDuration);
 
   for (i = 0, offset = 0; i < mParticleCount; i++) {
     delay = i * prefabDelay;
@@ -266,7 +265,7 @@ function initParticleSystem() {
     {
       shininess: 16,
       specular: 0xffd700,
-      emissive: 0x1B0914
+      emissive: mShadowColor
     }
   );
 
@@ -291,7 +290,7 @@ function update() {
   var data = mAnalyser.frequencyByteData;
 
   var dataArray = [];
-  var cap = data.length * 0.5;
+  var cap = data.length * 0.5; // because the high frequencies are usually very flat
   var i;
 
   //for (i = cap - 1; i >= 0; i--) {
@@ -338,10 +337,6 @@ function update() {
   mLight3.intensity = a1 * a1 * a1 * a1 * 0.5;
 
   mParticleSystem.material.uniforms['uTime'].value = mAudioElement.currentTime || 0;
-  //if (mTime >= mDuration) {
-  //  mTime = 0;
-  //  mAudioElement.play(0);
-  //}
 }
 
 function render() {
@@ -385,17 +380,8 @@ SpectrumAnalyzer.prototype = {
     this.frequencyByteData = new Uint8Array(binCount); 	// frequency
     this.timeByteData = new Uint8Array(binCount);		// waveform
   },
-
   setSmoothingTimeConstant: function (smoothingTimeConstant) {
     this.analyzerNode.smoothingTimeConstant = smoothingTimeConstant;
-  },
-
-  getFrequencyData: function () {
-    return this.frequencyByteData;
-  },
-
-  getTimeData: function () {
-    return this.timeByteData;
   },
   // not save if out of bounds
   getAverage: function (index, count) {
