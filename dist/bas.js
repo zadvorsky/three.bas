@@ -19,6 +19,109 @@ THREE.BAS.ShaderChunk["ease_out_cubic"] = "float ease(float t, float b, float c,
 THREE.BAS.ShaderChunk["quaternion_rotation"] = "vec3 rotateVector(vec4 q, vec3 v)\n{\n    return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);\n}\n\nvec4 quatFromAxisAngle(vec3 axis, float angle)\n{\n    float halfAngle = angle * 0.5;\n    return vec4(axis.xyz * sin(halfAngle), cos(halfAngle));\n}\n";
 
 
+THREE.BAS.Utils = {
+  separateFaces:function(geometry) {
+    var vertices = [];
+
+    for ( var i = 0, il = geometry.faces.length; i < il; i ++ ) {
+
+      var n = vertices.length;
+
+      var face = geometry.faces[ i ];
+
+      var a = face.a;
+      var b = face.b;
+      var c = face.c;
+
+      var va = geometry.vertices[ a ];
+      var vb = geometry.vertices[ b ];
+      var vc = geometry.vertices[ c ];
+
+      vertices.push( va.clone() );
+      vertices.push( vb.clone() );
+      vertices.push( vc.clone() );
+
+      face.a = n;
+      face.b = n + 1;
+      face.c = n + 2;
+
+    }
+
+    geometry.vertices = vertices;
+    delete geometry.__tmpVertices;
+  },
+
+  computeCentroid:(function() {
+    var v = new THREE.Vector3();
+
+    return function (geometry, face) {
+      var a = this.vertices[face.a],
+        b = this.vertices[face.b],
+        c = this.vertices[face.c];
+
+      v.x = (a.x + b.x + c.x) / 3;
+      v.y = (a.y + b.y + c.y) / 3;
+      v.z = (a.z + b.z + c.z) / 3;
+
+      return v;
+    }
+  })()
+};
+THREE.BAS.ModelBufferGeometry = function (model) {
+  THREE.BufferGeometry.call(this);
+
+  this.modelGeometry = model;
+
+  this.bufferDefaults();
+};
+THREE.BAS.ModelBufferGeometry.prototype = Object.create(THREE.BufferGeometry.prototype);
+THREE.BAS.ModelBufferGeometry.prototype.constructor = THREE.BAS.ModelBufferGeometry;
+
+THREE.BAS.ModelBufferGeometry.prototype.bufferDefaults = function () {
+  var modelFaceCount = this.faceCount = this.modelGeometry.faces.length;
+  var modelVertexCount = this.vertexCount = this.modelGeometry.vertices.length;
+
+  var indexBuffer = new Uint32Array(modelFaceCount * 3);
+  var positionBuffer = new Float32Array(modelVertexCount * 3);
+
+  this.setIndex(new THREE.BufferAttribute(indexBuffer, 1));
+  this.addAttribute('position', new THREE.BufferAttribute(positionBuffer, 3));
+
+  var i, offset;
+
+  for (i = 0, offset = 0; i < modelVertexCount; i++, offset += 3) {
+    var prefabVertex = this.modelGeometry.vertices[i];
+
+    positionBuffer[offset    ] = prefabVertex.x;
+    positionBuffer[offset + 1] = prefabVertex.y;
+    positionBuffer[offset + 2] = prefabVertex.z;
+  }
+
+  for (i = 0, offset = 0; i < modelFaceCount; i++, offset += 3) {
+    var face = this.modelGeometry.faces[i];
+
+    indexBuffer[offset    ] = face.a;
+    indexBuffer[offset + 1] = face.b;
+    indexBuffer[offset + 2] = face.c;
+  }
+};
+
+
+
+
+
+
+THREE.BAS.ModelBufferGeometry.prototype.createAttribute = function (name, itemSize) {
+  var buffer = new Float32Array(this.vertexCount * itemSize);
+  var attribute = new THREE.BufferAttribute(buffer, itemSize);
+
+  this.addAttribute(name, attribute);
+
+  return attribute;
+};
+
+
+
 THREE.BAS.PrefabBufferGeometry = function (prefab, count) {
   THREE.BufferGeometry.call(this);
 
