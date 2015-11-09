@@ -5,6 +5,7 @@ var mControls;
 var mScene;
 var mLight;
 var mLight2;
+var mLight3;
 
 var mParticleCount = 500000; // <-- change this number!
 var mParticleSystem;
@@ -58,12 +59,16 @@ function initTHREE() {
   mScene = new THREE.Scene();
 
   mLight = new THREE.PointLight(0xffffff, 1, 1200, 2);
-  mLight.position.set(0, 100, 0);
+  mLight.position.set(0, 0, 0);
   mScene.add(mLight);
 
   mLight2 = new THREE.DirectionalLight(0xff00ff, 0.25);
-  //mLight2.position.set(0, 1, 1);
+  mLight2.position.set(0, 1, 1);
   mScene.add(mLight2);
+
+  mLight3 = new THREE.DirectionalLight(0x00ffff, 0.25);
+  mLight3.position.set(0, 1, -1);
+  mScene.add(mLight3);
 }
 
 function initControls() {
@@ -71,6 +76,7 @@ function initControls() {
   mControls.autoRotate = true;
   mControls.enableZoom = false;
   mControls.enablePan = false;
+  mControls.constraint.minPolarAngle = mControls.constraint.maxPolarAngle = Math.PI * 0.5;
 }
 
 function initParticleSystem() {
@@ -91,11 +97,13 @@ function initParticleSystem() {
   var delay;
   var duration;
   var prefabDelay = 0.0001;
-  var vertexDelay = 0.01;
-  var minDuration = 24.0;
+  var vertexDelay = 0.0075;
+  var minDuration = 32.0;
   var maxDuration = 42.0;
 
   mDuration = maxDuration + prefabDelay * mParticleCount + vertexDelay * prefabGeometry.vertices.length;
+
+  console.log(mDuration);
 
   for (i = 0, offset = 0; i < mParticleCount; i++) {
     delay = i * prefabDelay;
@@ -180,7 +188,7 @@ function initParticleSystem() {
     }
     else {
       x = THREE.Math.randFloatSpread(600);
-      y = THREE.Math.randFloatSpread(400);
+      y = (-400 + (800 / length) * i) + THREE.Math.randFloatSpread(200);
       z = THREE.Math.randFloatSpread(600);
     }
 
@@ -291,8 +299,8 @@ function update() {
     dataArray.push(data[i]);
   }
 
-  //for (i = cap - 1; i >= 0; i--) {
-  for (i = 0; i < cap; i++) {
+  for (i = cap - 1; i >= 0; i--) {
+  //for (i = 0; i < cap; i++) {
     dataArray.push(data[i]);
   }
 
@@ -301,8 +309,8 @@ function update() {
     dataArray.push(data[i]);
   }
 
-  //for (i = cap - 1; i >= 0; i--) {
-  for (i = 0; i < cap; i++) {
+  for (i = cap - 1; i >= 0; i--) {
+  //for (i = 0; i < cap; i++) {
     dataArray.push(data[i]);
   }
 
@@ -310,7 +318,7 @@ function update() {
   for (i = 0; i < dataArray.length; i++) {
     if (i && dataArray.length - i > 1) {
       var val = dataArray[i] / 255;
-      uniform[i] = Math.max(8, val * val * 64);
+      uniform[i] = Math.max(1, val * val * val * 48);
     }
     else {
       uniform[i] = 128;
@@ -318,19 +326,18 @@ function update() {
   }
 
 
-  var a0 = mAnalyser.getAverageFloat() * 2 + 2;
+  var a0 = mAnalyser.getAverageFloat();
+
+  var r = 8 * a0 * a0 * a0 + 1;
+
+  mParticleSystem.material.uniforms['uRoundness'].value.set(r, r);
+
   var a1 = mAnalyser.getAverageFloat() * 2;
-
-  mParticleSystem.material.uniforms['uRoundness'].value.set(a0, a0);
-
   mLight.intensity = a1 * a1;
-  mLight2.intensity = a1 * a1 * a1 * a1;
+  mLight2.intensity = a1 * a1 * a1 * a1 * 0.5;
+  mLight3.intensity = a1 * a1 * a1 * a1 * 0.5;
 
-  //mTime += mTimeStep;// * a1;
-  //mTime %= mDuration;
-  var time = mAudioElement.currentTime || 0;
-
-  mParticleSystem.material.uniforms['uTime'].value = time;
+  mParticleSystem.material.uniforms['uTime'].value = mAudioElement.currentTime || 0;
   //if (mTime >= mDuration) {
   //  mTime = 0;
   //  mAudioElement.play(0);
