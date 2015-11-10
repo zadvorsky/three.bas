@@ -15,6 +15,7 @@
   ],
   "dependencies": {
     "three.js": "threejs#*",
-    "gsap": "~1.18.0"
+    "gsap": "~1.18.0",
+    "dat.gui": "*"
   }
 }
