@@ -33,17 +33,25 @@ THREE.BAS.PrefabBufferGeometry.prototype.bufferDefaults = function () {
   this.setIndex(new THREE.BufferAttribute(indexBuffer, 1));
   this.addAttribute('position', new THREE.BufferAttribute(positionBuffer, 3));
 
+  this.bufferPositions();
+
+  for (var i = 0; i < this.prefabCount; i++) {
+    for (var k = 0; k < prefabIndexCount; k++) {
+      indexBuffer[i * prefabIndexCount + k] = prefabIndices[k] + i * prefabVertexCount;
+    }
+  }
+};
+
+THREE.BAS.PrefabBufferGeometry.prototype.bufferPositions = function() {
+  var positionBuffer = this.attributes['position'].array;
+
   for (var i = 0, offset = 0; i < this.prefabCount; i++) {
-    for (var j = 0; j < prefabVertexCount; j++, offset += 3) {
+    for (var j = 0; j < this.prefabVertexCount; j++, offset += 3) {
       var prefabVertex = this.prefabGeometry.vertices[j];
 
       positionBuffer[offset    ] = prefabVertex.x;
       positionBuffer[offset + 1] = prefabVertex.y;
       positionBuffer[offset + 2] = prefabVertex.z;
-    }
-
-    for (var k = 0; k < prefabIndexCount; k++) {
-      indexBuffer[i * prefabIndexCount + k] = prefabIndices[k] + i * prefabVertexCount;
     }
   }
 };
