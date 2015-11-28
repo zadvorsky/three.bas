@@ -54,6 +54,7 @@ function initTHREE() {
 function initControls() {
   mControls = new THREE.OrbitControls(mCamera, mRenderer.domElement);
   mControls.target.y = 2;
+  mControls.keys = false;
 }
 
 function tick() {
@@ -95,7 +96,11 @@ function GameController(scene) {
   var mCrossSpline = null;
   var mPlayerSplineProgress = 0;
 
-  var mTileFactory = new TileFactory();
+
+  var mPathWidth = 16;
+
+
+  var mTileFactory = new TileFactory(mPathWidth);
   var mTileWidth = mTileFactory.tileWidth, mHalfTileWidth = mTileWidth * 0.5;
   var mTileDepth = mTileFactory.tileDepth, mHalfTileDepth = mTileDepth * 0.5;
 
@@ -105,6 +110,10 @@ function GameController(scene) {
   var g = new THREE.OctahedronGeometry(1);
   var m = new THREE.MeshPhongMaterial({color:0xff0000, shading:THREE.FlatShading});
   var mPlayerObject = new THREE.Mesh(g, m);
+
+
+
+  var mPlayerController = new PlayerController(mPathWidth);
 
   function placeNextTile() {
     var tile = mTileFactory.nextTile();
@@ -153,12 +162,19 @@ function GameController(scene) {
 
       mPlayerObject.position.copy(mMainSpline.getPointAt(mPlayerSplineProgress));
 
-      var crossFraction = THREE.Math.mapLinear(mPlayerObject.position.x, -mHalfTileWidth, mHalfTileWidth, 0.0, 1.0);
 
+      mPlayerController.update();
+      var i = mPlayerController.getPlayerLaneIndex();
+      mPlayerObject.position.x += i * mTileFactory.pillarWidth;
+
+
+      var crossFraction = THREE.Math.mapLinear(mPlayerObject.position.x, -mHalfTileWidth, mHalfTileWidth, 0.0, 1.0);
       mPlayerObject.position.y += mCrossSpline.getPointAt(crossFraction).y;
       mPlayerObject.position.y += mEyeHeight;
 
+
       mPlayerSplineProgress += 0.005;
+
 
       //var animationProgress = mPlayerSplineProgress + 0.25;
       var animationProgress = THREE.Math.mapLinear(mPlayerObject.position.z, -mHalfTileDepth, mHalfTileDepth, 0.0, 1.0) + 0.25;
@@ -175,6 +191,70 @@ function GameController(scene) {
     }
   }
 }
+
+
+// horse animation, camera (+wobble), controls
+function PlayerController(pathWidth) {
+  var keys = { LEFT: 37, UP: 38, RIGHT: 39, BOTTOM: 40 };
+  var keyboardHelper = new KeyboardHelper();
+
+  var indexRange = pathWidth * 0.5 - 1;
+  var laneIndex = 0;
+
+  return {
+    getPlayerSpeed:function() {
+
+    },
+    getPlayerLaneIndex:function() {
+      return laneIndex;
+    },
+    update:function() {
+      if (keyboardHelper.isDown(keys.RIGHT)) {
+        laneIndex = Math.max(-indexRange, laneIndex - 1);
+      }
+      else if (keyboardHelper.isDown(keys.LEFT)) {
+        laneIndex = Math.min( indexRange, laneIndex + 1);
+      }
+    }
+  }
+}
+
+function KeyboardHelper() {
+  var downKeys = {};
+
+  window.addEventListener('keydown', onKeyDown);
+  window.addEventListener('keyup', onKeyUp);
+
+  function onKeyDown(e) {
+    downKeys[e.keyCode] = true;
+  }
+  function onKeyUp(e) {
+    delete downKeys[e.keyCode];
+  }
+
+  return {
+    isDown:function(key) {
+      return downKeys[key];
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function SplineHelper(spline, color) {
   var g = new THREE.Geometry();
@@ -249,14 +329,14 @@ function Tile(prefabGeometry, prefabCount) {
 }
 Tile.prototype = Object.create(THREE.Mesh.prototype);
 Tile.prototype.constructor = Tile;
-
 Tile.prototype.setAnimationProgress = function(progress) {
   this.material.uniforms['uTime'].value = this.animationDuration * progress;
 };
 
-function TileFactory() {
+
+function TileFactory(pathWidth) {
   // pillar things
-  var mPillarWidth = 2;
+  var mPillarWidth = 4;
   var mPillarHeight = 60;
   var mPillarDepth = 4;
   var mPillarGeometry = new THREE.BoxGeometry(mPillarWidth, mPillarHeight, mPillarDepth);
@@ -265,12 +345,15 @@ function TileFactory() {
   mPillarGeometry.applyMatrix(new THREE.Matrix4().makeTranslation(0, -mPillarHeight * 0.5, 0));
 
   // tile things
-  var mGridWidth = 100;
+  var mGridWidth = 50;
   var mGridDepth = 50;
   var mTileWidth = mGridWidth * mPillarWidth, halfTileWidth = mTileWidth * 0.5;
   var mTileDepth = mGridDepth * mPillarDepth, halfTileDepth = mTileDepth * 0.5;
   var mPillarCount = mGridWidth * mGridDepth;
-  // height variance along the x axis
+
+  var mPathWidth = pathWidth * mPillarWidth;
+
+  // height variance along the x axis (same for all tiles)
   var mCrossSpline = createCrossSpline(8, 8);
 
   // tile cache
@@ -319,8 +402,7 @@ function TileFactory() {
 
     var x, y, z;
 
-    var pathWidth = 40; // meters
-    var pathWidthRange = pathWidth / mTileWidth * 0.5;
+    var pathWidthRange = mPathWidth / mTileWidth * 0.5;
     var tileRandomSpreadY = 0; // meters
     var tileDensity = 0.25;
 
@@ -407,6 +489,8 @@ function TileFactory() {
   return {
     tileWidth:mTileWidth,
     tileDepth:mTileDepth,
+    pillarWidth:mPillarWidth,
+    pillarDepth:mPillarDepth,
     cacheSize:mTileCache.length,
     nextTile:function() {
       var tile = mTileCache[mTileCacheIndex];
