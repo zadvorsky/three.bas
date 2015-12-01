@@ -37,7 +37,7 @@ function initTHREE() {
   mCamera.position.set(0, 2, -4);
 
   mScene = new THREE.Scene();
-  //mScene.fog = new THREE.FogExp2(0x666666, 0.015);
+  mScene.fog = new THREE.FogExp2(0x666666, 0.015);
   //mScene.add(new THREE.GridHelper(50, 10));
 
   var light;
@@ -177,7 +177,7 @@ function GameController(scene) {
 
 
       //var animationProgress = mPlayerSplineProgress + 0.25;
-      var animationProgress = THREE.Math.mapLinear(mPlayerObject.position.z, -mHalfTileDepth, mHalfTileDepth, 0.0, 1.0) + 0.25;
+      var animationProgress = THREE.Math.mapLinear(mPlayerObject.position.z, -mHalfTileDepth, mHalfTileDepth, 0.0, 1.0) + 0.5;
 
       if (animationProgress > 1.0) {
         var nextAnimationProgress = animationProgress - 1.0;
@@ -201,19 +201,25 @@ function PlayerController(pathWidth) {
   var indexRange = pathWidth * 0.5 - 1;
   var laneIndex = 0;
 
+  var proxy = {p:0};
+
   return {
     getPlayerSpeed:function() {
 
     },
     getPlayerLaneIndex:function() {
-      return laneIndex;
+      return proxy.p;
     },
     update:function() {
-      if (keyboardHelper.isDown(keys.RIGHT)) {
-        laneIndex = Math.max(-indexRange, laneIndex - 1);
-      }
-      else if (keyboardHelper.isDown(keys.LEFT)) {
-        laneIndex = Math.min( indexRange, laneIndex + 1);
+      if (!TweenMax.isTweening(proxy)) {
+        if (keyboardHelper.isDown(keys.RIGHT)) {
+          laneIndex = Math.max(-indexRange, laneIndex - 1);
+        }
+        else if (keyboardHelper.isDown(keys.LEFT)) {
+          laneIndex = Math.min( indexRange, laneIndex + 1);
+        }
+
+        TweenMax.to(proxy, 0.075, {p:laneIndex, ease:Power0.easeInOut});
       }
     }
   }
@@ -325,6 +331,9 @@ function Tile(prefabGeometry, prefabCount) {
     }
   );
 
+  this.obstacles = [];
+  this.nuggets = [];
+
   THREE.Mesh.call(this, geometry, material);
 }
 Tile.prototype = Object.create(THREE.Mesh.prototype);
@@ -332,6 +341,10 @@ Tile.prototype.constructor = Tile;
 Tile.prototype.setAnimationProgress = function(progress) {
   this.material.uniforms['uTime'].value = this.animationDuration * progress;
 };
+
+function Obstacle(type, position) {
+
+}
 
 
 function TileFactory(pathWidth) {
@@ -351,7 +364,7 @@ function TileFactory(pathWidth) {
   var mTileDepth = mGridDepth * mPillarDepth, halfTileDepth = mTileDepth * 0.5;
   var mPillarCount = mGridWidth * mGridDepth;
 
-  var mPathWidth = pathWidth * mPillarWidth;
+  var mPathWidth = pathWidth * mPillarWidth; // meters
 
   // height variance along the x axis (same for all tiles)
   var mCrossSpline = createCrossSpline(8, 8);
@@ -402,11 +415,14 @@ function TileFactory(pathWidth) {
 
     var x, y, z;
 
-    var pathWidthRange = mPathWidth / mTileWidth * 0.5;
+    var pathWidthRange = mPathWidth * 0.5;
     var tileRandomSpreadY = 0; // meters
-    var tileDensity = 0.25;
+    var woodsDensity = 0.15;
+
+    tile.obstacles.length = 0;
 
     for (x = -halfTileWidth, offset = 0; x < halfTileWidth; x += mPillarWidth) {
+
       for (z = -halfTileDepth; z < halfTileDepth; z += mPillarDepth) {
 
         var t1 = THREE.Math.mapLinear(z, -halfTileDepth, halfTileDepth, 0, 1);
@@ -418,20 +434,44 @@ function TileFactory(pathWidth) {
         //y = mainSplinePoint.y + THREE.Math.randFloat(0, tileRandomSpreadY);
 
         var endY;
+        var isPathTile = Math.abs(mainSplinePoint.x - x) < pathWidthRange;
 
-        if (Math.random() < tileDensity && Math.abs(mainSplinePoint.x - x) > mTileWidth * pathWidthRange) {
-          endY = THREE.Math.randFloat(mPillarHeight * 0.25, mPillarHeight * 0.75);
+        if (isPathTile) {
+
+          if (Math.random() < 0.05) {
+            var obstacleHeight;
+
+            if (Math.random() < 0.6) {
+              // stump
+              obstacleHeight = 0.05;
+            }
+            else {
+              // full
+              obstacleHeight = THREE.Math.randFloat(0.5, 0.8)
+            }
+
+            endY = y + mPillarHeight * obstacleHeight;
+          }
+          else {
+            endY = y;
+          }
+
         }
         else {
-          endY = y;
+          if (Math.random() < woodsDensity) {
+            endY = THREE.Math.randFloat(mPillarHeight * 0.25, mPillarHeight * 0.75);
+          }
+          else {
+            endY = -THREE.Math.randFloat(mPillarHeight * 0.25, mPillarHeight * 0.75);
+          }
         }
 
         for (j = 0; j < mPrefabVertexCount; j++, offset += 3) {
-          aStartPosition.array[offset  ] = x;
+          aStartPosition.array[offset  ] = x + mainSplinePoint.x;
           aStartPosition.array[offset+1] = y;
           aStartPosition.array[offset+2] = z;
 
-          aEndPosition.array[offset  ] = x;
+          aEndPosition.array[offset  ] = x + mainSplinePoint.x;
           aEndPosition.array[offset+1] = endY;
           aEndPosition.array[offset+2] = z;
         }
@@ -498,7 +538,7 @@ function TileFactory(pathWidth) {
       mTileCacheIndex++;
       mTileCacheIndex %= mTileCache.length;
 
-      var mainSpline = createMainSpline(6, 32, 16);
+      var mainSpline = createMainSpline(6, 8, 8);
 
       configureTile(tile, mainSpline, mCrossSpline);
 
@@ -506,4 +546,3 @@ function TileFactory(pathWidth) {
     }
   }
 }
-
