@@ -360,8 +360,8 @@ function TileFactory(pathWidth) {
   // tile things
   var mGridWidth = 50;
   var mGridDepth = 50;
-  var mTileWidth = mGridWidth * mPillarWidth, halfTileWidth = mTileWidth * 0.5;
-  var mTileDepth = mGridDepth * mPillarDepth, halfTileDepth = mTileDepth * 0.5;
+  var mTileWidth = mGridWidth * mPillarWidth, mHalfTileWidth = mTileWidth * 0.5;
+  var mTileDepth = mGridDepth * mPillarDepth, mHalfTileDepth = mTileDepth * 0.5;
   var mPillarCount = mGridWidth * mGridDepth;
 
   var mPathWidth = pathWidth * mPillarWidth; // meters
@@ -413,25 +413,29 @@ function TileFactory(pathWidth) {
 
     tile.animationDuration = maxDuration + rowDelay * mGridDepth + vertexVariance;
 
-    var x, y, z;
-
     var pathWidthRange = mPathWidth * 0.5;
     var tileRandomSpreadY = 0; // meters
     var woodsDensity = 0.15;
 
     tile.obstacles.length = 0;
 
-    for (x = -halfTileWidth, offset = 0; x < halfTileWidth; x += mPillarWidth) {
+    var x, y, z;
+    var ix, iz;
 
-      for (z = -halfTileDepth; z < halfTileDepth; z += mPillarDepth) {
+    for (ix = 0, offset = 0; ix < mGridWidth; ix++) {
+      
+      for (iz = 0; iz < mGridDepth; iz++) {
 
-        var t1 = THREE.Math.mapLinear(z, -halfTileDepth, halfTileDepth, 0, 1);
+        x = THREE.Math.mapLinear(ix, 0, mGridWidth, -mHalfTileWidth, mHalfTileWidth);
+        z = THREE.Math.mapLinear(iz, 0, mGridDepth, -mHalfTileDepth, mHalfTileDepth);
+
+        var t1 = THREE.Math.mapLinear(z, -mHalfTileDepth, mHalfTileDepth, 0, 1);
         var mainSplinePoint = mainSpline.getPoint(t1);
-        var t2 = THREE.Math.mapLinear(x, -halfTileWidth, halfTileWidth, 0, 1);
+        var t2 = THREE.Math.mapLinear(x, -mHalfTileWidth, mHalfTileWidth, 0, 1);
         var crossSplinePoint = crossSpline.getPoint(t2);
 
+        x += mainSplinePoint.x;
         y = mainSplinePoint.y + crossSplinePoint.y + THREE.Math.randFloat(0, tileRandomSpreadY);
-        //y = mainSplinePoint.y + THREE.Math.randFloat(0, tileRandomSpreadY);
 
         var endY;
         var isPathTile = Math.abs(mainSplinePoint.x - x) < pathWidthRange;
@@ -467,11 +471,11 @@ function TileFactory(pathWidth) {
         }
 
         for (j = 0; j < mPrefabVertexCount; j++, offset += 3) {
-          aStartPosition.array[offset  ] = x + mainSplinePoint.x;
+          aStartPosition.array[offset  ] = x;
           aStartPosition.array[offset+1] = y;
           aStartPosition.array[offset+2] = z;
 
-          aEndPosition.array[offset  ] = x + mainSplinePoint.x;
+          aEndPosition.array[offset  ] = x;
           aEndPosition.array[offset+1] = endY;
           aEndPosition.array[offset+2] = z;
         }
@@ -502,7 +506,7 @@ function TileFactory(pathWidth) {
         point.y = THREE.Math.randFloatSpread(yVariance);
       }
 
-      point.z = THREE.Math.mapLinear(i, 0, pointCount - 1, -halfTileDepth, halfTileDepth);
+      point.z = THREE.Math.mapLinear(i, 0, pointCount - 1, -mHalfTileDepth, mHalfTileDepth);
 
       points.push(point);
     }
@@ -516,7 +520,7 @@ function TileFactory(pathWidth) {
 
     for (var i = 0; i < pointCount; i++) {
       point = new THREE.Vector3();
-      point.x = THREE.Math.mapLinear(i, 0, pointCount - 1, -halfTileWidth, halfTileWidth);
+      point.x = THREE.Math.mapLinear(i, 0, pointCount - 1, -mHalfTileWidth, mHalfTileWidth);
       point.y = THREE.Math.randFloatSpread(yVariance);
       point.z = 0;
 
