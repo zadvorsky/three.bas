@@ -117,6 +117,8 @@ function GameController(scene) {
 
   var mPlayerController = new PlayerController(mPathWidth);
 
+  var mJumpOffset = {y:0};
+
   function placeNextTile() {
     var tile = mTileFactory.nextTile();
 
@@ -191,12 +193,12 @@ function GameController(scene) {
             mPlayerController.collideWithStump();
 
             // jump (move to player controller)
-            if (!TweenMax.isTweening(mPlayerObject.position)) {
+            if (!TweenMax.isTweening(mJumpOffset)) {
               //console.log('jump?');
-              //var tl = new TimelineMax();
+              var tl = new TimelineMax();
               //
-              //tl.to(mPlayerObject.position, 0.3, {y:15, ease:Power2.easeOut});
-              //tl.to(mPlayerObject.position, 0.3, {y:0, ease:Power2.easeIn});
+              tl.to(mJumpOffset, 0.2, {y:6, ease:Power2.easeOut});
+              tl.to(mJumpOffset, 0.35, {y:0, ease:Power2.easeIn});
             }
 
             break;
@@ -211,9 +213,11 @@ function GameController(scene) {
         //mPlayerObject.material.color.set(0x00ff00);
       }
 
+      mPlayerObject.position.y += mJumpOffset.y;
+
       // update tile animation progress
-      //var animationProgress = mPlayerSplineProgress + 0.25;
-      var animationProgress = THREE.Math.mapLinear(mPlayerObject.position.z, -mHalfTileDepth, mHalfTileDepth, 0.0, 1.0) + 0.5;
+      var animationProgress = mPlayerSplineProgress + 0.3;
+      //var animationProgress = THREE.Math.mapLinear(mPlayerObject.position.z, -mHalfTileDepth, mHalfTileDepth, 0.0, 1.0) + 0.35;
       if (animationProgress > 1.0) {
         var nextAnimationProgress = animationProgress - 1.0;
         var nextTile = mTilesInWorld[mPlayerTileIndex + 1];
@@ -235,7 +239,7 @@ function PlayerController(pathWidth) {
 
   var indexRange = pathWidth * 0.5 - 1;
   var laneIndex = 0;
-  var defaultSpeed = 0.005;
+  var defaultSpeed = 0.004;
 
   var proxy = {
     laneIndex:laneIndex,
@@ -247,12 +251,10 @@ function PlayerController(pathWidth) {
 
     },
     collideWithTree:function() {
-      //if (!TweenMax.isTweening(proxy)) {
-        TweenMax.fromTo(proxy, 0.5,
-          {speed:defaultSpeed},
-          {speed:0.002, repeat:1, yoyo:true}
-        );
-      //}
+      TweenMax.fromTo(proxy, 0.5,
+        {speed:defaultSpeed},
+        {speed:0.002, repeat:1, yoyo:true}
+      );
     },
     getSpeed:function() {
       return proxy.speed;
@@ -269,7 +271,7 @@ function PlayerController(pathWidth) {
           laneIndex = Math.min( indexRange, laneIndex + 1);
         }
 
-        TweenMax.to(proxy, 0.075, {laneIndex:laneIndex, ease:Power0.easeInOut});
+        TweenMax.to(proxy, 0.12, {laneIndex:laneIndex, ease:Power0.easeOut});
       }
     }
   }
@@ -402,7 +404,7 @@ function TileFactory(pathWidth) {
   var mPillarWidth = 4;
   var mPillarHeight = 60;
   var mPillarDepth = 4;
-  var mPillarGeometry = new THREE.BoxGeometry(mPillarWidth, mPillarHeight, mPillarDepth);
+  var mPillarGeometry = new THREE.BoxGeometry(mPillarWidth, mPillarHeight, mPillarDepth, 2, 1, 2);
   var mPrefabVertexCount = mPillarGeometry.vertices.length;
 
   mPillarGeometry.applyMatrix(new THREE.Matrix4().makeTranslation(0, -mPillarHeight * 0.5, 0));
@@ -424,7 +426,7 @@ function TileFactory(pathWidth) {
   var mTileCacheIndex = 0;
 
   // gameplay things
-  var mObstacleChance = 0.05;
+  var mObstacleChance = 0.04;
   var mNuggetChance = 0.05;
 
   for (var i = 0; i < 2; i++) {
@@ -451,7 +453,7 @@ function TileFactory(pathWidth) {
     var delay;
     var duration;
     var minDuration = 1;
-    var maxDuration = 2;
+    var maxDuration = 4;
     var rowDelay = 0.05;
     var vertexVariance = 0.5;
 
@@ -501,14 +503,14 @@ function TileFactory(pathWidth) {
             var obstacleHeight;
             var obstacle = new Obstacle();
 
-            if (Math.random() < 0.6) {
+            if (Math.random() < 0.25) {
               // stump
               obstacleHeight = 0.05;
               obstacle.type = Obstacle.TYPE_STUMP;
             }
             else {
               // full
-              obstacleHeight = THREE.Math.randFloat(0.5, 0.8)
+              obstacleHeight = THREE.Math.randFloat(0.2, 0.8);
               obstacle.type = Obstacle.TYPE_TREE;
             }
 
@@ -606,7 +608,7 @@ function TileFactory(pathWidth) {
       mTileCacheIndex++;
       mTileCacheIndex %= mTileCache.length;
 
-      var mainSpline = createMainSpline(6, 8, 8);
+      var mainSpline = createMainSpline(6, 4, 8);
 
       configureTile(tile, mainSpline, mCrossSpline);
 
