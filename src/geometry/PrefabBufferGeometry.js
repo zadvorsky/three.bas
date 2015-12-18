@@ -147,11 +147,23 @@ THREE.BAS.PrefabBufferGeometry.prototype.computeVertexNormals = function () {
   attributes.normal.needsUpdate = true;
 };
 
-THREE.BAS.PrefabBufferGeometry.prototype.createAttribute = function (name, itemSize) {
+THREE.BAS.PrefabBufferGeometry.prototype.createAttribute = function (name, itemSize, factory) {
   var buffer = new Float32Array(this.prefabCount * this.prefabVertexCount * itemSize);
   var attribute = new THREE.BufferAttribute(buffer, itemSize);
 
   this.addAttribute(name, attribute);
+
+  if (factory) {
+    for (var i = 0, offset = 0; i < this.prefabCount; i++) {
+      var r = factory(i, this.prefabCount);
+
+      for (var j = 0; j < this.prefabVertexCount; j++) {
+        for (var k = 0; k < itemSize; k++) {
+          buffer[offset++] = typeof r === 'number' ? r : r[k];
+        }
+      }
+    }
+  }
 
   return attribute;
 };
