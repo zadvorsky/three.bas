@@ -2,33 +2,21 @@ THREE.BAS.ModelBufferGeometry = function (model) {
   THREE.BufferGeometry.call(this);
 
   this.modelGeometry = model;
+  this.faceCount = this.modelGeometry.faces.length;
+  this.vertexCount = this.modelGeometry.vertices.length;
 
-  this.bufferDefaults();
+  this.bufferIndices();
+  this.bufferPositions();
 };
 THREE.BAS.ModelBufferGeometry.prototype = Object.create(THREE.BufferGeometry.prototype);
 THREE.BAS.ModelBufferGeometry.prototype.constructor = THREE.BAS.ModelBufferGeometry;
 
-THREE.BAS.ModelBufferGeometry.prototype.bufferDefaults = function () {
-  var modelFaceCount = this.faceCount = this.modelGeometry.faces.length;
-  var modelVertexCount = this.vertexCount = this.modelGeometry.vertices.length;
-
-  var indexBuffer = new Uint32Array(modelFaceCount * 3);
-  var positionBuffer = new Float32Array(modelVertexCount * 3);
+THREE.BAS.ModelBufferGeometry.prototype.bufferIndices = function () {
+  var indexBuffer = new Uint32Array(this.faceCount * 3);
 
   this.setIndex(new THREE.BufferAttribute(indexBuffer, 1));
-  this.addAttribute('position', new THREE.BufferAttribute(positionBuffer, 3));
 
-  var i, offset;
-
-  for (i = 0, offset = 0; i < modelVertexCount; i++, offset += 3) {
-    var prefabVertex = this.modelGeometry.vertices[i];
-
-    positionBuffer[offset    ] = prefabVertex.x;
-    positionBuffer[offset + 1] = prefabVertex.y;
-    positionBuffer[offset + 2] = prefabVertex.z;
-  }
-
-  for (i = 0, offset = 0; i < modelFaceCount; i++, offset += 3) {
+  for (var i = 0, offset = 0; i < this.faceCount; i++, offset += 3) {
     var face = this.modelGeometry.faces[i];
 
     indexBuffer[offset    ] = face.a;
@@ -37,10 +25,17 @@ THREE.BAS.ModelBufferGeometry.prototype.bufferDefaults = function () {
   }
 };
 
+THREE.BAS.ModelBufferGeometry.prototype.bufferPositions = function() {
+  var positionBuffer = this.createAttribute('position', 3).array;
 
+  for (var i = 0, offset = 0; i < this.vertexCount; i++, offset += 3) {
+    var prefabVertex = this.modelGeometry.vertices[i];
 
-
-
+    positionBuffer[offset    ] = prefabVertex.x;
+    positionBuffer[offset + 1] = prefabVertex.y;
+    positionBuffer[offset + 2] = prefabVertex.z;
+  }
+};
 
 THREE.BAS.ModelBufferGeometry.prototype.createAttribute = function (name, itemSize) {
   var buffer = new Float32Array(this.vertexCount * itemSize);
@@ -50,5 +45,3 @@ THREE.BAS.ModelBufferGeometry.prototype.createAttribute = function (name, itemSi
 
   return attribute;
 };
-
-

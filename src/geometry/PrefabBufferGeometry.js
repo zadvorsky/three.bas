@@ -5,22 +5,16 @@ THREE.BAS.PrefabBufferGeometry = function (prefab, count) {
   this.prefabCount = count;
   this.prefabVertexCount = prefab.vertices.length;
 
-  this.bufferDefaults();
+  this.bufferIndices();
+  this.bufferPositions();
 };
 THREE.BAS.PrefabBufferGeometry.prototype = Object.create(THREE.BufferGeometry.prototype);
 THREE.BAS.PrefabBufferGeometry.prototype.constructor = THREE.BAS.PrefabBufferGeometry;
 
-THREE.BAS.PrefabBufferGeometry.prototype.bufferDefaults = function () {
+THREE.BAS.PrefabBufferGeometry.prototype.bufferIndices = function () {
   var prefabFaceCount = this.prefabGeometry.faces.length;
   var prefabIndexCount = this.prefabGeometry.faces.length * 3;
-  var prefabVertexCount = this.prefabVertexCount = this.prefabGeometry.vertices.length;
   var prefabIndices = [];
-
-  //console.log('prefabCount', this.prefabCount);
-  //console.log('prefabFaceCount', prefabFaceCount);
-  //console.log('prefabIndexCount', prefabIndexCount);
-  //console.log('prefabVertexCount', prefabVertexCount);
-  //console.log('triangles', prefabFaceCount * this.prefabCount);
 
   for (var h = 0; h < prefabFaceCount; h++) {
     var face = this.prefabGeometry.faces[h];
@@ -28,22 +22,18 @@ THREE.BAS.PrefabBufferGeometry.prototype.bufferDefaults = function () {
   }
 
   var indexBuffer = new Uint32Array(this.prefabCount * prefabIndexCount);
-  var positionBuffer = new Float32Array(this.prefabCount * prefabVertexCount * 3);
 
   this.setIndex(new THREE.BufferAttribute(indexBuffer, 1));
-  this.addAttribute('position', new THREE.BufferAttribute(positionBuffer, 3));
-
-  this.bufferPositions();
 
   for (var i = 0; i < this.prefabCount; i++) {
     for (var k = 0; k < prefabIndexCount; k++) {
-      indexBuffer[i * prefabIndexCount + k] = prefabIndices[k] + i * prefabVertexCount;
+      indexBuffer[i * prefabIndexCount + k] = prefabIndices[k] + i * this.prefabVertexCount;
     }
   }
 };
 
 THREE.BAS.PrefabBufferGeometry.prototype.bufferPositions = function() {
-  var positionBuffer = this.attributes['position'].array;
+  var positionBuffer = this.createAttribute('position', 3).array;
 
   for (var i = 0, offset = 0; i < this.prefabCount; i++) {
     for (var j = 0; j < this.prefabVertexCount; j++, offset += 3) {
