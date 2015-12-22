@@ -53,7 +53,7 @@ function initRainbow() {
   var height = 0.25, halfHeight = height * 0.5;
   var depth = 40, halfDepth = depth * 0.5;
 
-  var modelGeometry = new THREE.BoxGeometry(width, height, depth, width, 1, depth);
+  var modelGeometry = new THREE.BoxGeometry(width, height, depth, width, 1, 20);
 
   THREE.BAS.Utils.separateFaces(modelGeometry);
 
@@ -101,6 +101,7 @@ function initRainbow() {
   var material = new THREE.BAS.PhongAnimationMaterial({
       vertexColors: THREE.VertexColors,
       shading: THREE.FlatShading,
+      side: THREE.DoubleSide,
       //wireframe: true,
       defines: {
       },
@@ -179,21 +180,27 @@ RainbowGeometry.prototype.bufferPositions = function() {
     var vb = verts[face.b];
     var vc = verts[face.c];
 
-    var y = Math.random() * 10;
+    var c = THREE.BAS.Utils.computeCentroid(this.modelGeometry, face);
+    var scale = THREE.Math.mapLinear(c.z, 20, -20, 0.5, 1.0);
 
-    positionBuffer[face.a * 3 + 0] = va.x + y;
-    positionBuffer[face.a * 3 + 1] = va.y + y;
-    positionBuffer[face.a * 3 + 2] = va.z + y;
+    va.sub(c).multiplyScalar(scale).add(c);
+    vb.sub(c).multiplyScalar(scale).add(c);
+    vc.sub(c).multiplyScalar(scale).add(c);
 
-    positionBuffer[face.b * 3 + 0] = vb.x + y;
-    positionBuffer[face.b * 3 + 1] = vb.y + y;
-    positionBuffer[face.b * 3 + 2] = vb.z + y;
+    //var y = Math.random() * 10;
 
-    positionBuffer[face.c * 3 + 0] = vc.x + y;
-    positionBuffer[face.c * 3 + 1] = vc.y + y;
-    positionBuffer[face.c * 3 + 2] = vc.z + y;
+    positionBuffer[face.a * 3 + 0] = va.x + THREE.Math.randFloatSpread(0.1);
+    positionBuffer[face.a * 3 + 1] = va.y;
+    positionBuffer[face.a * 3 + 2] = va.z + THREE.Math.randFloatSpread(0.1);
 
-    //var c = THREE.BAS.Utils.computeCentroid(this.modelGeometry, face);
+    positionBuffer[face.b * 3 + 0] = vb.x + THREE.Math.randFloatSpread(0.1);
+    positionBuffer[face.b * 3 + 1] = vb.y;
+    positionBuffer[face.b * 3 + 2] = vb.z + THREE.Math.randFloatSpread(0.1);
+
+    positionBuffer[face.c * 3 + 0] = vc.x + THREE.Math.randFloatSpread(0.1);
+    positionBuffer[face.c * 3 + 1] = vc.y;
+    positionBuffer[face.c * 3 + 2] = vc.z + THREE.Math.randFloatSpread(0.1);
+
 
 
   }

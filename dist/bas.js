@@ -55,9 +55,9 @@ THREE.BAS.Utils = {
     var v = new THREE.Vector3();
 
     return function (geometry, face) {
-      var a = this.vertices[face.a],
-        b = this.vertices[face.b],
-        c = this.vertices[face.c];
+      var a = geometry.vertices[face.a],
+          b = geometry.vertices[face.b],
+          c = geometry.vertices[face.c];
 
       v.x = (a.x + b.x + c.x) / 3;
       v.y = (a.y + b.y + c.y) / 3;
