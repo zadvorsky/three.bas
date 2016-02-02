@@ -55,9 +55,9 @@ THREE.BAS.Utils = {
     var v = new THREE.Vector3();
 
     return function (geometry, face) {
-      var a = this.vertices[face.a],
-        b = this.vertices[face.b],
-        c = this.vertices[face.c];
+      var a = geometry.vertices[face.a],
+          b = geometry.vertices[face.b],
+          c = geometry.vertices[face.c];
 
       v.x = (a.x + b.x + c.x) / 3;
       v.y = (a.y + b.y + c.y) / 3;
@@ -71,33 +71,21 @@ THREE.BAS.ModelBufferGeometry = function (model) {
   THREE.BufferGeometry.call(this);
 
   this.modelGeometry = model;
+  this.faceCount = this.modelGeometry.faces.length;
+  this.vertexCount = this.modelGeometry.vertices.length;
 
-  this.bufferDefaults();
+  this.bufferIndices();
+  this.bufferPositions();
 };
 THREE.BAS.ModelBufferGeometry.prototype = Object.create(THREE.BufferGeometry.prototype);
 THREE.BAS.ModelBufferGeometry.prototype.constructor = THREE.BAS.ModelBufferGeometry;
 
-THREE.BAS.ModelBufferGeometry.prototype.bufferDefaults = function () {
-  var modelFaceCount = this.faceCount = this.modelGeometry.faces.length;
-  var modelVertexCount = this.vertexCount = this.modelGeometry.vertices.length;
-
-  var indexBuffer = new Uint32Array(modelFaceCount * 3);
-  var positionBuffer = new Float32Array(modelVertexCount * 3);
+THREE.BAS.ModelBufferGeometry.prototype.bufferIndices = function () {
+  var indexBuffer = new Uint32Array(this.faceCount * 3);
 
   this.setIndex(new THREE.BufferAttribute(indexBuffer, 1));
-  this.addAttribute('position', new THREE.BufferAttribute(positionBuffer, 3));
 
-  var i, offset;
-
-  for (i = 0, offset = 0; i < modelVertexCount; i++, offset += 3) {
-    var prefabVertex = this.modelGeometry.vertices[i];
-
-    positionBuffer[offset    ] = prefabVertex.x;
-    positionBuffer[offset + 1] = prefabVertex.y;
-    positionBuffer[offset + 2] = prefabVertex.z;
-  }
-
-  for (i = 0, offset = 0; i < modelFaceCount; i++, offset += 3) {
+  for (var i = 0, offset = 0; i < this.faceCount; i++, offset += 3) {
     var face = this.modelGeometry.faces[i];
 
     indexBuffer[offset    ] = face.a;
@@ -106,10 +94,17 @@ THREE.BAS.ModelBufferGeometry.prototype.bufferDefaults = function () {
   }
 };
 
+THREE.BAS.ModelBufferGeometry.prototype.bufferPositions = function() {
+  var positionBuffer = this.createAttribute('position', 3).array;
 
+  for (var i = 0, offset = 0; i < this.vertexCount; i++, offset += 3) {
+    var prefabVertex = this.modelGeometry.vertices[i];
 
-
-
+    positionBuffer[offset    ] = prefabVertex.x;
+    positionBuffer[offset + 1] = prefabVertex.y;
+    positionBuffer[offset + 2] = prefabVertex.z;
+  }
+};
 
 THREE.BAS.ModelBufferGeometry.prototype.createAttribute = function (name, itemSize) {
   var buffer = new Float32Array(this.vertexCount * itemSize);
@@ -120,8 +115,6 @@ THREE.BAS.ModelBufferGeometry.prototype.createAttribute = function (name, itemSi
   return attribute;
 };
 
-
-
 THREE.BAS.PrefabBufferGeometry = function (prefab, count) {
   THREE.BufferGeometry.call(this);
 
@@ -129,22 +122,16 @@ THREE.BAS.PrefabBufferGeometry = function (prefab, count) {
   this.prefabCount = count;
   this.prefabVertexCount = prefab.vertices.length;
 
-  this.bufferDefaults();
+  this.bufferIndices();
+  this.bufferPositions();
 };
 THREE.BAS.PrefabBufferGeometry.prototype = Object.create(THREE.BufferGeometry.prototype);
 THREE.BAS.PrefabBufferGeometry.prototype.constructor = THREE.BAS.PrefabBufferGeometry;
 
-THREE.BAS.PrefabBufferGeometry.prototype.bufferDefaults = function () {
+THREE.BAS.PrefabBufferGeometry.prototype.bufferIndices = function () {
   var prefabFaceCount = this.prefabGeometry.faces.length;
   var prefabIndexCount = this.prefabGeometry.faces.length * 3;
-  var prefabVertexCount = this.prefabVertexCount = this.prefabGeometry.vertices.length;
   var prefabIndices = [];
-
-  //console.log('prefabCount', this.prefabCount);
-  //console.log('prefabFaceCount', prefabFaceCount);
-  //console.log('prefabIndexCount', prefabIndexCount);
-  //console.log('prefabVertexCount', prefabVertexCount);
-  //console.log('triangles', prefabFaceCount * this.prefabCount);
 
   for (var h = 0; h < prefabFaceCount; h++) {
     var face = this.prefabGeometry.faces[h];
@@ -152,22 +139,18 @@ THREE.BAS.PrefabBufferGeometry.prototype.bufferDefaults = function () {
   }
 
   var indexBuffer = new Uint32Array(this.prefabCount * prefabIndexCount);
-  var positionBuffer = new Float32Array(this.prefabCount * prefabVertexCount * 3);
 
   this.setIndex(new THREE.BufferAttribute(indexBuffer, 1));
-  this.addAttribute('position', new THREE.BufferAttribute(positionBuffer, 3));
-
-  this.bufferPositions();
 
   for (var i = 0; i < this.prefabCount; i++) {
     for (var k = 0; k < prefabIndexCount; k++) {
-      indexBuffer[i * prefabIndexCount + k] = prefabIndices[k] + i * prefabVertexCount;
+      indexBuffer[i * prefabIndexCount + k] = prefabIndices[k] + i * this.prefabVertexCount;
     }
   }
 };
 
 THREE.BAS.PrefabBufferGeometry.prototype.bufferPositions = function() {
-  var positionBuffer = this.attributes['position'].array;
+  var positionBuffer = this.createAttribute('position', 3).array;
 
   for (var i = 0, offset = 0; i < this.prefabCount; i++) {
     for (var j = 0; j < this.prefabVertexCount; j++, offset += 3) {
@@ -271,11 +254,23 @@ THREE.BAS.PrefabBufferGeometry.prototype.computeVertexNormals = function () {
   attributes.normal.needsUpdate = true;
 };
 
-THREE.BAS.PrefabBufferGeometry.prototype.createAttribute = function (name, itemSize) {
+THREE.BAS.PrefabBufferGeometry.prototype.createAttribute = function (name, itemSize, factory) {
   var buffer = new Float32Array(this.prefabCount * this.prefabVertexCount * itemSize);
   var attribute = new THREE.BufferAttribute(buffer, itemSize);
 
   this.addAttribute(name, attribute);
+
+  if (factory) {
+    for (var i = 0, offset = 0; i < this.prefabCount; i++) {
+      var r = factory(i, this.prefabCount);
+
+      for (var j = 0; j < this.prefabVertexCount; j++) {
+        for (var k = 0; k < itemSize; k++) {
+          buffer[offset++] = typeof r === 'number' ? r : r[k];
+        }
+      }
+    }
+  }
 
   return attribute;
 };

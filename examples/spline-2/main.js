@@ -51,79 +51,62 @@ function initParticleSystem() {
   var prefabGeometry = new THREE.OctahedronGeometry(3);
   var bufferGeometry = new THREE.BAS.PrefabBufferGeometry(prefabGeometry, mParticleCount);
 
-  bufferGeometry.computeVertexNormals();
+  bufferGeometry.createAttribute('aOffset', 1, function(index, count) {
+    return index / count * mDuration;
+  });
 
-  // generate additional geometry data
-  var aOffset = bufferGeometry.createAttribute('aOffset', 1);
-  var aPivot = bufferGeometry.createAttribute('aPivot', 3);
-  var aAxisAngle = bufferGeometry.createAttribute('aAxisAngle', 4);
-  var aColor = bufferGeometry.createAttribute('color', 3);
+  bufferGeometry.createAttribute('aPivot', 3, (function() {
+    var r = [];
 
-  var i, j, offset;
+    return function() {
+      r[0] = THREE.Math.randFloat(0, 2);
+      r[1] = THREE.Math.randFloat(0, 2);
+      r[2] = THREE.Math.randFloat(0, 2);
 
-  // buffer time offset
-  var delay;
-
-  for (i = 0, offset = 0; i < mParticleCount; i++) {
-    delay = i / mParticleCount * mDuration;
-
-    for (j = 0; j < prefabGeometry.vertices.length; j++) {
-      aOffset.array[offset++] = delay;
+      return r;
     }
-  }
+  })());
 
-  // buffer pivot
-  var pivot = new THREE.Vector3();
+  bufferGeometry.createAttribute('aAxisAngle', 4, (function() {
+    var axis = new THREE.Vector3();
+    var angle = 0;
+    var r = [];
 
-  for (i = 0, offset = 0; i < mParticleCount; i++) {
-    pivot.x = THREE.Math.randFloat(0, 2);
-    pivot.y = THREE.Math.randFloat(0, 2);
-    pivot.z = THREE.Math.randFloat(0, 2);
+    return function () {
+      axis.x = THREE.Math.randFloatSpread(2);
+      axis.y = THREE.Math.randFloatSpread(2);
+      axis.z = THREE.Math.randFloatSpread(2);
+      axis.normalize();
 
-    for (j = 0; j < prefabGeometry.vertices.length; j++) {
-      aPivot.array[offset++] = pivot.x;
-      aPivot.array[offset++] = pivot.y;
-      aPivot.array[offset++] = pivot.z;
+      angle = Math.PI * THREE.Math.randInt(24, 32);
+
+      r[0] = axis.x;
+      r[1] = axis.y;
+      r[2] = axis.z;
+      r[3] = angle;
+
+      return r;
     }
-  }
+  })());
 
-  // buffer axis angle
-  var axis = new THREE.Vector3();
-  var angle = 0;
+  bufferGeometry.createAttribute('color', 3, (function() {
+    var color = new THREE.Color();
+    var h, s, l;
+    var r = [];
 
-  for (i = 0, offset = 0; i < mParticleCount; i++) {
-    axis.x = THREE.Math.randFloatSpread(2);
-    axis.y = THREE.Math.randFloatSpread(2);
-    axis.z = THREE.Math.randFloatSpread(2);
-    axis.normalize();
+    return function(index, count) {
+      h = index / count;
+      s = THREE.Math.randFloat(0.5, 0.75);
+      l = THREE.Math.randFloat(0.25, 0.5);
+      color.setHSL(h, s, l);
 
-    angle = Math.PI * THREE.Math.randInt(24, 32);
+      r[0] = color.r;
+      r[1] = color.g;
+      r[2] = color.b;
 
-    for (j = 0; j < prefabGeometry.vertices.length; j++) {
-      aAxisAngle.array[offset++] = axis.x;
-      aAxisAngle.array[offset++] = axis.y;
-      aAxisAngle.array[offset++] = axis.z;
-      aAxisAngle.array[offset++] = angle;
+      return r;
     }
-  }
-
-  // buffer color
-  var color = new THREE.Color();
-  var h, s, l;
-
-  for (i = 0, offset = 0; i < mParticleCount; i++) {
-    h = i / mParticleCount;
-    s = THREE.Math.randFloat(0.5, 0.75);
-    l = THREE.Math.randFloat(0.25, 0.5);
-
-    color.setHSL(h, s, l);
-
-    for (j = 0; j < prefabGeometry.vertices.length; j++) {
-      aColor.array[offset++] = color.r;
-      aColor.array[offset++] = color.g;
-      aColor.array[offset++] = color.b;
-    }
-  }
+  })());
 
   // buffer spline (uniform)
   var pathArray = [];
@@ -134,7 +117,7 @@ function initParticleSystem() {
   pathArray.push(-1000, 0, 0);
   radiusArray.push(2);
 
-  for (i = 1; i < length - 1; i++) {
+  for (var i = 1; i < length - 1; i++) {
     pathArray.push(
       THREE.Math.randFloatSpread(500),
       THREE.Math.randFloatSpread(500),
