@@ -35,7 +35,7 @@ function initTHREE() {
   mContainer.appendChild(mRenderer.domElement);
 
   mCamera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 5000);
-  mCamera.position.set(0, 20, 100);
+  mCamera.position.set(0, 0, 100);
 
   mScene = new THREE.Scene();
   //mScene.add(new THREE.GridHelper(200, 10));
@@ -84,10 +84,15 @@ function initText() {
   mTextHeight = mTextGeometry.boundingBox.max.y - mTextGeometry.boundingBox.min.y;
   mTextDepth = mTextGeometry.boundingBox.max.z - mTextGeometry.boundingBox.min.z;
 
+  console.log(mTextWidth, mTextHeight, mTextDepth);
+
   var xOffset = -0.5 * mTextWidth;
-  var matrix = new THREE.Matrix4().makeTranslation(xOffset, 0, 0);
+  var yOffset = -0.5 * mTextHeight;
+  var matrix = new THREE.Matrix4().makeTranslation(xOffset, yOffset, 0);
 
   mTextGeometry.applyMatrix(matrix);
+
+  THREE.BAS.Utils.separateFaces(mTextGeometry);
 
   // test mesh
   //var material = new THREE.MeshPhongMaterial({color:0xff00ff});
@@ -145,7 +150,7 @@ function initBufferGeometry() {
         ],
         shaderTransformPosition: [
           'float tPeriod = sin(uTime + aWave.y);',
-          'transformed.y += tPeriod * aWave.x;'
+          'transformed.x += tPeriod * aWave.x;'
         ]
       },
       {
