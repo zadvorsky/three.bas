@@ -24,7 +24,7 @@ function init() {
   initText();
   initBufferGeometry();
 
-  mTween = TweenMax.fromTo(window, 24, {mTime:0}, {mTime:mTotalDuration, ease:Power0.easeIn});
+  mTween = TweenMax.fromTo(window, 24, {mTime:0}, {mTime:mTotalDuration, ease:Power0.easeIn, repeat:-1});
 
   var mouseDown = false;
   var _cx = 0;
