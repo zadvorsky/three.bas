@@ -3,7 +3,6 @@ var mCamera, mRenderer;
 var mControls;
 
 var mTime = 0.0;
-var mTimeStep = (1/30);
 
 var mScene;
 
@@ -12,15 +11,53 @@ var mTextBoundingBox;
 var mTextWidth, mTextHeight, mTextDepth;
 var mParticleSystem;
 
+var mTotalDuration = 0;
+var mTween;
+
 window.onload = function () {
   init();
 };
 
 function init() {
   initTHREE();
-  initControls();
+  //initControls();
   initText();
   initBufferGeometry();
+
+  mTween = TweenMax.fromTo(window, 24, {mTime:0}, {mTime:mTotalDuration, ease:Power0.easeIn});
+
+  var mouseDown = false;
+  var _cx = 0;
+  var step = 0.001;
+
+  document.body.style.cursor = 'pointer';
+
+  window.addEventListener('mousedown', function(e) {
+    mouseDown = true;
+    _cx = e.clientX;
+
+    TweenMax.to(mTween, 2, {timeScale:0});
+
+    document.body.style.cursor = 'ew-resize';
+  });
+  window.addEventListener('mouseup', function(e) {
+    mouseDown = false;
+    TweenMax.to(mTween, 2, {timeScale:1});
+
+    document.body.style.cursor = 'pointer';
+  });
+  window.addEventListener('mousemove', function(e) {
+    if (mouseDown === true) {
+      var cx = e.clientX;
+      var dx = cx - _cx;
+      var progress = mTween.progress();
+      var p = THREE.Math.clamp((progress + (dx * step)), 0, 1);
+
+      mTween.progress(p);
+
+      _cx = cx;
+    }
+  });
 
   requestAnimationFrame(tick);
   window.addEventListener('resize', resize, false);
@@ -29,22 +66,26 @@ function init() {
 function initTHREE() {
   mRenderer = new THREE.WebGLRenderer({antialias: true});
   mRenderer.setSize(window.innerWidth, window.innerHeight);
-  mRenderer.setClearColor(0xffffff);
+  mRenderer.setClearColor(0x000000);
 
   mContainer = document.getElementById('three-container');
   mContainer.appendChild(mRenderer.domElement);
 
   mCamera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 5000);
-  mCamera.position.set(0, 0, 100);
+  mCamera.position.set(0, 0, 60);
 
   mScene = new THREE.Scene();
   //mScene.add(new THREE.GridHelper(200, 10));
-  mScene.add(new THREE.AxisHelper(20));
+  //mScene.add(new THREE.AxisHelper(20));
 
   var light;
 
-  light = new THREE.DirectionalLight(0xffffff);
-  light.position.set(1, 1, 1);
+  light = new THREE.DirectionalLight(0x00ffff);
+  light.position.set(0, 1, 0);
+  mScene.add(light);
+
+  light = new THREE.DirectionalLight(0xff00ff);
+  light.position.set(0, -1, 0);
   mScene.add(light);
 }
 
@@ -53,15 +94,15 @@ function initControls() {
 }
 
 function initText() {
-  var text = '3D TEXT';
+  var text = 'POLYGON';
   var size = 14;
-  var height = 1;
+  var height = 4;
   var curveSegments = 10;
   var font = 'droid sans';
   var weight = 'bold';
   var style = 'normal';
-  var bevelSize = 0.5;
-  var bevelThickness = 0.25;
+  var bevelSize = 0.75;
+  var bevelThickness = 0.50;
 
   mTextGeometry = new THREE.TextGeometry( text, {
 
@@ -88,9 +129,18 @@ function initText() {
 
   var xOffset = -0.5 * mTextWidth;
   var yOffset = -0.5 * mTextHeight;
-  var matrix = new THREE.Matrix4().makeTranslation(xOffset, yOffset, 0);
+  var zOffset = -0.5 * mTextDepth;
+  var matrix = new THREE.Matrix4().makeTranslation(xOffset, yOffset, zOffset);
 
   mTextGeometry.applyMatrix(matrix);
+
+  //var noise = 0.25;
+  //
+  //mTextGeometry.vertices.forEach(function(v) {
+  //  v.x += THREE.Math.randFloatSpread(noise);
+  //  v.y += THREE.Math.randFloatSpread(noise);
+  //  v.z += THREE.Math.randFloatSpread(noise);
+  //});
 
   THREE.BAS.Utils.separateFaces(mTextGeometry);
 
@@ -103,61 +153,121 @@ function initText() {
 
 function initBufferGeometry() {
   var bufferGeometry = new THREE.BAS.ModelBufferGeometry(mTextGeometry);
-
   var halfWidth = mTextWidth * 0.5;
   var halfHeight = mTextHeight * 0.5;
   var halfDepth = mTextDepth * 0.5;
 
-  var aWave = bufferGeometry.createAttribute('aWave', 2);
-  var aColor = bufferGeometry.createAttribute('color', 3);
+  var aAnimation = bufferGeometry.createAttribute('aAnimation', 2);
+  var aCentroid = bufferGeometry.createAttribute('aCentroid', 3);
+  var aRotation = bufferGeometry.createAttribute('aRotation', 4);
+  var aTranslation = bufferGeometry.createAttribute('aTranslation', 3);
 
   var faceCount = bufferGeometry.faceCount;
   var vertexCount = bufferGeometry.vertexCount;
-  var i, j, offset;
+  var i, i2, i3, i4, v;
 
-  var amplitude, periodOffsetX, periodOffsetZ;
+  var axis = new THREE.Vector3();
 
-  for (i = 0, offset = 0; i < vertexCount; i++) {
-    var v = mTextGeometry.vertices[i];
+  mTotalDuration = 5.3;
 
-    amplitude = THREE.Math.mapLinear(v.z, -halfDepth, halfDepth, 0, 1);
+  for (i = 0, i2 = 0, i3 = 0, i4 = 0; i < faceCount; i++, i2 += 6, i3 += 9, i4 += 12) {
+    var face = mTextGeometry.faces[i];
+    var centroid = THREE.BAS.Utils.computeCentroid(mTextGeometry, face);
+    var dirX = centroid.x > 0 ? 1 : -1;
+    var dirY = centroid.y > 0 ? 1 : -1;
+    var dirZ = centroid.z > 0 ? 1 : -1;
 
-    periodOffsetX = THREE.Math.mapLinear(v.x, -halfWidth, halfWidth, 0, Math.PI * 0.25);
-    periodOffsetZ = THREE.Math.mapLinear(v.z, -halfDepth, halfWidth, 0, Math.PI * 2);
+    // animation
 
-    aWave.array[offset++] = amplitude;
-    aWave.array[offset++] = periodOffsetZ + periodOffsetX;
+    var xDelay = THREE.Math.mapLinear(centroid.x, -halfWidth, halfWidth, 0, 0.5);
+    //var yDelay = THREE.Math.mapLinear(centroid.y, -halfHeight, halfHeight, 0, 0.05);
+    var yDelay = 0;
+    var duration = THREE.Math.randFloat(1.2, 2.8);
+
+    for (v = 0; v < 6; v += 2) {
+      aAnimation.array[i2 + v + 0] = xDelay + yDelay;
+      aAnimation.array[i2 + v + 1] = duration;
+    }
+
+    // centroid
+
+    for (v = 0; v < 9; v += 3) {
+      aCentroid.array[i3 + v + 0] = centroid.x;
+      aCentroid.array[i3 + v + 1] = centroid.y;
+      aCentroid.array[i3 + v + 2] = centroid.z;
+    }
+
+    // rotation
+
+    axis.x = THREE.Math.randFloatSpread(2);
+    axis.y = dirY;
+    axis.z = dirZ;
+    axis.normalize();
+
+    for (v = 0; v < 12; v += 4) {
+      aRotation.array[i4 + v + 0] = axis.x;
+      aRotation.array[i4 + v + 1] = axis.y;
+      aRotation.array[i4 + v + 2] = axis.z;
+      aRotation.array[i4 + v + 3] = Math.PI * THREE.Math.randFloat(4, 8);
+    }
+
+    // translation
+
+    var x = THREE.Math.randFloat(20, 60) * dirX;
+    var y = THREE.Math.randFloat(120, 140) * dirY;
+    var z = THREE.Math.randFloat(20, 60) * dirZ;
+
+    for (v = 0; v < 9; v += 3) {
+      aTranslation.array[i3 + v + 0] = x;
+      aTranslation.array[i3 + v + 1] = y;
+      aTranslation.array[i3 + v + 2] = z;
+    }
   }
 
   var material = new THREE.BAS.PhongAnimationMaterial({
-        //vertexColors: THREE.VertexColors,
-        shading: THREE.FlatShading,
-        //wireframe: true,
-        defines: {
-        },
-        uniforms: {
-          uTime: {type: 'f', value: 0}
-        },
-        shaderFunctions: [
-        ],
-        shaderParameters: [
-          'uniform float uTime;',
-          'attribute vec2 aWave;'
-        ],
-        shaderVertexInit: [
-        ],
-        shaderTransformNormal: [
-        ],
-        shaderTransformPosition: [
-          'float tPeriod = sin(uTime + aWave.y);',
-          'transformed.x += tPeriod * aWave.x;'
-        ]
+      //vertexColors: THREE.VertexColors,
+      shading: THREE.FlatShading,
+      side: THREE.DoubleSide,
+      //wireframe: true,
+      defines: {
       },
-      {
-        shininess: 40,
-        //diffuse:0xff00ff
-        //specular: 0xffd700
-      }
+      uniforms: {
+        uTime: {type: 'f', value: 0}
+      },
+      shaderFunctions: [
+        //THREE.BAS.ShaderChunk['ease_out_cubic'],
+        THREE.BAS.ShaderChunk['quaternion_rotation'],
+        THREE.BAS.ShaderChunk['cubic_bezier']
+      ],
+      shaderParameters: [
+        'uniform float uTime;',
+        'attribute vec2 aAnimation;',
+        'attribute vec3 aCentroid;',
+        'attribute vec4 aRotation;',
+        'attribute vec3 aTranslation;'
+      ],
+      shaderVertexInit: [
+        'float tDelay = aAnimation.x;',
+        'float tDuration = aAnimation.y;',
+        'float tTime = clamp(uTime - tDelay, 0.0, tDuration);',
+        'float tProgress = tTime / tDuration;'
+      ],
+      shaderTransformNormal: [
+      ],
+      shaderTransformPosition: [
+        'vec3 tPosition = transformed - aCentroid;',
+        'vec4 tQuat = quatFromAxisAngle(aRotation.xyz, aRotation.w * tProgress);',
+        'tPosition = rotateVector(tQuat, tPosition);',
+        'tPosition += aCentroid;',
+        'tPosition += aTranslation * tProgress;',
+        'transformed = tPosition;'
+      ]
+    },
+    {
+      shininess: 120,
+      //diffuse:0xff00ff
+      specular: 0xffd700
+    }
   );
 
   mParticleSystem = new THREE.Mesh(bufferGeometry, material);
@@ -169,13 +279,11 @@ function tick() {
   update();
   render();
 
-  mTime += mTimeStep;
-
   requestAnimationFrame(tick);
 }
 
 function update() {
-  mControls.update();
+  //mControls.update();
 
   mParticleSystem.material.uniforms['uTime'].value = mTime;
 }
