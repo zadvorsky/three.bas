@@ -98,7 +98,7 @@ function initTweenControls() {
 }
 
 function initText() {
-  var text = 'ASHES TO ASHES';
+  var text = 'PIECE BY PIECE';
   var size = 14;
   var height = 0;
   var curveSegments = 10;
@@ -128,7 +128,7 @@ function initText() {
   mTextHeight = mTextGeometry.boundingBox.max.y - mTextGeometry.boundingBox.min.y;
   mTextDepth = mTextGeometry.boundingBox.max.z - mTextGeometry.boundingBox.min.z;
 
-  console.log('txt size', mTextWidth, mTextHeight, mTextDepth);
+  //console.log('txt size', mTextWidth, mTextHeight, mTextDepth);
 
   var xOffset = -0.5 * mTextWidth;
   var yOffset = -0.5 * mTextHeight;
