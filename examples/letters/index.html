@@ -23,12 +23,12 @@
 <script src="FontUtils.js"></script>
 <script src="pnltri.min.js"></script>
 <script>
-    THREE.Shape.Utils.triangulateShape = ( function () {
+    THREE.ShapeUtils.triangulateShape = (function () {
         var pnlTriangulator = new PNLTRI.Triangulator();
-        return function triangulateShape( contour, holes ) {
-            return pnlTriangulator.triangulate_polygon( [ contour ].concat(holes) );
+        return function triangulateShape(contour, holes) {
+            return pnlTriangulator.triangulate_polygon([contour].concat(holes));
         };
-    } )();
+    })();
 </script>
 
 <script src="TextGeometry.js"></script>
