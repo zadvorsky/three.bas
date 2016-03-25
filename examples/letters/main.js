@@ -1,15 +1,7 @@
 var mContainer;
 var mCamera, mRenderer;
 var mControls;
-
-var mTime = 0.0;
-
 var mScene;
-
-var mTextGeometry;
-var mTextBoundingBox;
-var mTextWidth, mTextHeight, mTextDepth;
-var mParticleSystem;
 
 var mTotalDuration = 9.25;
 var mTween;
@@ -22,11 +14,16 @@ function init() {
   initTHREE();
   // initControls();
   initTweenControls();
-  initText();
-  initBufferGeometry();
 
-  mTween = TweenMax.fromTo(window, mTotalDuration * 0.5, {mTime:0},
-    {mTime:mTotalDuration, ease:Power1.easeInOut, repeat:-1, yoyo:true});
+  var textAnimation = createTextAnimation();
+  var uTime = textAnimation.material.uniforms['uTime'];
+
+  mScene.add(textAnimation);
+
+  mTween = TweenMax.fromTo(uTime, mTotalDuration * 0.5,
+    {value:0},
+    {value:mTotalDuration, ease:Power1.easeInOut, repeat:-1, yoyo:true}
+  );
 
   requestAnimationFrame(tick);
   window.addEventListener('resize', resize, false);
@@ -44,18 +41,6 @@ function initTHREE() {
   mCamera.position.set(0, 0, 1400);
 
   mScene = new THREE.Scene();
-  //mScene.add(new THREE.GridHelper(200, 10));
-  //mScene.add(new THREE.AxisHelper(20));
-
-  var light;
-
-  light = new THREE.DirectionalLight(0x00ffff);
-  light.position.set(0, 1, 0);
-  mScene.add(light);
-
-  light = new THREE.DirectionalLight(0xff00ff);
-  light.position.set(0, -1, 0);
-  mScene.add(light);
 }
 
 function initControls() {
@@ -97,119 +82,109 @@ function initTweenControls() {
   });
 }
 
-function initText() {
-  var text = 'ASHES TO ASHES';
-  var size = 14;
-  var height = 0;
-  var curveSegments = 10;
-  var font = 'droid sans';
-  var weight = 'bold';
-  var style = 'normal';
-  var bevelSize = 0.75;
-  var bevelThickness = 0.50;
-
-  mTextGeometry = new THREE.TextGeometry(text, {
-    size: size,
-    height: height,
-    curveSegments: curveSegments,
-
-    font: font,
-    weight: weight,
-    style: style,
-
-    bevelThickness: bevelThickness,
-    bevelSize: bevelSize,
-    bevelEnabled: true
+function createTextAnimation() {
+  var geometry = generateTextGeometry('PIECE BY PIECE', {
+    size:14,
+    height:0,
+    font:'droid sans',
+    weight:'bold',
+    style:'normal',
+    bevelSize:0.75,
+    bevelThickness:0.50,
+    anchor:{x:0.5, y:0.5, z:0.5}
   });
 
-  mTextGeometry.computeBoundingBox();
-  mTextBoundingBox = mTextGeometry.boundingBox;
-  mTextWidth = mTextGeometry.boundingBox.max.x - mTextGeometry.boundingBox.min.x;
-  mTextHeight = mTextGeometry.boundingBox.max.y - mTextGeometry.boundingBox.min.y;
-  mTextDepth = mTextGeometry.boundingBox.max.z - mTextGeometry.boundingBox.min.z;
+  THREE.BAS.Utils.separateFaces(geometry);
 
-  console.log('txt size', mTextWidth, mTextHeight, mTextDepth);
+  var bufferGeometry = generateBufferGeometry(geometry);
 
-  var xOffset = -0.5 * mTextWidth;
-  var yOffset = -0.5 * mTextHeight;
-  var zOffset = -0.5 * mTextDepth;
-  var matrix = new THREE.Matrix4().makeTranslation(xOffset, yOffset, zOffset);
+  var material = new THREE.BAS.BasicAnimationMaterial({
+      shading: THREE.FlatShading,
+      side: THREE.DoubleSide,
+      uniforms: {
+        uTime: {type: 'f', value: 0}
+      },
+      shaderFunctions: [
+        THREE.BAS.ShaderChunk['cubic_bezier']
+      ],
+      shaderParameters: [
+        'uniform float uTime;',
+        'attribute vec2 aAnimation;',
+        'attribute vec3 aControl0;',
+        'attribute vec3 aControl1;',
+        'attribute vec3 aEndPosition;'
+      ],
+      shaderVertexInit: [
+        'float tDelay = aAnimation.x;',
+        'float tDuration = aAnimation.y;',
+        'float tTime = clamp(uTime - tDelay, 0.0, tDuration);',
+        'float tProgress = tTime / tDuration;'
+      ],
+      shaderTransformPosition: [
+        'vec3 tPosition = transformed;',
+        'tPosition *= 1.0 - tProgress;',
+        'tPosition += cubicBezier(transformed, aControl0, aControl1, aEndPosition, tProgress);',
+        'transformed = tPosition;'
+      ]
+    },
+    {
+      diffuse: 0x000000
+    }
+  );
 
-  mTextGeometry.applyMatrix(matrix);
+  var mesh = new THREE.Mesh(bufferGeometry, material);
+  mesh.frustumCulled = false;
 
-  //var noise = 0.25;
-  //
-  //mTextGeometry.vertices.forEach(function(v) {
-  //  v.x += THREE.Math.randFloatSpread(noise);
-  //  v.y += THREE.Math.randFloatSpread(noise);
-  //  v.z += THREE.Math.randFloatSpread(noise);
-  //});
-
-  THREE.BAS.Utils.separateFaces(mTextGeometry);
-
-  // test mesh
-  //var material = new THREE.MeshPhongMaterial({color:0xff00ff});
-  //var mesh = new THREE.Mesh(mTextGeometry, material);
-  //
-  //mScene.add(mesh);
+  return mesh;
 }
 
-function initBufferGeometry() {
-  var bufferGeometry = new THREE.BAS.ModelBufferGeometry(mTextGeometry);
-  var halfWidth = mTextWidth * 0.5;
-  var halfHeight = mTextHeight * 0.5;
-  var halfDepth = mTextDepth * 0.5;
+function generateTextGeometry(text, params) {
+  var geometry = new THREE.TextGeometry(text, params);
+
+  geometry.computeBoundingBox();
+
+  geometry.userData = {};
+  geometry.userData.size = {
+    width: geometry.boundingBox.max.x - geometry.boundingBox.min.x,
+    height: geometry.boundingBox.max.y - geometry.boundingBox.min.y,
+    depth: geometry.boundingBox.max.z - geometry.boundingBox.min.z
+  };
+
+  var anchorX = geometry.userData.size.width * -params.anchor.x;
+  var anchorY = geometry.userData.size.height * -params.anchor.y;
+  var anchorZ = geometry.userData.size.depth * -params.anchor.z;
+  var matrix = new THREE.Matrix4().makeTranslation(anchorX, anchorY, anchorZ);
+
+  geometry.applyMatrix(matrix);
+
+  return geometry;
+}
+
+function generateBufferGeometry(geometry) {
+  var bufferGeometry = new THREE.BAS.ModelBufferGeometry(geometry);
 
   var aAnimation = bufferGeometry.createAttribute('aAnimation', 2);
-  // var aCentroid = bufferGeometry.createAttribute('aCentroid', 3);
-  // var aRotation = bufferGeometry.createAttribute('aRotation', 4);
   var aControl0 = bufferGeometry.createAttribute('aControl0', 3);
   var aControl1 = bufferGeometry.createAttribute('aControl1', 3);
   var aEndPosition = bufferGeometry.createAttribute('aEndPosition', 3);
 
   var faceCount = bufferGeometry.faceCount;
-  var vertexCount = bufferGeometry.vertexCount;
   var i, i2, i3, i4, v;
 
-  // var axis = new THREE.Vector3();
-
   for (i = 0, i2 = 0, i3 = 0, i4 = 0; i < faceCount; i++, i2 += 6, i3 += 9, i4 += 12) {
-    var face = mTextGeometry.faces[i];
-    var centroid = THREE.BAS.Utils.computeCentroid(mTextGeometry, face);
+    var face = geometry.faces[i];
+    var centroid = THREE.BAS.Utils.computeCentroid(geometry, face);
     var dirX = centroid.x > 0 ? 1 : -1;
     var dirY = centroid.y > 0 ? 1 : -1;
-    var dirZ = centroid.z > 0 ? 1 : -1;
 
     // animation
-    // var xDelay = THREE.Math.mapLinear(centroid.x, -halfWidth, halfWidth, 0, 0.25);
-    // var yDelay = THREE.Math.mapLinear(centroid.y, -halfHeight, halfHeight, 0, 4.0);
     var delay = centroid.length() * THREE.Math.randFloat(0.03, 0.06);
     var duration = THREE.Math.randFloat(2, 4);
 
     for (v = 0; v < 6; v += 2) {
-      aAnimation.array[i2 + v + 0] = delay + Math.random() * 1.0;
+      aAnimation.array[i2 + v    ] = delay + Math.random();
       aAnimation.array[i2 + v + 1] = duration;
     }
-
-    // centroid
-    // for (v = 0; v < 9; v += 3) {
-    //   aCentroid.array[i3 + v + 0] = centroid.x;
-    //   aCentroid.array[i3 + v + 1] = centroid.y;
-    //   aCentroid.array[i3 + v + 2] = centroid.z;
-    // }
-
-    // rotation
-    // axis.x = THREE.Math.randFloatSpread(2);
-    // axis.y = dirY;
-    // axis.z = dirZ;
-    // axis.normalize();
-    //
-    // for (v = 0; v < 12; v += 4) {
-    //   aRotation.array[i4 + v + 0] = axis.x;
-    //   aRotation.array[i4 + v + 1] = axis.y;
-    //   aRotation.array[i4 + v + 2] = axis.z;
-    //   aRotation.array[i4 + v + 3] = Math.PI * THREE.Math.randFloat(4, 8);
-    // }
 
     // ctrl
     var c0x = THREE.Math.randFloat(0, 30) * dirX;
@@ -221,101 +196,22 @@ function initBufferGeometry() {
     var c1z = THREE.Math.randFloat(-20, 20);
 
     for (v = 0; v < 9; v += 3) {
-      aControl0.array[i3 + v + 0] = c0x;
+      aControl0.array[i3 + v    ] = c0x;
       aControl0.array[i3 + v + 1] = c0y;
       aControl0.array[i3 + v + 2] = c0z;
 
-      aControl1.array[i3 + v + 0] = c1x;
+      aControl1.array[i3 + v    ] = c1x;
       aControl1.array[i3 + v + 1] = c1y;
       aControl1.array[i3 + v + 2] = c1z;
     }
-
-    // end position (just leave at 0)
-    // var x = THREE.Math.randFloatSpread(120);
-    // var y = THREE.Math.randFloatSpread(120);
-    // var z = THREE.Math.randFloatSpread(120);
-    // var x = THREE.Math.randFloat(20, 60) * dirX;
-    // var y = THREE.Math.randFloat(20, 60) * dirY;
-    // var z = THREE.Math.randFloat(0, 10) * dirZ;
-    //
-    // for (v = 0; v < 9; v += 3) {
-    //   aEndPosition.array[i3 + v + 0] = 0;
-    //   aEndPosition.array[i3 + v + 1] = 0;
-    //   aEndPosition.array[i3 + v + 2] = 0;
-    // }
   }
 
-  var material = new THREE.BAS.BasicAnimationMaterial({
-      //vertexColors: THREE.VertexColors,
-      shading: THREE.FlatShading,
-      side: THREE.DoubleSide,
-      //wireframe: true,
-      defines: {
-      },
-      uniforms: {
-        uTime: {type: 'f', value: 0}
-      },
-      shaderFunctions: [
-        //THREE.BAS.ShaderChunk['ease_out_cubic'],
-        THREE.BAS.ShaderChunk['quaternion_rotation'],
-        THREE.BAS.ShaderChunk['cubic_bezier']
-      ],
-      shaderParameters: [
-        'uniform float uTime;',
-        'attribute vec2 aAnimation;',
-        // 'attribute vec3 aCentroid;',
-        // 'attribute vec4 aRotation;',
-        'attribute vec3 aControl0;',
-        'attribute vec3 aControl1;',
-        'attribute vec3 aEndPosition;'
-      ],
-      shaderVertexInit: [
-        'float tDelay = aAnimation.x;',
-        'float tDuration = aAnimation.y;',
-        'float tTime = clamp(uTime - tDelay, 0.0, tDuration);',
-        'float tProgress = tTime / tDuration;'
-      ],
-      shaderTransformNormal: [
-      ],
-      shaderTransformPosition: [
-        // 'vec3 tPosition = transformed - aCentroid;',
-
-        // 'vec4 tQuat = quatFromAxisAngle(aRotation.xyz, aRotation.w * tProgress);',
-        // 'tPosition = rotateVector(tQuat, tPosition);',
-        // 'tPosition += aCentroid;',
-
-        'vec3 tPosition = transformed;',
-
-        'tPosition *= 1.0 - tProgress;',
-
-        'tPosition += cubicBezier(transformed, aControl0, aControl1, aEndPosition, tProgress);',
-
-        'transformed = tPosition;'
-      ]
-    },
-    {
-      // shininess: 120,
-      diffuse: 0x000000
-      // specular: 0xffd700
-    }
-  );
-
-  mParticleSystem = new THREE.Mesh(bufferGeometry, material);
-  mParticleSystem.frustumCulled = false;
-  mScene.add(mParticleSystem);
+  return bufferGeometry;
 }
 
 function tick() {
-  update();
   render();
-
   requestAnimationFrame(tick);
-}
-
-function update() {
-  //mControls.update();
-
-  mParticleSystem.material.uniforms['uTime'].value = mTime;
 }
 
 function render() {
