@@ -3,7 +3,6 @@ var mCamera, mRenderer;
 var mControls;
 var mScene;
 
-var mTotalDuration = 9.25;
 var mTween;
 
 window.onload = function () {
@@ -16,13 +15,12 @@ function init() {
   initTweenControls();
 
   var textAnimation = createTextAnimation();
-  var uTime = textAnimation.material.uniforms['uTime'];
 
   mScene.add(textAnimation);
 
-  mTween = TweenMax.fromTo(uTime, mTotalDuration * 0.5,
-    {value:0},
-    {value:mTotalDuration, ease:Power1.easeInOut, repeat:-1, yoyo:true}
+  mTween = TweenMax.fromTo(textAnimation, 4,
+    {animationProgress:0},
+    {animationProgress:1, ease:Power1.easeInOut, repeat:-1, yoyo:true}
   );
 
   requestAnimationFrame(tick);
@@ -134,6 +132,17 @@ function createTextAnimation() {
 
   var mesh = new THREE.Mesh(bufferGeometry, material);
   mesh.frustumCulled = false;
+  mesh._animationProgress = 0;
+
+  Object.defineProperty(mesh, 'animationProgress', {
+    get: function() {
+      return this._animationProgress;
+    },
+    set: function(v) {
+      this._animationProgress = v;
+      this.material.uniforms['uTime'].value = this.geometry.animationDuration * v;
+    }
+  });
 
   return mesh;
 }
@@ -170,6 +179,12 @@ function generateBufferGeometry(geometry) {
 
   var faceCount = bufferGeometry.faceCount;
   var i, i2, i3, i4, v;
+
+  var size = geometry.userData.size;
+  var length = new THREE.Vector3(size.width, size.height, size.depth).multiplyScalar(0.5).length();
+  var maxDelay = length * 0.06;
+
+  bufferGeometry.animationDuration = maxDelay + 4 + 1;
 
   for (i = 0, i2 = 0, i3 = 0, i4 = 0; i < faceCount; i++, i2 += 6, i3 += 9, i4 += 12) {
     var face = geometry.faces[i];
