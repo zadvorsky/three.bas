@@ -91,6 +91,7 @@ function createTextAnimation() {
     style:'normal',
     bevelSize:0.75,
     bevelThickness:0.50,
+    bevelEnabled:true,
     anchor:{x:0.5, y:0.5, z:0.5}
   });
 
