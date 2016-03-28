@@ -6,6 +6,7 @@ function init() {
     fov:60
   });
   root.renderer.setClearColor(0xffffff);
+  root.renderer.setPixelRatio(window.devicePixelRatio || 1);
   root.camera.position.set(0, 0, 400);
 
   var textAnimation = createTextAnimation();
@@ -14,6 +15,7 @@ function init() {
 
   var tl = new TimelineMax({
     repeat:-1,
+    repeatDelay:0.25,
     yoyo:true
   });
   tl.fromTo(textAnimation, 4,
@@ -33,7 +35,7 @@ function init() {
 function createTextAnimation() {
   var geometry = generateTextGeometry('UP IN SMOKE', {
     size:14,
-    height:2,
+    height:0,
     font:'droid sans',
     weight:'bold',
     style:'normal',
@@ -92,10 +94,9 @@ function TextAnimation(textGeometry) {
   var maxDelayY = 0.25;
   var minDuration = 4;
   var maxDuration = 8;
-  var stretch = 0.15;
+  var stretch = 0.25;
 
-  this.animationDuration = maxDelayX + maxDelayY + maxDuration + stretch;
-  this.animationDuration = 4;
+  this.animationDuration = maxDelayX + maxDelayY + maxDuration - 3;
   this._animationProgress = 0;
 
   for (i = 0, i2 = 0, i3 = 0, i4 = 0; i < faceCount; i++, i2 += 6, i3 += 9, i4 += 12) {
@@ -176,7 +177,7 @@ function TextAnimation(textGeometry) {
         'float tDuration = aAnimation.y;',
         'float tTime = clamp(uTime - tDelay, 0.0, tDuration);',
         'float tProgress =  ease(tTime, 0.0, 1.0, tDuration);'
-        // 'float tProgress = tTime / tDuration;'
+         //'float tProgress = tTime / tDuration;'
       ],
       shaderTransformPosition: [
         'vec3 tPosition = transformed - aCentroid;',
