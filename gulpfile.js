@@ -36,8 +36,13 @@ gulp.task('watch-glsl', function() {
 });
 
 gulp.task('watch-js', function() {
-  return gulp.watch([jsSources], ['build-js']);
+  return gulp.watch(jsSources, ['build-js']);
 });
+
+gulp.task('default', [
+  'watch-js',
+  'watch-glsl'
+]);
 
 function getFileContents(basePath) {
     var srcFiles = fs.readdirSync(basePath);
