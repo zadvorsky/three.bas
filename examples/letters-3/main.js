@@ -17,16 +17,16 @@ function init() {
   var textAnimation = createTextAnimation();
   root.scene.add(textAnimation);
 
-  textAnimation.bufferAnimation(new THREE.Vector3());
+  textAnimation.bufferAnimation(new THREE.Vector3(0, 0, 0));
 
   var tl = new TimelineMax({
     repeat:-1,
     repeatDelay:0.0,
     yoyo:false
   });
-  tl.fromTo(textAnimation, 10,
+  tl.fromTo(textAnimation, 4,
     {animationProgress:0.0},
-    {animationProgress:1.0, ease:Power1.easeIn},
+    {animationProgress:1.0, ease:Power1.easeInOut},
     0
   );
   //createTweenScrubber(tl);
