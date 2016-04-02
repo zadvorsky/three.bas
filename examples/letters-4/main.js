@@ -2,7 +2,7 @@ window.onload = init;
 
 function init() {
   var root = new THREERoot({
-    createCameraControls:true,
+    createCameraControls:!true,
     antialias:true,
     fov:90
   });
@@ -24,12 +24,12 @@ function init() {
   });
   tl.fromTo(textAnimation, 8,
     {animationProgress:0.0},
-    {animationProgress:0.75, ease:Power1.easeInOut},
+    {animationProgress:0.9, ease:Power1.easeInOut},
     0
   );
-  // tl.to(root.camera.position, 8, {z:-350, ease:Power1.easeInOut}, 0);
+  tl.to(root.camera.position, 8, {z:-350, ease:Power1.easeInOut}, 0);
 
-  // createTweenScrubber(tl);
+  createTweenScrubber(tl);
 }
 
 function createTextAnimation() {
@@ -39,8 +39,9 @@ function createTextAnimation() {
     font:'droid sans',
     weight:'bold',
     style:'normal',
-    bevelSize:0.75,
-    bevelThickness:2.0,
+    curveSegments:24,
+    bevelSize:0.25,
+    bevelThickness:0.25,
     bevelEnabled:true,
     anchor:{x:0.5, y:0.5, z:0.5}
   });
@@ -89,11 +90,12 @@ function TextAnimation(textGeometry) {
   var faceCount = bufferGeometry.faceCount;
   var i, i2, i3, i4, v;
   var keys = ['a', 'b', 'c'];
+  var vDelay = new THREE.Vector3();
 
   var maxDelay = 0.0;
-  var minDuration = 0.75;
+  var minDuration = 1.0;
   var maxDuration = 1.0;
-  var stretch = 0.025;
+  var stretch = 0.0125;
   var lengthFactor = 0.01;
   var maxLength = textGeometry.boundingBox.max.length();
 
@@ -115,7 +117,7 @@ function TextAnimation(textGeometry) {
 
     for (v = 0; v < 6; v += 2) {
       var vertex = textGeometry.vertices[face[keys[v * 0.5]]];
-      var vertexDelay = vertex.length() * 0.001;
+      var vertexDelay = vDelay.subVectors(centroid, vertex).length() * 0.0001;
 
       aAnimation.array[i2 + v    ] = delay + vertexDelay + stretch * Math.random();
       aAnimation.array[i2 + v + 1] = duration;
@@ -129,13 +131,13 @@ function TextAnimation(textGeometry) {
     }
 
     // ctrl
-    var c0x = centroid.x * 0.33;//THREE.Math.randFloat(0.75, 1.0);
-    var c0y = centroid.y * 0.33;//THREE.Math.randFloat(0.75, 1.0);
-    var c0z = distanceZ * 0.66;//THREE.Math.randFloat(0.5, 0.75);
+    var c0x = centroid.x * THREE.Math.randFloat(0.75, 1.0);
+    var c0y = centroid.y * THREE.Math.randFloat(0.75, 1.0);
+    var c0z = distanceZ * THREE.Math.randFloat(0.5, 0.75);
 
-    var c1x = centroid.x * 0.66;//THREE.Math.randFloat(0.25, 0.5);
-    var c1y = centroid.y * 0.66;//THREE.Math.randFloat(0.25, 0.5);
-    var c1z = distanceZ * 0.33;//THREE.Math.randFloat(0.75, 1.0);
+    var c1x = centroid.x * THREE.Math.randFloat(0.25, 0.5);
+    var c1y = centroid.y * THREE.Math.randFloat(0.25, 0.5);
+    var c1z = distanceZ * THREE.Math.randFloat(0.75, 1.0);
 
     for (v = 0; v < 9; v += 3) {
       aControl0.array[i3 + v    ] = c0x;
@@ -164,9 +166,11 @@ function TextAnimation(textGeometry) {
     // axis.x = THREE.Math.randFloatSpread(0.25);
     // axis.y = THREE.Math.randFloatSpread(0.25);
     // axis.z = 1.0;
-    axis.x = -centroid.x * 0.01;
-    axis.y = centroid.y * 0.05;
-    axis.z = centroid.z >= 0 ? 1 : -1;
+    // axis.x = -centroid.x * 0.0001;
+    // axis.y = centroid.y * 0.0005;
+    axis.x = 0;
+    axis.y = 0;
+    axis.z = 1;
 
     axis.normalize();
 
