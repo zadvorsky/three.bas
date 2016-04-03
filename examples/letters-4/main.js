@@ -8,7 +8,7 @@ function init() {
   });
   root.renderer.setClearColor(0x000000);
   root.renderer.setPixelRatio(window.devicePixelRatio || 1);
-  root.camera.position.set(0, 0, 200);
+  root.camera.position.set(0, 0, 300);
 
   var textAnimation = createTextAnimation();
   root.scene.add(textAnimation);
@@ -27,13 +27,13 @@ function init() {
     {animationProgress:0.9, ease:Power1.easeInOut},
     0
   );
-  tl.to(root.camera.position, 8, {z:-350, ease:Power1.easeInOut}, 0);
+  // tl.to(root.camera.position, 8, {z:-350, ease:Power1.easeInOut}, 0);
 
   createTweenScrubber(tl);
 }
 
 function createTextAnimation() {
-  var geometry = generateTextGeometry('DOWN THE DRAIN', {
+  var geometry = generateTextGeometry('TWISTING IN THE WIND', {
     size:14,
     height:4,
     font:'droid sans',
@@ -117,7 +117,7 @@ function TextAnimation(textGeometry) {
 
     for (v = 0; v < 6; v += 2) {
       var vertex = textGeometry.vertices[face[keys[v * 0.5]]];
-      var vertexDelay = vDelay.subVectors(centroid, vertex).length() * 0.0001;
+      var vertexDelay = vDelay.subVectors(centroid, vertex).length() * 0.005;
 
       aAnimation.array[i2 + v    ] = delay + vertexDelay + stretch * Math.random();
       aAnimation.array[i2 + v + 1] = duration;
@@ -131,12 +131,12 @@ function TextAnimation(textGeometry) {
     }
 
     // ctrl
-    var c0x = centroid.x * THREE.Math.randFloat(0.75, 1.0);
-    var c0y = centroid.y * THREE.Math.randFloat(0.75, 1.0);
+    var c0x = centroid.x * THREE.Math.randFloat(0.0, 1.0);
+    var c0y = centroid.y * THREE.Math.randFloat(0.0, 1.0);
     var c0z = distanceZ * THREE.Math.randFloat(0.5, 0.75);
 
-    var c1x = centroid.x * THREE.Math.randFloat(0.25, 0.5);
-    var c1y = centroid.y * THREE.Math.randFloat(0.25, 0.5);
+    var c1x = centroid.x * THREE.Math.randFloat(0.0, 1.0);
+    var c1y = centroid.y * THREE.Math.randFloat(0.0, 1.0);
     var c1z = distanceZ * THREE.Math.randFloat(0.75, 1.0);
 
     for (v = 0; v < 9; v += 3) {
@@ -154,7 +154,7 @@ function TextAnimation(textGeometry) {
 
     x = 0;
     y = 0;
-    z = distanceZ;
+    z = distanceZ * THREE.Math.randFloat(0.0, 1.0);
 
     for (v = 0; v < 9; v += 3) {
       aEndPosition.array[i3 + v    ] = x;
@@ -166,10 +166,8 @@ function TextAnimation(textGeometry) {
     // axis.x = THREE.Math.randFloatSpread(0.25);
     // axis.y = THREE.Math.randFloatSpread(0.25);
     // axis.z = 1.0;
-    // axis.x = -centroid.x * 0.0001;
-    // axis.y = centroid.y * 0.0005;
-    axis.x = 0;
-    axis.y = 0;
+    axis.x = -centroid.x * 0.1;
+    axis.y = centroid.y * 0.1;
     axis.z = 1;
 
     axis.normalize();
