@@ -40,8 +40,8 @@ function createTextAnimation() {
     weight:'bold',
     style:'normal',
     curveSegments:24,
-    bevelSize:0.25,
-    bevelThickness:0.25,
+    bevelSize:1,
+    bevelThickness:1,
     bevelEnabled:true,
     anchor:{x:0.5, y:0.5, z:0.5}
   });
