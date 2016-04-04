@@ -95,7 +95,7 @@ function TextAnimation(textGeometry) {
   var maxDelay = 0.0;
   var minDuration = 1.0;
   var maxDuration = 1.0;
-  var stretch = 0.0125;
+  var stretch = 0.02;
   var lengthFactor = 0.01;
   var maxLength = textGeometry.boundingBox.max.length();
 
@@ -166,13 +166,13 @@ function TextAnimation(textGeometry) {
     // axis.x = THREE.Math.randFloatSpread(0.25);
     // axis.y = THREE.Math.randFloatSpread(0.25);
     // axis.z = 1.0;
-    axis.x = -centroid.x * 0.1;
-    axis.y = centroid.y * 0.1;
+    axis.x = -centroid.x * 0.05;
+    axis.y = centroid.y * 0.05;
     axis.z = 1;
 
     axis.normalize();
 
-    angle = Math.PI * THREE.Math.randFloat(4, 6);
+    angle = Math.PI * THREE.Math.randFloat(2, 4);
     // angle = Math.PI * 4;
 
     for (v = 0; v < 12; v += 4) {
