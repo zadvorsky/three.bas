@@ -4,11 +4,11 @@ function init() {
   var root = new THREERoot({
     createCameraControls:!true,
     antialias:true,
-    fov:90
+    fov:60
   });
   root.renderer.setClearColor(0x000000);
   root.renderer.setPixelRatio(window.devicePixelRatio || 1);
-  root.camera.position.set(0, 0, 100);
+  root.camera.position.set(0, 0, 600);
 
   var textAnimation = createTextAnimation();
   root.scene.add(textAnimation);
@@ -22,20 +22,20 @@ function init() {
     repeatDelay:0.25,
     yoyo:true
   });
-  tl.fromTo(textAnimation, 32,
+  tl.fromTo(textAnimation, 8,
     {animationProgress:0.0},
-    {animationProgress:0.9, ease:Power1.easeInOut},
+    {animationProgress:0.8, ease:Power1.easeInOut},
     0
   );
-  // tl.to(root.camera.position, 8, {z:-350, ease:Power1.easeInOut}, 0);
+  tl.fromTo(textAnimation.rotation, 8, {y:0}, {y:Math.PI * 2, ease:Power1.easeInOut}, 0);
 
   createTweenScrubber(tl);
 }
 
 function createTextAnimation() {
-  var geometry = generateTextGeometry('A B C', {
+  var geometry = generateTextGeometry('AS THE WORLD TURNS', {
     size:40,
-    height:4,
+    height:12,
     font:'droid sans',
     weight:'bold',
     style:'normal',
@@ -43,12 +43,10 @@ function createTextAnimation() {
     bevelSize:1,
     bevelThickness:1,
     bevelEnabled:true,
-    anchor:{x:0.5, y:0.5, z:0.5}
+    anchor:{x:0.5, y:0.5, z:0.0}
   });
 
-  THREE.BAS.Utils.tessellateRepeat(geometry, 1, 4);
-
-  //THREE.BAS.Utils.subdivide(geometry, 2);
+  THREE.BAS.Utils.tessellateRepeat(geometry, 0.5, 2);
 
   THREE.BAS.Utils.separateFaces(geometry);
 
@@ -66,6 +64,8 @@ function generateTextGeometry(text, params) {
     height: geometry.boundingBox.max.y - geometry.boundingBox.min.y,
     depth: geometry.boundingBox.max.z - geometry.boundingBox.min.z
   };
+
+  console.log('size', geometry.userData.size);
 
   var anchorX = geometry.userData.size.width * -params.anchor.x;
   var anchorY = geometry.userData.size.height * -params.anchor.y;
@@ -93,37 +93,60 @@ function TextAnimation(textGeometry) {
 
   var faceCount = bufferGeometry.faceCount;
   var i, i2, i3, i4, v;
-  var keys = ['a', 'b', 'c'];
-  var vDelay = new THREE.Vector3();
 
   var maxDelay = 0.0;
   var minDuration = 1.0;
   var maxDuration = 1.0;
-  var stretch = 0.02;
-  var lengthFactor = 0.02;
+  var stretch = 0.05;
+  var lengthFactor = 0.001;
   var maxLength = textGeometry.boundingBox.max.length();
 
   this.animationDuration = maxDuration + maxDelay + stretch + lengthFactor * maxLength;
   this._animationProgress = 0;
 
-  var distanceZ = -150;
-
   var axis = new THREE.Vector3();
   var angle;
+
+  var radius = 200;
+  var PHI = Math.PI * (3 - Math.sqrt(5));
+  var offset = 2.0 / faceCount;
+
+  //var vertexCount = textGeometry.vertices.length;
+  //var radius = 200;
+  //var PHI = Math.PI * (3 - Math.sqrt(5));
+  //var offset = 2.0 / vertexCount;
+  //for (i = 0, i2 = 0, i3 = 0, i4 = 0; i < vertexCount; i++, i2 += 2, i3 += 3, i4 += 4) {
+  //  var vertex = textGeometry.vertices[i];
+  //
+  //  aAnimation.array[i2] = vertex.length() * lengthFactor + Math.random() * maxDelay;
+  //  aAnimation.array[i2 + 1] = THREE.Math.randFloat(minDuration, maxDuration);
+  //
+  //  // end position
+  //  var x, y, z, r, phi;
+  //
+  //  y = i * offset - 1 + (offset * 0.5);
+  //  r = Math.sqrt(1 - y * y);
+  //  phi = i * PHI;
+  //  x = Math.cos(phi) * r;
+  //  z = Math.sin(phi) * r;
+  //
+  //  aEndPosition.array[i3] = x * radius;
+  //  aEndPosition.array[i3+1] = y * radius;
+  //  aEndPosition.array[i3+2] = z * radius;
+  //}
 
   for (i = 0, i2 = 0, i3 = 0, i4 = 0; i < faceCount; i++, i2 += 6, i3 += 9, i4 += 12) {
     var face = textGeometry.faces[i];
     var centroid = THREE.BAS.Utils.computeCentroid(textGeometry, face);
+    var centroidN = new THREE.Vector3().copy(centroid).normalize();
 
     // animation
-    var delay = centroid.length() * lengthFactor + Math.random() * maxDelay;
+    var delay = (maxLength - centroid.length()) * lengthFactor;
     var duration = THREE.Math.randFloat(minDuration, maxDuration);
 
     for (v = 0; v < 6; v += 2) {
-      var vertex = textGeometry.vertices[face[keys[v * 0.5]]];
-      var vertexDelay = vDelay.subVectors(centroid, vertex).length() * 0.005;
 
-      aAnimation.array[i2 + v    ] = delay + vertexDelay + stretch * Math.random();
+      aAnimation.array[i2 + v    ] = delay + stretch * Math.random();
       aAnimation.array[i2 + v + 1] = duration;
     }
 
@@ -135,13 +158,13 @@ function TextAnimation(textGeometry) {
     }
 
     // ctrl
-    var c0x = centroid.x * THREE.Math.randFloat(0.0, 1.0);
-    var c0y = centroid.y * THREE.Math.randFloat(0.0, 1.0);
-    var c0z = distanceZ * THREE.Math.randFloat(0.5, 0.75);
+    var c0x = Math.random() * radius;
+    var c0y = Math.random() * radius;
+    var c0z = Math.random() * radius;
 
-    var c1x = centroid.x * THREE.Math.randFloat(0.0, 1.0);
-    var c1y = centroid.y * THREE.Math.randFloat(0.0, 1.0);
-    var c1z = distanceZ * THREE.Math.randFloat(0.75, 1.0);
+    var c1x = Math.random() * radius;
+    var c1y = Math.random() * radius;
+    var c1z = Math.random() * radius;
 
     for (v = 0; v < 9; v += 3) {
       aControl0.array[i3 + v    ] = c0x;
@@ -154,30 +177,29 @@ function TextAnimation(textGeometry) {
     }
 
     // end position
-    var x, y, z;
+    var x, y, z, r, phi;
 
-    x = 0;
-    y = 0;
-    z = distanceZ * THREE.Math.randFloat(0.0, 1.0);
+    y = i * offset - 1 + (offset * 0.5);
+    r = Math.sqrt(1 - y * y);
+    phi = i * PHI;
+    x = Math.cos(phi) * r;
+    z = Math.sin(phi) * r;
 
     for (v = 0; v < 9; v += 3) {
-      aEndPosition.array[i3 + v    ] = x;
-      aEndPosition.array[i3 + v + 1] = y;
-      aEndPosition.array[i3 + v + 2] = z;
+      aEndPosition.array[i3 + v    ] = x * radius;
+      aEndPosition.array[i3 + v + 1] = y * radius;
+      aEndPosition.array[i3 + v + 2] = z * radius;
     }
 
     // axis angle
-    // axis.x = THREE.Math.randFloatSpread(0.25);
-    // axis.y = THREE.Math.randFloatSpread(0.25);
-    // axis.z = 1.0;
-    axis.x = -centroid.x * 0.05;
-    axis.y = centroid.y * 0.05;
-    axis.z = 1;
+    axis.x = centroidN.x;
+    axis.y = centroidN.y;
+    axis.z = -centroidN.z;
 
     axis.normalize();
 
-    angle = Math.PI * THREE.Math.randFloat(2, 4);
-    // angle = Math.PI * 4;
+    angle = Math.PI * THREE.Math.randFloat(0.5, 2.0);
+     //angle = Math.PI * 2;
 
     for (v = 0; v < 12; v += 4) {
       aAxisAngle.array[i4 + v    ] = axis.x;
@@ -218,20 +240,20 @@ function TextAnimation(textGeometry) {
         //'float tProgress = tTime / tDuration;'
       ],
       shaderTransformPosition: [
-        // 'transformed -= aCentroid;',
-        'transformed *= 1.0 - tProgress;',
-        // 'transformed += aCentroid;',
 
-        'transformed += cubicBezier(transformed, aControl0, aControl1, aEndPosition, tProgress);',
-        // 'transformed += aEndPosition * tProgress;'
+        'vec3 faceLocal = transformed - aCentroid;',
+        //'transformed = cubicBezier(transformed, aControl0, aControl1, aEndPosition, tProgress);',
+        'transformed = mix(transformed, aEndPosition, tProgress);',
+        //'transformed += faceLocal * tProgress;',
 
         'float angle = aAxisAngle.w * tProgress;',
         'vec4 tQuat = quatFromAxisAngle(aAxisAngle.xyz, angle);',
-        'transformed = rotateVector(tQuat, transformed);'
+        'transformed = rotateVector(tQuat, transformed);',
       ]
     },
     {
-      diffuse: 0xffffff
+      diffuse: 0xffffff,
+      //emissive:0xffffff
     }
   );
 
@@ -255,8 +277,8 @@ Object.defineProperty(TextAnimation.prototype, 'animationProgress', {
 function THREERoot(params) {
   params = utils.extend({
     fov:60,
-    zNear:1,
-    zFar:10000,
+    zNear:10,
+    zFar:100000,
 
     createCameraControls:true
   }, params);
