@@ -20,7 +20,7 @@ function init() {
 
   var tl = new TimelineMax({
     repeat:-1,
-    repeatDelay:0.25,
+    repeatDelay:0.5,
     yoyo:true
   });
   tl.fromTo(textAnimation, 4,
@@ -41,13 +41,13 @@ function createTextAnimation() {
     weight:'bold',
     style:'normal',
     curveSegments:24,
-    bevelSize:1,
-    bevelThickness:1,
+    bevelSize:2,
+    bevelThickness:2,
     bevelEnabled:true,
     anchor:{x:0.5, y:0.5, z:0.0}
   });
 
-  THREE.BAS.Utils.tessellateRepeat(geometry, 0.5, 2);
+  THREE.BAS.Utils.tessellateRepeat(geometry, 1.0, 3);
 
   THREE.BAS.Utils.separateFaces(geometry);
 
@@ -59,18 +59,10 @@ function generateTextGeometry(text, params) {
 
   geometry.computeBoundingBox();
 
-  geometry.userData = {};
-  geometry.userData.size = {
-    width: geometry.boundingBox.max.x - geometry.boundingBox.min.x,
-    height: geometry.boundingBox.max.y - geometry.boundingBox.min.y,
-    depth: geometry.boundingBox.max.z - geometry.boundingBox.min.z
-  };
-
-  console.log('size', geometry.userData.size);
-
-  var anchorX = geometry.userData.size.width * -params.anchor.x;
-  var anchorY = geometry.userData.size.height * -params.anchor.y;
-  var anchorZ = geometry.userData.size.depth * -params.anchor.z;
+  var size = geometry.boundingBox.size();
+  var anchorX = size.x * -params.anchor.x;
+  var anchorY = size.y * -params.anchor.y;
+  var anchorZ = size.z * -params.anchor.z;
   var matrix = new THREE.Matrix4().makeTranslation(anchorX, anchorY, anchorZ);
 
   geometry.applyMatrix(matrix);
@@ -130,7 +122,7 @@ function TextAnimation(textGeometry) {
 
     // axis angle
     axis.x = centroidN.x;
-    axis.y = centroidN.y;
+    axis.y = -centroidN.y;
     axis.z = -centroidN.z;
 
     axis.normalize();
@@ -181,7 +173,9 @@ function TextAnimation(textGeometry) {
       ]
     },
     {
-      diffuse: 0xffffff,
+      diffuse: 0x444444,
+      specular: 0xcccccc,
+      shininess: 4
       //emissive:0xffffff
     }
   );
@@ -211,8 +205,6 @@ function THREERoot(params) {
 
     createCameraControls:true
   }, params);
-
-  console.log(params.antialias);
 
   this.renderer = new THREE.WebGLRenderer({
     antialias:params.antialias
@@ -276,6 +268,17 @@ var utils = {
   randSign: function() {
     return Math.random() > 0.5 ? 1 : -1;
   },
+  ease:function(ease, t, b, c, d) {
+    return b + ease.getRatio(t / d) * c;
+  },
+  // mapEase:function(ease, v, x1, y1, x2, y2) {
+  //   var t = v;
+  //   var b = x2;
+  //   var c = y2 - x2;
+  //   var d = y1 - x1;
+  //
+  //   return utils.ease(ease, t, b, c, d);
+  // },
   fibSpherePoint: (function() {
     var v = {x:0, y:0, z:0};
     var G = Math.PI * (3 - Math.sqrt(5));
@@ -305,11 +308,11 @@ function createTweenScrubber(tween, seekSpeed) {
   seekSpeed = seekSpeed || 0.001;
 
   function stop() {
-    TweenMax.to(tween, 2, {timeScale:0});
+    TweenMax.to(tween, 1, {timeScale:0});
   }
 
   function resume() {
-    TweenMax.to(tween, 2, {timeScale:1});
+    TweenMax.to(tween, 1, {timeScale:1});
   }
 
   function seek(dx) {
