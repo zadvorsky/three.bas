@@ -11,6 +11,9 @@ function init() {
   root.renderer.setPixelRatio(window.devicePixelRatio || 1);
   root.camera.position.set(0, 0, 600);
 
+
+  root.scene.add(new THREE.AxisHelper(100));
+
   var textAnimation = createTextAnimation();
   root.scene.add(textAnimation);
 
@@ -25,7 +28,7 @@ function init() {
   });
   tl.fromTo(textAnimation, 4,
     {animationProgress:0.0},
-    {animationProgress:0.75, ease:Power1.easeInOut},
+    {animationProgress:1.0, ease:Power1.easeInOut},
     0
   );
   //tl.fromTo(textAnimation.rotation, 4, {y:0}, {y:Math.PI * 2, ease:Power1.easeInOut}, 0);
@@ -44,7 +47,7 @@ function createTextAnimation() {
     bevelSize:2,
     bevelThickness:2,
     bevelEnabled:true,
-    anchor:{x:0.5, y:0.5, z:0.0}
+    anchor:{x:0.5, y:0.5, z:0.5}
   });
 
   //THREE.BAS.Utils.tessellateRepeat(geometry, 1.0, 3);
@@ -77,6 +80,7 @@ function TextAnimation(textGeometry) {
   var bufferGeometry = new THREE.BAS.ModelBufferGeometry(textGeometry);
 
   var aAnimation = bufferGeometry.createAttribute('aAnimation', 2);
+  var aCentroid = bufferGeometry.createAttribute('aCentroid', 3);
   var aEndPosition = bufferGeometry.createAttribute('aEndPosition', 3);
   var aAxisAngle = bufferGeometry.createAttribute('aAxisAngle', 4);
 
@@ -117,6 +121,12 @@ function TextAnimation(textGeometry) {
       aAnimation.array[i2 + v + 1] = duration;
     }
 
+    for (v = 0; v < 9; v+= 3) {
+      aCentroid.array[i3 + v    ] = centroid.x;
+      aCentroid.array[i3 + v + 1] = centroid.y;
+      aCentroid.array[i3 + v + 2] = centroid.z;
+    }
+
     // end position
     var point = utils.fibSpherePoint(i, faceCount, 200);
 
@@ -136,7 +146,7 @@ function TextAnimation(textGeometry) {
 
     axis.normalize();
 
-    angle = Math.PI * 2;
+    angle = Math.PI * THREE.Math.randFloat(1.0, 2.0);
 
     for (v = 0; v < 12; v += 4) {
       aAxisAngle.array[i4 + v    ] = axis.x;
@@ -163,6 +173,7 @@ function TextAnimation(textGeometry) {
         'uniform vec3 uAxis;',
         'uniform float uAngle;',
         'attribute vec2 aAnimation;',
+        'attribute vec3 aCentroid;',
         'attribute vec3 aEndPosition;',
         'attribute vec4 aAxisAngle;'
       ],
@@ -176,16 +187,22 @@ function TextAnimation(textGeometry) {
       shaderTransformPosition: [
         //'transformed = mix(transformed, aEndPosition, tProgress);',
 
+        'transformed -= aCentroid;',
+        'transformed.x *= 1.0 + tProgress * 2.0;',
+        //'transformed.y *= 1.0 - tProgress * 0.125;',
+        'transformed += aCentroid;',
+
         'float angle = aAxisAngle.w * tProgress;',
         'vec4 tQuat = quatFromAxisAngle(aAxisAngle.xyz, angle);',
         'transformed = rotateVector(tQuat, transformed);',
+
       ]
     },
     {
       diffuse: 0x444444,
       specular: 0xcccccc,
-      shininess: 4
-      //emissive:0xffffff
+      shininess: 4,
+      emissive:0x444444
     }
   );
 
