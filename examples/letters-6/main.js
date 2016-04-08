@@ -28,9 +28,9 @@ function init() {
       repeatDelay:0.5,
       yoyo:true
     });
-    tl.fromTo(textAnimation, 2,
+    tl.fromTo(textAnimation, 8,
       {animationProgress:0.0},
-      {animationProgress:0.5, ease:Power1.easeInOut},
+      {animationProgress:1.0, ease:Power0.easeInOut},
       0
     );
   });
@@ -41,7 +41,7 @@ function init() {
 }
 
 function createTextAnimation(font) {
-  var text = 'PARTY TIME';
+  var text = 'PARTY';
   var params = {
     size:40,
     height:12,
@@ -87,13 +87,14 @@ function generateSplitTextGeometry(text, params) {
     matrix.identity().makeTranslation(offset, 0, 0);
     charGeometry.applyMatrix(matrix);
 
+    data.info[i].glyphOffset = offset;
     offset += glyph.ha * scale;
 
     // store face index offsets
     THREE.BAS.Utils.separateFaces(charGeometry);
 
-    data.info[i].length = charGeometry.faces.length;
-    data.info[i].offset = faceOffset;
+    data.info[i].faceCount = charGeometry.faces.length;
+    data.info[i].faceOffset = faceOffset;
 
     faceOffset += charGeometry.faces.length;
 
@@ -136,7 +137,7 @@ function generateSplitTextGeometry(text, params) {
 function TextAnimation(data) {
   var textGeometry = data.geometry;
 
-  var bufferGeometry = new THREE.BAS.ModelBufferGeometry(textGeometry);
+  var bufferGeometry = new TextBufferAnimation(textGeometry);
 
   var aAnimation = bufferGeometry.createAttribute('aAnimation', 2);
   var aStartPosition = bufferGeometry.createAttribute('aStartPosition', 3);
@@ -146,22 +147,27 @@ function TextAnimation(data) {
   var minDuration = 1.0;
   var maxDuration = 1.0;
 
-  this.animationDuration = maxDuration;
+  this.animationDuration = 5;
   this._animationProgress = 0;
 
   var axis = new THREE.Vector3();
   var angle;
 
-  var size = new THREE.Vector3();
-  var center = new THREE.Vector3();
+  var glyphSize = new THREE.Vector3();
+  var glyphCenter = new THREE.Vector3();
 
   for (var f = 0; f < data.info.length; f++) {
-    bufferChar(data.info[f]);
+    bufferChar(data.info[f], f);
   }
 
-  function bufferChar(info) {
-    var s = info.offset;
-    var l = info.offset + info.length;
+  function bufferChar(info, index) {
+    var s = info.faceOffset;
+    var l = info.faceOffset + info.faceCount;
+    var box = info.boundingBox;
+    var glyphOffset = info.glyphOffset;
+
+    box.size(glyphSize);
+    box.center(glyphCenter);
 
     var i, i2, i3, i4, v;
 
@@ -171,7 +177,7 @@ function TextAnimation(data) {
       var centroid = THREE.BAS.Utils.computeCentroid(textGeometry, face);
 
       // animation
-      var delay = 0;
+      var delay = index;
       var duration = THREE.Math.randFloat(minDuration, maxDuration);
 
       for (v = 0; v < 6; v += 2) {
@@ -187,16 +193,26 @@ function TextAnimation(data) {
       }
 
       // end position
+
+      var dx = centroid.x > glyphOffset + glyphCenter.x ? 1 : -1;
+      var x = dx * THREE.Math.randFloat(16, 24);
+
+      var dy = 1;
+      var y = dy * THREE.Math.randFloat(0, 32);
+
+      var dz = centroid.z > 0 ? 1 : -1;
+      var z = dz * THREE.Math.randFloat(16, 24);
+
       for (v = 0; v < 9; v += 3) {
-        aEndPosition.array[i3 + v    ] = centroid.x * 4;
-        aEndPosition.array[i3 + v + 1] = centroid.y * 4;
-        aEndPosition.array[i3 + v + 2] = centroid.z * 4;
+        aEndPosition.array[i3 + v    ] = centroid.x + x;
+        aEndPosition.array[i3 + v + 1] = centroid.y + y;
+        aEndPosition.array[i3 + v + 2] = centroid.z + z;
       }
 
       // axis angle
-      axis.x = 1;
-      axis.y = 0;
-      axis.z = 0;
+      axis.x = THREE.Math.randFloatSpread(2);
+      axis.y = THREE.Math.randFloatSpread(2);
+      axis.z = THREE.Math.randFloatSpread(2);
       axis.normalize();
       angle = Math.PI * THREE.Math.randFloat(1.0, 2.0);
 
@@ -234,22 +250,20 @@ function TextAnimation(data) {
         'float tDelay = aAnimation.x;',
         'float tDuration = aAnimation.y;',
         'float tTime = clamp(uTime - tDelay, 0.0, tDuration);',
-        'float tProgress = ease(tTime, 0.0, 1.0, tDuration);'
-        // 'float tProgress = tTime / tDuration;'
+        //'float tProgress = ease(tTime, 0.0, 1.0, tDuration);'
+         'float tProgress = tTime / tDuration;'
       ],
       shaderTransformPosition: [
-        'vec3 tPosition = transformed - aStartPosition;',
+        // scale
+        'transformed *= 1.0 - tProgress;',
 
         // rotate
-        //'float angle = aAxisAngle.w * tProgress;',
-        //'vec4 tQuat = quatFromAxisAngle(aAxisAngle.xyz, angle);',
-        //'tPosition = rotateVector(tQuat, tPosition);',
+        'float angle = aAxisAngle.w * tProgress;',
+        'vec4 tQuat = quatFromAxisAngle(aAxisAngle.xyz, angle);',
+        'transformed = rotateVector(tQuat, transformed);',
 
-         //translate
-        'tPosition += mix(aStartPosition, aEndPosition, tProgress);',
-
-        //'tPosition += aStartPosition;',
-        'transformed = tPosition;'
+        // translate
+        'transformed += mix(aStartPosition, aEndPosition, tProgress);'
       ]
     },
     {
@@ -276,6 +290,39 @@ Object.defineProperty(TextAnimation.prototype, 'animationProgress', {
     this.material.uniforms['uTime'].value = this.animationDuration * v;
   }
 });
+
+function TextBufferAnimation(model) {
+  THREE.BAS.ModelBufferGeometry.call(this, model);
+}
+TextBufferAnimation.prototype = Object.create(THREE.BAS.ModelBufferGeometry.prototype);
+TextBufferAnimation.prototype.constructor = TextBufferAnimation;
+TextBufferAnimation.prototype.bufferPositions = function() {
+  var positionBuffer = this.createAttribute('position', 3).array;
+
+  for (var i = 0; i < this.faceCount; i++) {
+    var face = this.modelGeometry.faces[i];
+    var centroid = THREE.BAS.Utils.computeCentroid(this.modelGeometry, face);
+
+    var a = this.modelGeometry.vertices[face.a];
+    var b = this.modelGeometry.vertices[face.b];
+    var c = this.modelGeometry.vertices[face.c];
+
+    positionBuffer[face.a * 3    ] = a.x - centroid.x;
+    positionBuffer[face.a * 3 + 1] = a.y - centroid.y;
+    positionBuffer[face.a * 3 + 2] = a.z - centroid.z;
+
+    positionBuffer[face.b * 3    ] = b.x - centroid.x;
+    positionBuffer[face.b * 3 + 1] = b.y - centroid.y;
+    positionBuffer[face.b * 3 + 2] = b.z - centroid.z;
+
+    positionBuffer[face.c * 3    ] = c.x - centroid.x;
+    positionBuffer[face.c * 3 + 1] = c.y - centroid.y;
+    positionBuffer[face.c * 3 + 2] = c.z - centroid.z;
+  }
+};
+
+
+
 
 function THREERoot(params) {
   params = utils.extend({
