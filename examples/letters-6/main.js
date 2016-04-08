@@ -11,148 +11,201 @@ function init() {
   root.renderer.setPixelRatio(window.devicePixelRatio || 1);
   root.camera.position.set(0, 0, 600);
 
-
   root.scene.add(new THREE.AxisHelper(100));
 
-  var textAnimation = createTextAnimation();
-  root.scene.add(textAnimation);
+  var fl = new THREE.FontLoader();
+  fl.load('droid_sans_bold.typeface.js', function(font) {
 
-  var light = new THREE.DirectionalLight();
-  light.position.set(0, 0, 1);
-  root.scene.add(light);
+    var textAnimation = createTextAnimation(font);
+    root.scene.add(textAnimation);
 
-  var tl = new TimelineMax({
-    repeat:-1,
-    repeatDelay:0.5,
-    yoyo:true
+    var light = new THREE.DirectionalLight();
+    light.position.set(0, 0, 1);
+    root.scene.add(light);
+
+    var tl = new TimelineMax({
+      repeat:-1,
+      repeatDelay:0.5,
+      yoyo:true
+    });
+    tl.fromTo(textAnimation, 2,
+      {animationProgress:0.0},
+      {animationProgress:0.5, ease:Power1.easeInOut},
+      0
+    );
   });
-  tl.fromTo(textAnimation, 4,
-    {animationProgress:0.0},
-    {animationProgress:1.0, ease:Power1.easeInOut},
-    0
-  );
+
   //tl.fromTo(textAnimation.rotation, 4, {y:0}, {y:Math.PI * 2, ease:Power1.easeInOut}, 0);
 
   //createTweenScrubber(tl);
 }
 
-function createTextAnimation() {
-  var geometry = generateTextGeometry('WORDS', {
+function createTextAnimation(font) {
+  var text = 'PARTY TIME';
+  var params = {
     size:40,
     height:12,
-    font:'droid sans',
-    weight:'bold',
-    style:'normal',
-    curveSegments:24,
+    font:font,
+    curveSegments:12,
+    bevelEnabled:false,
     bevelSize:2,
     bevelThickness:2,
-    bevelEnabled:true,
     anchor:{x:0.5, y:0.5, z:0.5}
-  });
+  };
 
-  //THREE.BAS.Utils.tessellateRepeat(geometry, 1.0, 3);
-  //THREE.BAS.Utils.separateFaces(geometry);
+  var textGeometryData = generateSplitTextGeometry(text, params);
 
-  return new TextAnimation(geometry);
+  console.log(textGeometryData);
+
+  return new TextAnimation(textGeometryData);
 }
 
-function generateTextGeometry(text, params) {
-  var geometry = new THREE.TextGeometry(text, params);
+function generateSplitTextGeometry(text, params) {
+  var matrix = new THREE.Matrix4();
 
-  geometry.computeBoundingBox();
+  var scale = params.size / params.font.data.resolution;
+  var offset = 0;
 
-  var size = geometry.boundingBox.size();
-  var anchorX = size.x * -params.anchor.x;
-  var anchorY = size.y * -params.anchor.y;
-  var anchorZ = size.z * -params.anchor.z;
-  var matrix = new THREE.Matrix4().makeTranslation(anchorX, anchorY, anchorZ);
+  var data = {
+    geometry:new THREE.Geometry(),
+    info:[]
+  };
+  var faceOffset = 0;
 
-  geometry.applyMatrix(matrix);
+  for (var i = 0; i < text.length; i++) {
+    var char = text[i];
+    var glyph = params.font.data.glyphs[char];
+    var charGeometry = new THREE.TextGeometry(char, params);
 
-  return geometry;
+    data.info[i] = {};
+
+    // compute and store char bounding box
+    charGeometry.computeBoundingBox();
+    data.info[i].boundingBox = charGeometry.boundingBox.clone();
+
+    // translate char based on font data
+    matrix.identity().makeTranslation(offset, 0, 0);
+    charGeometry.applyMatrix(matrix);
+
+    offset += glyph.ha * scale;
+
+    // store face index offsets
+    THREE.BAS.Utils.separateFaces(charGeometry);
+
+    data.info[i].length = charGeometry.faces.length;
+    data.info[i].offset = faceOffset;
+
+    faceOffset += charGeometry.faces.length;
+
+    // merge char geometry into text geometry
+    data.geometry.merge(charGeometry);
+  }
+
+  //data.geometry.computeBoundingBox();
+  //var size = data.geometry.boundingBox.size();
+  //var anchorX = size.x * -params.anchor.x;
+  //var anchorY = size.y * -params.anchor.y;
+  //var anchorZ = size.z * -params.anchor.z;
+  //
+  //matrix.identity().makeTranslation(anchorX, anchorY, anchorZ);
+  //data.geometry.applyMatrix(matrix);
+
+  return data;
 }
+
+//function generateTextGeometry(text, params) {
+//  var geometry = new THREE.TextGeometry(text, params);
+//
+//  geometry.computeBoundingBox();
+//
+//  var size = geometry.boundingBox.size();
+//  var anchorX = size.x * -params.anchor.x;
+//  var anchorY = size.y * -params.anchor.y;
+//  var anchorZ = size.z * -params.anchor.z;
+//  var matrix = new THREE.Matrix4().makeTranslation(anchorX, anchorY, anchorZ);
+//
+//  geometry.applyMatrix(matrix);
+//
+//  return geometry;
+//}
 
 ////////////////////
 // CLASSES
 ////////////////////
 
-function TextAnimation(textGeometry) {
+function TextAnimation(data) {
+  var textGeometry = data.geometry;
+
   var bufferGeometry = new THREE.BAS.ModelBufferGeometry(textGeometry);
 
   var aAnimation = bufferGeometry.createAttribute('aAnimation', 2);
-  var aCentroid = bufferGeometry.createAttribute('aCentroid', 3);
+  var aStartPosition = bufferGeometry.createAttribute('aStartPosition', 3);
   var aEndPosition = bufferGeometry.createAttribute('aEndPosition', 3);
   var aAxisAngle = bufferGeometry.createAttribute('aAxisAngle', 4);
 
-  var faceCount = bufferGeometry.faceCount;
-  var i, i2, i3, i4, v;
-
-  var keys = ['a', 'b', 'c'];
-  var vDelay = new THREE.Vector3();
-
-  var maxDelay = 0.0;
   var minDuration = 1.0;
   var maxDuration = 1.0;
-  var stretch = 0.05;
-  var lengthFactor = 0.001;
-  var maxLength = textGeometry.boundingBox.max.length();
 
-  this.animationDuration = maxDuration + maxDelay + stretch + lengthFactor * maxLength;
+  this.animationDuration = maxDuration;
   this._animationProgress = 0;
 
   var axis = new THREE.Vector3();
   var angle;
 
-  for (i = 0, i2 = 0, i3 = 0, i4 = 0; i < faceCount; i++, i2 += 6, i3 += 9, i4 += 12) {
-    var face = textGeometry.faces[i];
-    var centroid = THREE.BAS.Utils.computeCentroid(textGeometry, face);
-    var centroidN = new THREE.Vector3().copy(centroid).normalize();
+  var size = new THREE.Vector3();
+  var center = new THREE.Vector3();
 
-    // animation
-    var delay = centroid.length() * lengthFactor;
-    //var delay = i * 0.01;
-    var duration = THREE.Math.randFloat(minDuration, maxDuration);
+  for (var f = 0; f < data.info.length; f++) {
+    bufferChar(data.info[f]);
+  }
 
-    for (v = 0; v < 6; v += 2) {
-      var vertex = textGeometry.vertices[face[keys[v % 2]]];
-      var vertexDelay = vDelay.subVectors(centroid, vertex).length() * 0.005;
+  function bufferChar(info) {
+    var s = info.offset;
+    var l = info.offset + info.length;
 
-      aAnimation.array[i2 + v    ] = delay + vertexDelay;
-      aAnimation.array[i2 + v + 1] = duration;
-    }
+    var i, i2, i3, i4, v;
 
-    for (v = 0; v < 9; v+= 3) {
-      aCentroid.array[i3 + v    ] = centroid.x;
-      aCentroid.array[i3 + v + 1] = centroid.y;
-      aCentroid.array[i3 + v + 2] = centroid.z;
-    }
+    for (i = s, i2 = s * 6, i3 = s * 9, i4 = s * 12; i < l; i++, i2 += 6, i3 += 9, i4 += 12) {
 
-    // end position
-    var point = utils.fibSpherePoint(i, faceCount, 200);
+      var face = textGeometry.faces[i];
+      var centroid = THREE.BAS.Utils.computeCentroid(textGeometry, face);
 
-    for (v = 0; v < 9; v += 3) {
-      aEndPosition.array[i3 + v    ] = point.x;
-      aEndPosition.array[i3 + v + 1] = point.y;
-      aEndPosition.array[i3 + v + 2] = point.z;
-    }
+      // animation
+      var delay = 0;
+      var duration = THREE.Math.randFloat(minDuration, maxDuration);
 
-    // axis angle
-    //axis.x = centroidN.x;
-    //axis.y = -centroidN.y;
-    //axis.z = -centroidN.z;
-    axis.x = 1;
-    axis.y = 0;
-    axis.z = 0;
+      for (v = 0; v < 6; v += 2) {
+        aAnimation.array[i2 + v    ] = delay;
+        aAnimation.array[i2 + v + 1] = duration;
+      }
 
-    axis.normalize();
+      // start position (centroid)
+      for (v = 0; v < 9; v+= 3) {
+        aStartPosition.array[i3 + v    ] = centroid.x;
+        aStartPosition.array[i3 + v + 1] = centroid.y;
+        aStartPosition.array[i3 + v + 2] = centroid.z;
+      }
 
-    angle = Math.PI * THREE.Math.randFloat(1.0, 2.0);
+      // end position
+      for (v = 0; v < 9; v += 3) {
+        aEndPosition.array[i3 + v    ] = centroid.x * 4;
+        aEndPosition.array[i3 + v + 1] = centroid.y * 4;
+        aEndPosition.array[i3 + v + 2] = centroid.z * 4;
+      }
 
-    for (v = 0; v < 12; v += 4) {
-      aAxisAngle.array[i4 + v    ] = axis.x;
-      aAxisAngle.array[i4 + v + 1] = axis.y;
-      aAxisAngle.array[i4 + v + 2] = axis.z;
-      aAxisAngle.array[i4 + v + 3] = angle;
+      // axis angle
+      axis.x = 1;
+      axis.y = 0;
+      axis.z = 0;
+      axis.normalize();
+      angle = Math.PI * THREE.Math.randFloat(1.0, 2.0);
+
+      for (v = 0; v < 12; v += 4) {
+        aAxisAngle.array[i4 + v    ] = axis.x;
+        aAxisAngle.array[i4 + v + 1] = axis.y;
+        aAxisAngle.array[i4 + v + 2] = axis.z;
+        aAxisAngle.array[i4 + v + 3] = angle;
+      }
     }
   }
 
@@ -173,7 +226,7 @@ function TextAnimation(textGeometry) {
         'uniform vec3 uAxis;',
         'uniform float uAngle;',
         'attribute vec2 aAnimation;',
-        'attribute vec3 aCentroid;',
+        'attribute vec3 aStartPosition;',
         'attribute vec3 aEndPosition;',
         'attribute vec4 aAxisAngle;'
       ],
@@ -185,17 +238,18 @@ function TextAnimation(textGeometry) {
         // 'float tProgress = tTime / tDuration;'
       ],
       shaderTransformPosition: [
-        //'transformed = mix(transformed, aEndPosition, tProgress);',
+        'vec3 tPosition = transformed - aStartPosition;',
 
-        'transformed -= aCentroid;',
-        'transformed.x *= 1.0 + tProgress * 2.0;',
-        //'transformed.y *= 1.0 - tProgress * 0.125;',
-        'transformed += aCentroid;',
+        // rotate
+        //'float angle = aAxisAngle.w * tProgress;',
+        //'vec4 tQuat = quatFromAxisAngle(aAxisAngle.xyz, angle);',
+        //'tPosition = rotateVector(tQuat, tPosition);',
 
-        'float angle = aAxisAngle.w * tProgress;',
-        'vec4 tQuat = quatFromAxisAngle(aAxisAngle.xyz, angle);',
-        'transformed = rotateVector(tQuat, transformed);',
+         //translate
+        'tPosition += mix(aStartPosition, aEndPosition, tProgress);',
 
+        //'tPosition += aStartPosition;',
+        'transformed = tPosition;'
       ]
     },
     {
