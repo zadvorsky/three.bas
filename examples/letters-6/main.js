@@ -91,6 +91,7 @@ function generateSplitTextGeometry(text, params) {
     offset += glyph.ha * scale;
 
     // store face index offsets
+    THREE.BAS.Utils.tessellate(charGeometry, 1.0);
     THREE.BAS.Utils.separateFaces(charGeometry);
 
     data.info[i].faceCount = charGeometry.faces.length;
@@ -155,6 +156,8 @@ function TextAnimation(data) {
 
   var glyphSize = new THREE.Vector3();
   var glyphCenter = new THREE.Vector3();
+  var centroidLocal = new THREE.Vector3();
+  var delta = new THREE.Vector3();
 
   for (var f = 0; f < data.info.length; f++) {
     bufferChar(data.info[f], f);
@@ -193,15 +196,13 @@ function TextAnimation(data) {
       }
 
       // end position
+      centroidLocal.copy(centroid);
+      centroidLocal.x -= glyphOffset;
+      delta.subVectors(centroidLocal, glyphCenter);
 
-      var dx = centroid.x > glyphOffset + glyphCenter.x ? 1 : -1;
-      var x = dx * THREE.Math.randFloat(16, 24);
-
-      var dy = 1;
-      var y = dy * THREE.Math.randFloat(0, 32);
-
-      var dz = centroid.z > 0 ? 1 : -1;
-      var z = dz * THREE.Math.randFloat(16, 24);
+      var x = delta.x * THREE.Math.randFloat(1.0, 4.0);
+      var y = delta.y * THREE.Math.randFloat(1.0, 4.0);
+      var z = delta.z * THREE.Math.randFloat(1.0, 4.0);
 
       for (v = 0; v < 9; v += 3) {
         aEndPosition.array[i3 + v    ] = centroid.x + x;
