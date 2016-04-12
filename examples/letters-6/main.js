@@ -23,8 +23,8 @@ function init() {
     var textAnimation = new TextAnimation(textAnimationData);
     root.scene.add(textAnimation);
 
-    var expl = new ExplosionSystem(textAnimationData);
-    root.scene.add(expl);
+    var explosionAnimation = new ExplosionSystem(textAnimationData);
+    root.scene.add(explosionAnimation);
 
     var light = new THREE.DirectionalLight();
     light.position.set(0, 0, 1);
@@ -35,17 +35,17 @@ function init() {
       repeatDelay:0.5,
       yoyo:true
     });
-    tl.fromTo(textAnimation, 8,
+    tl.fromTo(textAnimation, 5,
       {animationProgress:0.0},
       {animationProgress:1.0, ease:Power0.easeInOut},
       0
     );
-    // tl.add(expl.animation, 0);
-
-
+    tl.fromTo(explosionAnimation, 5,
+      {animationProgress:0.0},
+      {animationProgress:1.0, ease:Power0.easeInOut},
+      0
+    );
   });
-
-  //tl.fromTo(textAnimation.rotation, 4, {y:0}, {y:Math.PI * 2, ease:Power1.easeInOut}, 0);
 
   //createTweenScrubber(tl);
 }
@@ -53,12 +53,12 @@ function init() {
 function createTextAnimation(font) {
   var text = 'PARTY';
   var params = {
-    size:40,
-    height:12,
+    size:36,
+    height:4,
     font:font,
     curveSegments:12,
-    bevelEnabled:false,
-    bevelSize:2,
+    bevelEnabled:true,
+    bevelSize:1,
     bevelThickness:2,
     anchor:{x:0.5, y:0.5, z:0.5}
   };
@@ -135,10 +135,10 @@ function TextAnimation(data) {
   var aEndPosition = bufferGeometry.createAttribute('aEndPosition', 3);
   var aAxisAngle = bufferGeometry.createAttribute('aAxisAngle', 4);
 
-  var minDuration = 1.0;
+  var minDuration = 0.1;
   var maxDuration = 1.0;
 
-  this.animationDuration = 5;
+  this.animationDuration = maxDuration + data.info.length;
   this._animationProgress = 0;
 
   var axis = new THREE.Vector3();
@@ -314,11 +314,13 @@ TextBufferAnimation.prototype.bufferPositions = function() {
 
 
 function ExplosionSystem(data) {
-  var prefabCount = 500;
-  var prefabSize = 0.05;
+  var letterCount = data.info.length;
+  var prefabsPerLetter = 500;
+  var prefabCount = prefabsPerLetter * letterCount;
+  var prefabSize = 2.0;
 
   // var prefabGeometry = new THREE.TetrahedronGeometry(prefabSize);
-  var prefabGeometry = new THREE.PlaneGeometry(prefabSize, prefabSize, 1, 2);
+  var prefabGeometry = new THREE.PlaneGeometry(prefabSize, prefabSize, 1, 4);
 
   var geometry = new ExplosionGeometry(prefabGeometry, prefabCount);
 
@@ -330,98 +332,109 @@ function ExplosionSystem(data) {
   var aEndPosition = geometry.createAttribute('aEndPosition', 3);
   var aAxisAngle = geometry.createAttribute('aAxisAngle', 4);
 
-  var i, j, offset;
-
-  var delay;
-  var duration;
-  var minDuration = 0.25;
+  var duration, delay;
+  var minDuration = 0.1;
   var maxDuration = 1.0;
-  var prefabDelay = 0.0;
   var vertexDelay = 0.025;
 
-  for (i = 0, offset = 0; i < prefabCount; i++) {
-    delay = prefabDelay * i;
-    duration = THREE.Math.randFloat(minDuration, maxDuration);
+  this.animationDuration = (maxDuration + vertexDelay * prefabGeometry.vertices.length) * letterCount;
+  this._animationProgress = 0;
 
-    for (j = 0; j < prefabGeometry.vertices.length; j++) {
+  var glyphSize = new THREE.Vector3();
+  var glyphCenter = new THREE.Vector3();
 
-      aDelayDuration.array[offset++] = delay + vertexDelay * j;
-      aDelayDuration.array[offset++] = duration;
+  for (var q = 0; q < letterCount; q++) {
+    var letterOffset = prefabsPerLetter * q;
+    var letterBox = data.info[q].boundingBox;
+    letterBox.size(glyphSize);
+    letterBox.center(glyphCenter);
+    glyphCenter.x += data.info[q].glyphOffset;
+
+    var i, j, offset;
+
+    for (i = 0, offset = letterOffset * prefabGeometry.vertices.length * 2; i < prefabCount; i++) {
+      delay = q;
+      duration = THREE.Math.randFloat(minDuration, maxDuration);
+
+      for (j = 0; j < prefabGeometry.vertices.length; j++) {
+
+        aDelayDuration.array[offset++] = delay + vertexDelay * j * duration;
+        aDelayDuration.array[offset++] = duration;
+      }
     }
-  }
 
-  this.totalDuration = maxDuration + prefabDelay * prefabCount + vertexDelay * prefabGeometry.vertices.length;
+    var colorObj = new THREE.Color();
+    colorObj.setHSL(Math.random(), 1.0, 0.5);
 
-  var colorObj = new THREE.Color();
-  colorObj.setHSL(Math.random(), 1.0, 0.5);
+    var colorHSL = colorObj.getHSL();
+    var h, s, l;
 
-  var colorHSL = colorObj.getHSL();
-  var h, s, l;
+    for (i = 0, offset = letterOffset * prefabGeometry.vertices.length * 3; i < prefabCount; i++) {
+      h = colorHSL.h;
+      s = THREE.Math.randFloat(0.50, 1.00);
+      l = THREE.Math.randFloat(0.25, 0.75);
+      colorObj.setHSL(h, s, l);
 
-  for (i = 0, offset = 0; i < geometry.prefabCount; i++) {
-    h = colorHSL.h;
-    s = THREE.Math.randFloat(0.50, 1.00);
-    l = THREE.Math.randFloat(0.25, 0.75);
-    colorObj.setHSL(h, s, l);
+      for (j = 0; j < geometry.prefabVertexCount; j++) {
+        aColor.array[offset  ] = colorObj.r;
+        aColor.array[offset+1] = colorObj.g;
+        aColor.array[offset+2] = colorObj.b;
 
-    for (j = 0; j < geometry.prefabVertexCount; j++) {
-      aColor.array[offset  ] = colorObj.r;
-      aColor.array[offset+1] = colorObj.g;
-      aColor.array[offset+2] = colorObj.b;
-
-      offset += 3;
+        offset += 3;
+      }
     }
-  }
 
-  var radiusX = 20;
-  var radiusY = 80;
-  var radiusZ = 20;
+    var u, v, sp, ep, cp0, cp1;
 
-  for (i = 0, offset = 0; i < prefabCount; i++) {
-    var ep = utils.randomSpherePoint();
-    var cp0 = utils.randomSpherePoint();
-    var cp1 = utils.randomSpherePoint();
+    for (i = 0, offset = letterOffset * prefabGeometry.vertices.length * 3; i < prefabCount; i++) {
+      sp = glyphCenter;
 
-    for (j = 0; j < prefabGeometry.vertices.length; j++) {
+      u = Math.random();
+      v = Math.random();
+      ep = utils.spherePoint(u, v);
+      ep.x *= THREE.Math.randFloat(40, 60);
+      ep.y *= THREE.Math.randFloat(80, 120);
+      ep.z *= THREE.Math.randFloat(40, 60);
 
-      aEndPosition.array[offset  ] = ep.x * radiusX;
-      aEndPosition.array[offset+1] = ep.y * radiusY;
-      aEndPosition.array[offset+2] = ep.z * radiusZ;
+      u *= THREE.Math.randFloat(0.8, 1.2);
+      v *= THREE.Math.randFloat(0.8, 1.2);
+      cp0 = utils.spherePoint(u, v);
+      cp0.x *= THREE.Math.randFloat(10, 20);
+      cp0.y *= THREE.Math.randFloat(40, 80);
+      cp0.z *= THREE.Math.randFloat(10, 20);
 
-      aControlPosition0.array[offset  ] = cp0.x * radiusX;
-      aControlPosition0.array[offset+1] = cp0.y * radiusY;
-      aControlPosition0.array[offset+2] = cp0.z * radiusZ;
+      u *= THREE.Math.randFloat(0.8, 1.2);
+      v *= THREE.Math.randFloat(0.8, 1.2);
+      cp1 = utils.spherePoint(u, v);
+      cp1.x *= THREE.Math.randFloat(20, 40);
+      cp1.y *= THREE.Math.randFloat(40, 80);
+      cp1.z *= THREE.Math.randFloat(20, 40);
 
-      aControlPosition1.array[offset  ] = cp1.x * radiusX;
-      aControlPosition1.array[offset+1] = cp1.y * radiusY;
-      aControlPosition1.array[offset+2] = cp1.z * radiusZ;
+      for (j = 0; j < prefabGeometry.vertices.length; j++) {
+        aStartPosition.array[offset  ] = sp.x;
+        aStartPosition.array[offset+1] = sp.y;
+        aStartPosition.array[offset+2] = sp.z;
 
-      offset += 3;
-    }
-  }
+        aEndPosition.array[offset  ] = sp.x + ep.x;
+        aEndPosition.array[offset+1] = sp.y + ep.y;
+        aEndPosition.array[offset+2] = sp.z + ep.z;
 
-  // buffer rotation
-  var axis = new THREE.Vector3();
-  var angle = 0;
+        aControlPosition0.array[offset  ] = sp.x + cp0.x;
+        aControlPosition0.array[offset+1] = sp.y + cp0.y;
+        aControlPosition0.array[offset+2] = sp.z + cp0.z;
 
-  for (i = 0, offset = 0; i < prefabCount; i++) {
-    axis.x = 0;
-    axis.y = 0;
-    axis.z = 1;
-    axis.normalize();
+        aControlPosition1.array[offset  ] = sp.x + cp1.x;
+        aControlPosition1.array[offset+1] = sp.y + cp1.y;
+        aControlPosition1.array[offset+2] = sp.z + cp1.z;
 
-    angle = Math.PI * THREE.Math.randInt(1, 2);
-
-    for (j = 0; j < prefabGeometry.vertices.length; j++) {
-      aAxisAngle.array[offset++] = axis.x;
-      aAxisAngle.array[offset++] = axis.y;
-      aAxisAngle.array[offset++] = axis.z;
-      aAxisAngle.array[offset++] = angle;
+        offset += 3;
+      }
     }
   }
 
   var material = new THREE.BAS.BasicAnimationMaterial({
       vertexColors: THREE.VertexColors,
+      side:THREE.DoubleSide,
       uniforms: {
         uTime: {type: 'f', value: 0},
         uScale: {type: 'f', value: 1.0}
@@ -446,12 +459,8 @@ function ExplosionSystem(data) {
         'float tDuration = aDelayDuration.y;',
         'float tTime = clamp(uTime - tDelay, 0.0, tDuration);',
         'float tProgress = ease(tTime, 0.0, 1.0, tDuration);',
-
-        'float angle = aAxisAngle.w * tProgress;',
-        'vec4 tQuat = quatFromAxisAngle(aAxisAngle.xyz, angle);'
       ],
       shaderTransformPosition: [
-        'transformed = rotateVector(tQuat, transformed);',
         'float scl = tProgress * 2.0 - 1.0;',
         'transformed *= (1.0 - scl * scl);',
         'transformed += cubicBezier(aStartPosition, aControlPosition0, aControlPosition1, aEndPosition, tProgress);'
@@ -462,14 +471,22 @@ function ExplosionSystem(data) {
   THREE.Mesh.call(this, geometry, material);
   this.frustumCulled = false;
 
-  this.animation = TweenMax.fromTo(this.material.uniforms['uTime'], 2.0,
+  this.animation = TweenMax.fromTo(this.material.uniforms['uTime'], 5.0,
     {value:0},
     {value:this.totalDuration, ease:Power0.easeOut, repeat:-1}
   );
 }
 ExplosionSystem.prototype = Object.create(THREE.Mesh.prototype);
 ExplosionSystem.prototype.constructor = ExplosionSystem;
-
+Object.defineProperty(ExplosionSystem.prototype, 'animationProgress', {
+  get: function() {
+    return this._animationProgress;
+  },
+  set: function(v) {
+    this._animationProgress = v;
+    this.material.uniforms['uTime'].value = this.animationDuration * v;
+  }
+});
 function ExplosionGeometry(prefab, count) {
   THREE.BAS.PrefabBufferGeometry.call(this, prefab, count);
 }
@@ -585,14 +602,6 @@ var utils = {
   ease:function(ease, t, b, c, d) {
     return b + ease.getRatio(t / d) * c;
   },
-  // mapEase:function(ease, v, x1, y1, x2, y2) {
-  //   var t = v;
-  //   var b = x2;
-  //   var c = y2 - x2;
-  //   var d = y1 - x1;
-  //
-  //   return utils.ease(ease, t, b, c, d);
-  // },
   fibSpherePoint: (function() {
     var vec = {x:0, y:0, z:0};
     var G = Math.PI * (3 - Math.sqrt(5));
@@ -616,15 +625,15 @@ var utils = {
       return vec;
     }
   })(),
-  randomSpherePoint: (function() {
-    var vec = {x:0, y:0, z:0};
+  spherePoint: (function() {
+    return function(u, v) {
+      u === undefined && (u = Math.random());
+      v === undefined && (v = Math.random());
 
-    return function() {
-      var u = Math.random();
-      var v = Math.random();
       var theta = 2 * Math.PI * u;
       var phi = Math.acos(2 * v - 1);
 
+      var vec = {};
       vec.x = (Math.sin(phi) * Math.cos(theta));
       vec.y = (Math.sin(phi) * Math.sin(theta));
       vec.z = (Math.cos(phi));
