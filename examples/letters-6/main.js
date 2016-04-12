@@ -151,7 +151,7 @@ function TextAnimation(data) {
   var aEndPosition = bufferGeometry.createAttribute('aEndPosition', 3);
   var aAxisAngle = bufferGeometry.createAttribute('aAxisAngle', 4);
 
-  var minDuration = 0.1;
+  var minDuration = 1.0;
   var maxDuration = 2.0;
 
   this.animationDuration = maxDuration + data.info.length * settings.letterTimeOffset;
@@ -330,7 +330,7 @@ TextAnimationGeometry.prototype.bufferPositions = function() {
 
 function ExplosionAnimation(data) {
   var letterCount = data.info.length;
-  var prefabsPerLetter = 1000;
+  var prefabsPerLetter = 750;
   var prefabCount = prefabsPerLetter * letterCount;
   var prefabSize = 2.0;
 
@@ -348,9 +348,9 @@ function ExplosionAnimation(data) {
   var aAxisAngle = geometry.createAttribute('aAxisAngle', 4);
 
   var duration, delay;
-  var minDuration = 0.1;
-  var maxDuration = 0.75;
-  var vertexDelay = 0.0125;
+  var minDuration = 0.4;
+  var maxDuration = 0.5;
+  var vertexDelay = 0.02;
 
   this.animationDuration = (maxDuration + vertexDelay * prefabGeometry.vertices.length) * letterCount * settings.letterTimeOffset;
 
