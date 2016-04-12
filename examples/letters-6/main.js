@@ -1,8 +1,12 @@
 window.onload = init;
 
+var settings = {
+  letterTimeOffset:0.25
+};
+
 function init() {
   var root = new THREERoot({
-    createCameraControls:true,
+    createCameraControls:!true,
     antialias:(window.devicePixelRatio === 1),
     fov:60
   });
@@ -11,20 +15,25 @@ function init() {
   root.renderer.setPixelRatio(window.devicePixelRatio || 1);
   root.camera.position.set(0, 0, 200);
 
-  root.scene.add(new THREE.AxisHelper(100));
-
-  var fl = new THREE.FontLoader();
-  fl.load('droid_sans_bold.typeface.js', function(font) {
+  new THREE.FontLoader().load('droid_sans_bold.typeface.js', function(font) {
 
     var textAnimationData = createTextAnimation(font);
 
     console.log(textAnimationData);
 
+    var group = new THREE.Group();
+    root.scene.add(group);
+
     var textAnimation = new TextAnimation(textAnimationData);
-    root.scene.add(textAnimation);
+    group.add(textAnimation);
 
     var explosionAnimation = new ExplosionSystem(textAnimationData);
-    root.scene.add(explosionAnimation);
+    group.add(explosionAnimation);
+
+    var box = textAnimationData.geometry.boundingBox;
+    group.position.copy(box.size()).multiplyScalar(-0.5);
+
+    console.log('t', textAnimation.animationDuration, 'exp', explosionAnimation.animationDuration);
 
     var light = new THREE.DirectionalLight();
     light.position.set(0, 0, 1);
@@ -32,33 +41,30 @@ function init() {
 
     var tl = new TimelineMax({
       repeat:-1,
-      repeatDelay:0.5,
-      yoyo:true
+      repeatDelay:0.0,
+      yoyo:false
     });
-    tl.fromTo(textAnimation, 5,
-      {animationProgress:0.0},
-      {animationProgress:1.0, ease:Power0.easeInOut},
-      0
-    );
-    tl.fromTo(explosionAnimation, 5,
-      {animationProgress:0.0},
-      {animationProgress:1.0, ease:Power0.easeInOut},
-      0
-    );
-  });
+    tl.to(textAnimation, 6, {time:2.25, ease:Power0.easeIn}, 0);
+    tl.to(explosionAnimation, 6, {time:2.25, ease:Power0.easeIn}, 0);
 
-  //createTweenScrubber(tl);
+    //tl.to(textAnimation, 5, {animationProgress:1.0, ease:Power0.easeIn}, 0);
+    //tl.to(explosionAnimation, 5, {animationProgress:1.0, ease:Power0.easeIn}, 0);
+    //tl.to(textAnimation, 5, {animationProgress:0.0, ease:Power0.easeIn}, 5);
+    //tl.to(explosionAnimation, 5, {animationProgress:0.0, ease:Power0.easeIn}, 5);
+
+    createTweenScrubber(tl);
+  });
 }
 
 function createTextAnimation(font) {
-  var text = 'PARTY';
+  var text = 'BURST';
   var params = {
     size:36,
     height:4,
     font:font,
     curveSegments:12,
     bevelEnabled:true,
-    bevelSize:1,
+    bevelSize:2,
     bevelThickness:2,
     anchor:{x:0.5, y:0.5, z:0.5}
   };
@@ -109,14 +115,7 @@ function generateSplitTextGeometry(text, params) {
     data.geometry.merge(charGeometry);
   }
 
-  //data.geometry.computeBoundingBox();
-  //var size = data.geometry.boundingBox.size();
-  //var anchorX = size.x * -params.anchor.x;
-  //var anchorY = size.y * -params.anchor.y;
-  //var anchorZ = size.z * -params.anchor.z;
-  //
-  //matrix.identity().makeTranslation(anchorX, anchorY, anchorZ);
-  //data.geometry.applyMatrix(matrix);
+  data.geometry.computeBoundingBox();
 
   return data;
 }
@@ -138,8 +137,7 @@ function TextAnimation(data) {
   var minDuration = 0.1;
   var maxDuration = 1.0;
 
-  this.animationDuration = maxDuration + data.info.length;
-  this._animationProgress = 0;
+  this.animationDuration = maxDuration + data.info.length * settings.letterTimeOffset;
 
   var axis = new THREE.Vector3();
   var angle;
@@ -164,13 +162,15 @@ function TextAnimation(data) {
 
     var i, i2, i3, i4, v;
 
+    var delay = index * settings.letterTimeOffset;
+
     for (i = s, i2 = s * 6, i3 = s * 9, i4 = s * 12; i < l; i++, i2 += 6, i3 += 9, i4 += 12) {
 
       var face = textGeometry.faces[i];
       var centroid = THREE.BAS.Utils.computeCentroid(textGeometry, face);
 
       // animation
-      var delay = index;
+
       var duration = THREE.Math.randFloat(minDuration, maxDuration);
 
       for (v = 0; v < 6; v += 2) {
@@ -190,9 +190,9 @@ function TextAnimation(data) {
       centroidLocal.x -= glyphOffset;
       delta.subVectors(centroidLocal, glyphCenter);
 
-      var x = delta.x * THREE.Math.randFloat(1.0, 4.0);
-      var y = delta.y * THREE.Math.randFloat(1.0, 4.0);
-      var z = delta.z * THREE.Math.randFloat(1.0, 4.0);
+      var x = delta.x * THREE.Math.randFloat(4.0, 12.0);
+      var y = delta.y * THREE.Math.randFloat(4.0, 12.0);
+      var z = delta.z * THREE.Math.randFloat(4.0, 12.0);
 
       for (v = 0; v < 9; v += 3) {
         aEndPosition.array[i3 + v    ] = centroid.x + x;
@@ -261,7 +261,7 @@ function TextAnimation(data) {
       diffuse: 0x444444,
       specular: 0xcccccc,
       shininess: 4,
-      emissive:0x444444
+      emissive: 0x444444
     }
   );
 
@@ -271,14 +271,12 @@ function TextAnimation(data) {
 }
 TextAnimation.prototype = Object.create(THREE.Mesh.prototype);
 TextAnimation.prototype.constructor = TextAnimation;
-
-Object.defineProperty(TextAnimation.prototype, 'animationProgress', {
+Object.defineProperty(TextAnimation.prototype, 'time', {
   get: function() {
-    return this._animationProgress;
+    return this.material.uniforms['uTime'].value;
   },
   set: function(v) {
-    this._animationProgress = v;
-    this.material.uniforms['uTime'].value = this.animationDuration * v;
+    this.material.uniforms['uTime'].value = v;
   }
 });
 
@@ -335,25 +333,25 @@ function ExplosionSystem(data) {
   var duration, delay;
   var minDuration = 0.1;
   var maxDuration = 1.0;
-  var vertexDelay = 0.025;
+  var vertexDelay = 0.0125;
 
-  this.animationDuration = (maxDuration + vertexDelay * prefabGeometry.vertices.length) * letterCount;
-  this._animationProgress = 0;
+  this.animationDuration = (maxDuration + vertexDelay * prefabGeometry.vertices.length) * letterCount * settings.letterTimeOffset;
 
   var glyphSize = new THREE.Vector3();
   var glyphCenter = new THREE.Vector3();
 
-  for (var q = 0; q < letterCount; q++) {
-    var letterOffset = prefabsPerLetter * q;
-    var letterBox = data.info[q].boundingBox;
+  for (var index = 0; index < letterCount; index++) {
+    var letterOffset = prefabsPerLetter * index;
+    var letterBox = data.info[index].boundingBox;
     letterBox.size(glyphSize);
     letterBox.center(glyphCenter);
-    glyphCenter.x += data.info[q].glyphOffset;
+    glyphCenter.x += data.info[index].glyphOffset;
 
     var i, j, offset;
 
+    delay = index * settings.letterTimeOffset;
+
     for (i = 0, offset = letterOffset * prefabGeometry.vertices.length * 2; i < prefabCount; i++) {
-      delay = q;
       duration = THREE.Math.randFloat(minDuration, maxDuration);
 
       for (j = 0; j < prefabGeometry.vertices.length; j++) {
@@ -393,21 +391,21 @@ function ExplosionSystem(data) {
       v = Math.random();
       ep = utils.spherePoint(u, v);
       ep.x *= THREE.Math.randFloat(40, 60);
-      ep.y *= THREE.Math.randFloat(80, 120);
+      ep.y *= THREE.Math.randFloat(60, 80);
       ep.z *= THREE.Math.randFloat(40, 60);
 
       u *= THREE.Math.randFloat(0.8, 1.2);
       v *= THREE.Math.randFloat(0.8, 1.2);
       cp0 = utils.spherePoint(u, v);
       cp0.x *= THREE.Math.randFloat(10, 20);
-      cp0.y *= THREE.Math.randFloat(40, 80);
+      cp0.y *= THREE.Math.randFloat(20, 40);
       cp0.z *= THREE.Math.randFloat(10, 20);
 
       u *= THREE.Math.randFloat(0.8, 1.2);
       v *= THREE.Math.randFloat(0.8, 1.2);
       cp1 = utils.spherePoint(u, v);
       cp1.x *= THREE.Math.randFloat(20, 40);
-      cp1.y *= THREE.Math.randFloat(40, 80);
+      cp1.y *= THREE.Math.randFloat(40, 60);
       cp1.z *= THREE.Math.randFloat(20, 40);
 
       for (j = 0; j < prefabGeometry.vertices.length; j++) {
@@ -458,7 +456,8 @@ function ExplosionSystem(data) {
         'float tDelay = aDelayDuration.x;',
         'float tDuration = aDelayDuration.y;',
         'float tTime = clamp(uTime - tDelay, 0.0, tDuration);',
-        'float tProgress = ease(tTime, 0.0, 1.0, tDuration);',
+        //'float tProgress = ease(tTime, 0.0, 1.0, tDuration);',
+        'float tProgress = tTime / tDuration;'
       ],
       shaderTransformPosition: [
         'float scl = tProgress * 2.0 - 1.0;',
@@ -470,23 +469,18 @@ function ExplosionSystem(data) {
 
   THREE.Mesh.call(this, geometry, material);
   this.frustumCulled = false;
-
-  this.animation = TweenMax.fromTo(this.material.uniforms['uTime'], 5.0,
-    {value:0},
-    {value:this.totalDuration, ease:Power0.easeOut, repeat:-1}
-  );
 }
 ExplosionSystem.prototype = Object.create(THREE.Mesh.prototype);
 ExplosionSystem.prototype.constructor = ExplosionSystem;
-Object.defineProperty(ExplosionSystem.prototype, 'animationProgress', {
+Object.defineProperty(ExplosionSystem.prototype, 'time', {
   get: function() {
-    return this._animationProgress;
+    return this.material.uniforms['uTime'].value;
   },
   set: function(v) {
-    this._animationProgress = v;
-    this.material.uniforms['uTime'].value = this.animationDuration * v;
+    this.material.uniforms['uTime'].value = v;
   }
 });
+
 function ExplosionGeometry(prefab, count) {
   THREE.BAS.PrefabBufferGeometry.call(this, prefab, count);
 }
@@ -515,17 +509,6 @@ ExplosionGeometry.prototype.bufferPositions = function() {
     }
   }
 };
-
-
-
-
-
-
-
-
-
-
-
 
 
 function THREERoot(params) {
