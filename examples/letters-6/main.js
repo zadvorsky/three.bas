@@ -1,14 +1,14 @@
 window.onload = init;
 
 var settings = {
-  letterTimeOffset:0.25
+  letterTimeOffset:0.075
 };
 
 function init() {
   var root = new THREERoot({
     createCameraControls:!true,
     antialias:(window.devicePixelRatio === 1),
-    fov:60
+    fov:80
   });
 
   root.renderer.setClearColor(0x000000);
@@ -35,37 +35,54 @@ function init() {
 
     console.log('t', textAnimation.animationDuration, 'exp', explosionAnimation.animationDuration);
 
-    var light = new THREE.DirectionalLight();
+    var light = new THREE.DirectionalLight(0xffffff, 1.0);
     light.position.set(0, 0, 1);
     root.scene.add(light);
 
+    var lightTl = new TimelineMax();
+
+    var maxTime = Math.max(textAnimation.animationDuration, explosionAnimation.animationDuration);
+    var duration = 6.0;
+
+    for (var i = 0; i < textAnimationData.info.length; i++) {
+      var color = textAnimationData.info[i].color;
+      var pos = textAnimationData.info[i].boundingBox.center();
+
+      pos.x += textAnimationData.info[i].glyphOffset;
+
+      light = new THREE.PointLight(color, 2.0, 120, 2);
+      light.position.copy(pos);
+
+      group.add(light);
+
+      lightTl.fromTo(light, 0.25,
+        {intensity:0}, {intensity:4.0, repeat:1, yoyo:true},
+        (i * settings.letterTimeOffset) * (duration / maxTime));
+    }
+
     var tl = new TimelineMax({
       repeat:-1,
-      repeatDelay:0.0,
-      yoyo:false
+      repeatDelay:0.5,
+      yoyo:true
     });
-    tl.to(textAnimation, 6, {time:2.25, ease:Power0.easeIn}, 0);
-    tl.to(explosionAnimation, 6, {time:2.25, ease:Power0.easeIn}, 0);
-
-    //tl.to(textAnimation, 5, {animationProgress:1.0, ease:Power0.easeIn}, 0);
-    //tl.to(explosionAnimation, 5, {animationProgress:1.0, ease:Power0.easeIn}, 0);
-    //tl.to(textAnimation, 5, {animationProgress:0.0, ease:Power0.easeIn}, 5);
-    //tl.to(explosionAnimation, 5, {animationProgress:0.0, ease:Power0.easeIn}, 5);
+    tl.to(textAnimation, duration, {time:maxTime, ease:Power0.easeIn}, 0);
+    tl.to(explosionAnimation, duration, {time:maxTime, ease:Power0.easeIn}, 0);
+    tl.add(lightTl, 0);
 
     createTweenScrubber(tl);
   });
 }
 
 function createTextAnimation(font) {
-  var text = 'BURST';
+  var text = 'BURSTING BUBBLES';
   var params = {
     size:36,
-    height:4,
+    height:8,
     font:font,
     curveSegments:12,
     bevelEnabled:true,
-    bevelSize:2,
-    bevelThickness:2,
+    bevelSize:1,
+    bevelThickness:1,
     anchor:{x:0.5, y:0.5, z:0.5}
   };
 
@@ -111,6 +128,10 @@ function generateSplitTextGeometry(text, params) {
 
     faceOffset += charGeometry.faces.length;
 
+    // colors!
+    data.info[i].color = new THREE.Color();
+    data.info[i].color.setHSL(i / text.length - 1, 1.0, 0.5);
+
     // merge char geometry into text geometry
     data.geometry.merge(charGeometry);
   }
@@ -135,7 +156,7 @@ function TextAnimation(data) {
   var aAxisAngle = bufferGeometry.createAttribute('aAxisAngle', 4);
 
   var minDuration = 0.1;
-  var maxDuration = 1.0;
+  var maxDuration = 2.0;
 
   this.animationDuration = maxDuration + data.info.length * settings.letterTimeOffset;
 
@@ -205,7 +226,7 @@ function TextAnimation(data) {
       axis.y = THREE.Math.randFloatSpread(2);
       axis.z = THREE.Math.randFloatSpread(2);
       axis.normalize();
-      angle = Math.PI * THREE.Math.randFloat(1.0, 2.0);
+      angle = Math.PI * THREE.Math.randFloat(4.0, 8.0);
 
       for (v = 0; v < 12; v += 4) {
         aAxisAngle.array[i4 + v    ] = axis.x;
@@ -258,10 +279,10 @@ function TextAnimation(data) {
       ]
     },
     {
-      diffuse: 0x444444,
-      specular: 0xcccccc,
-      shininess: 4,
-      emissive: 0x444444
+      //diffuse: 0x444444,
+      //specular: 0xcccccc,
+      //shininess: 4,
+      //emissive: 0x444444
     }
   );
 
@@ -313,7 +334,7 @@ TextBufferAnimation.prototype.bufferPositions = function() {
 
 function ExplosionSystem(data) {
   var letterCount = data.info.length;
-  var prefabsPerLetter = 500;
+  var prefabsPerLetter = 1000;
   var prefabCount = prefabsPerLetter * letterCount;
   var prefabSize = 2.0;
 
@@ -332,7 +353,7 @@ function ExplosionSystem(data) {
 
   var duration, delay;
   var minDuration = 0.1;
-  var maxDuration = 1.0;
+  var maxDuration = 0.75;
   var vertexDelay = 0.0125;
 
   this.animationDuration = (maxDuration + vertexDelay * prefabGeometry.vertices.length) * letterCount * settings.letterTimeOffset;
@@ -361,22 +382,20 @@ function ExplosionSystem(data) {
       }
     }
 
-    var colorObj = new THREE.Color();
-    colorObj.setHSL(Math.random(), 1.0, 0.5);
-
-    var colorHSL = colorObj.getHSL();
+    var color = data.info[index].color;
+    var colorHSL = color.getHSL();
     var h, s, l;
 
     for (i = 0, offset = letterOffset * prefabGeometry.vertices.length * 3; i < prefabCount; i++) {
       h = colorHSL.h;
       s = THREE.Math.randFloat(0.50, 1.00);
       l = THREE.Math.randFloat(0.25, 0.75);
-      colorObj.setHSL(h, s, l);
+      color.setHSL(h, s, l);
 
       for (j = 0; j < geometry.prefabVertexCount; j++) {
-        aColor.array[offset  ] = colorObj.r;
-        aColor.array[offset+1] = colorObj.g;
-        aColor.array[offset+2] = colorObj.b;
+        aColor.array[offset  ] = color.r;
+        aColor.array[offset+1] = color.g;
+        aColor.array[offset+2] = color.b;
 
         offset += 3;
       }
@@ -390,22 +409,22 @@ function ExplosionSystem(data) {
       u = Math.random();
       v = Math.random();
       ep = utils.spherePoint(u, v);
-      ep.x *= THREE.Math.randFloat(40, 60);
-      ep.y *= THREE.Math.randFloat(60, 80);
-      ep.z *= THREE.Math.randFloat(40, 60);
+      ep.x *= THREE.Math.randFloat(40, 80);
+      ep.y *= THREE.Math.randFloat(80, 120);
+      ep.z *= THREE.Math.randFloat(40, 80);
 
       u *= THREE.Math.randFloat(0.8, 1.2);
       v *= THREE.Math.randFloat(0.8, 1.2);
       cp0 = utils.spherePoint(u, v);
       cp0.x *= THREE.Math.randFloat(10, 20);
-      cp0.y *= THREE.Math.randFloat(20, 40);
+      cp0.y *= THREE.Math.randFloat(40, 60);
       cp0.z *= THREE.Math.randFloat(10, 20);
 
       u *= THREE.Math.randFloat(0.8, 1.2);
       v *= THREE.Math.randFloat(0.8, 1.2);
       cp1 = utils.spherePoint(u, v);
       cp1.x *= THREE.Math.randFloat(20, 40);
-      cp1.y *= THREE.Math.randFloat(40, 60);
+      cp1.y *= THREE.Math.randFloat(60, 80);
       cp1.z *= THREE.Math.randFloat(20, 40);
 
       for (j = 0; j < prefabGeometry.vertices.length; j++) {
