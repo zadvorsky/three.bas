@@ -19,21 +19,17 @@ function init() {
 
     var textAnimationData = createTextAnimation(font);
 
-    console.log(textAnimationData);
-
     var group = new THREE.Group();
     root.scene.add(group);
 
     var textAnimation = new TextAnimation(textAnimationData);
     group.add(textAnimation);
 
-    var explosionAnimation = new ExplosionSystem(textAnimationData);
+    var explosionAnimation = new ExplosionAnimation(textAnimationData);
     group.add(explosionAnimation);
 
     var box = textAnimationData.geometry.boundingBox;
     group.position.copy(box.size()).multiplyScalar(-0.5);
-
-    console.log('t', textAnimation.animationDuration, 'exp', explosionAnimation.animationDuration);
 
     var light = new THREE.DirectionalLight(0xffffff, 1.0);
     light.position.set(0, 0, 1);
@@ -50,7 +46,7 @@ function init() {
 
       pos.x += textAnimationData.info[i].glyphOffset;
 
-      light = new THREE.PointLight(color, 2.0, 120, 2);
+      light = new THREE.PointLight(color, 2.0, 80, 2);
       light.position.copy(pos);
 
       group.add(light);
@@ -130,7 +126,7 @@ function generateSplitTextGeometry(text, params) {
 
     // colors!
     data.info[i].color = new THREE.Color();
-    data.info[i].color.setHSL(i / text.length - 1, 1.0, 0.5);
+    data.info[i].color.setHSL(i / (text.length - 1), 1.0, 0.5);
 
     // merge char geometry into text geometry
     data.geometry.merge(charGeometry);
@@ -148,7 +144,7 @@ function generateSplitTextGeometry(text, params) {
 function TextAnimation(data) {
   var textGeometry = data.geometry;
 
-  var bufferGeometry = new TextBufferAnimation(textGeometry);
+  var bufferGeometry = new TextAnimationGeometry(textGeometry);
 
   var aAnimation = bufferGeometry.createAttribute('aAnimation', 2);
   var aStartPosition = bufferGeometry.createAttribute('aStartPosition', 3);
@@ -301,12 +297,12 @@ Object.defineProperty(TextAnimation.prototype, 'time', {
   }
 });
 
-function TextBufferAnimation(model) {
+function TextAnimationGeometry(model) {
   THREE.BAS.ModelBufferGeometry.call(this, model);
 }
-TextBufferAnimation.prototype = Object.create(THREE.BAS.ModelBufferGeometry.prototype);
-TextBufferAnimation.prototype.constructor = TextBufferAnimation;
-TextBufferAnimation.prototype.bufferPositions = function() {
+TextAnimationGeometry.prototype = Object.create(THREE.BAS.ModelBufferGeometry.prototype);
+TextAnimationGeometry.prototype.constructor = TextAnimationGeometry;
+TextAnimationGeometry.prototype.bufferPositions = function() {
   var positionBuffer = this.createAttribute('position', 3).array;
 
   for (var i = 0; i < this.faceCount; i++) {
@@ -332,7 +328,7 @@ TextBufferAnimation.prototype.bufferPositions = function() {
 };
 
 
-function ExplosionSystem(data) {
+function ExplosionAnimation(data) {
   var letterCount = data.info.length;
   var prefabsPerLetter = 1000;
   var prefabCount = prefabsPerLetter * letterCount;
@@ -341,7 +337,7 @@ function ExplosionSystem(data) {
   // var prefabGeometry = new THREE.TetrahedronGeometry(prefabSize);
   var prefabGeometry = new THREE.PlaneGeometry(prefabSize, prefabSize, 1, 4);
 
-  var geometry = new ExplosionGeometry(prefabGeometry, prefabCount);
+  var geometry = new ExplosionAnimationGeometry(prefabGeometry, prefabCount);
 
   var aDelayDuration = geometry.createAttribute('aDelayDuration', 2);
   var aColor = geometry.createAttribute('color', 3);
@@ -489,9 +485,9 @@ function ExplosionSystem(data) {
   THREE.Mesh.call(this, geometry, material);
   this.frustumCulled = false;
 }
-ExplosionSystem.prototype = Object.create(THREE.Mesh.prototype);
-ExplosionSystem.prototype.constructor = ExplosionSystem;
-Object.defineProperty(ExplosionSystem.prototype, 'time', {
+ExplosionAnimation.prototype = Object.create(THREE.Mesh.prototype);
+ExplosionAnimation.prototype.constructor = ExplosionAnimation;
+Object.defineProperty(ExplosionAnimation.prototype, 'time', {
   get: function() {
     return this.material.uniforms['uTime'].value;
   },
@@ -500,12 +496,12 @@ Object.defineProperty(ExplosionSystem.prototype, 'time', {
   }
 });
 
-function ExplosionGeometry(prefab, count) {
+function ExplosionAnimationGeometry(prefab, count) {
   THREE.BAS.PrefabBufferGeometry.call(this, prefab, count);
 }
-ExplosionGeometry.prototype = Object.create(THREE.BAS.PrefabBufferGeometry.prototype);
-ExplosionGeometry.prototype.constructor = ExplosionGeometry;
-ExplosionGeometry.prototype.bufferPositions = function() {
+ExplosionAnimationGeometry.prototype = Object.create(THREE.BAS.PrefabBufferGeometry.prototype);
+ExplosionAnimationGeometry.prototype.constructor = ExplosionAnimationGeometry;
+ExplosionAnimationGeometry.prototype.bufferPositions = function() {
   var positionBuffer = this.createAttribute('position', 3).array;
 
   var scaleMatrix = new THREE.Matrix4();
