@@ -9,15 +9,22 @@ function init() {
 
   root.renderer.setClearColor(0x000000);
   root.renderer.setPixelRatio(window.devicePixelRatio || 1);
-  root.camera.position.set(0, 0, 600);
+  root.camera.position.set(0, 0, 200);
 
   root.scene.add(new THREE.AxisHelper(100));
 
   var fl = new THREE.FontLoader();
   fl.load('droid_sans_bold.typeface.js', function(font) {
 
-    var textAnimation = createTextAnimation(font);
+    var textAnimationData = createTextAnimation(font);
+
+    console.log(textAnimationData);
+
+    var textAnimation = new TextAnimation(textAnimationData);
     root.scene.add(textAnimation);
+
+    var expl = new ExplosionSystem(textAnimationData);
+    root.scene.add(expl);
 
     var light = new THREE.DirectionalLight();
     light.position.set(0, 0, 1);
@@ -33,6 +40,9 @@ function init() {
       {animationProgress:1.0, ease:Power0.easeInOut},
       0
     );
+    // tl.add(expl.animation, 0);
+
+
   });
 
   //tl.fromTo(textAnimation.rotation, 4, {y:0}, {y:Math.PI * 2, ease:Power1.easeInOut}, 0);
@@ -53,11 +63,7 @@ function createTextAnimation(font) {
     anchor:{x:0.5, y:0.5, z:0.5}
   };
 
-  var textGeometryData = generateSplitTextGeometry(text, params);
-
-  console.log(textGeometryData);
-
-  return new TextAnimation(textGeometryData);
+  return generateSplitTextGeometry(text, params);
 }
 
 function generateSplitTextGeometry(text, params) {
@@ -114,22 +120,6 @@ function generateSplitTextGeometry(text, params) {
 
   return data;
 }
-
-//function generateTextGeometry(text, params) {
-//  var geometry = new THREE.TextGeometry(text, params);
-//
-//  geometry.computeBoundingBox();
-//
-//  var size = geometry.boundingBox.size();
-//  var anchorX = size.x * -params.anchor.x;
-//  var anchorY = size.y * -params.anchor.y;
-//  var anchorZ = size.z * -params.anchor.z;
-//  var matrix = new THREE.Matrix4().makeTranslation(anchorX, anchorY, anchorZ);
-//
-//  geometry.applyMatrix(matrix);
-//
-//  return geometry;
-//}
 
 ////////////////////
 // CLASSES
@@ -323,6 +313,202 @@ TextBufferAnimation.prototype.bufferPositions = function() {
 };
 
 
+function ExplosionSystem(data) {
+  var prefabCount = 500;
+  var prefabSize = 0.05;
+
+  // var prefabGeometry = new THREE.TetrahedronGeometry(prefabSize);
+  var prefabGeometry = new THREE.PlaneGeometry(prefabSize, prefabSize, 1, 2);
+
+  var geometry = new ExplosionGeometry(prefabGeometry, prefabCount);
+
+  var aDelayDuration = geometry.createAttribute('aDelayDuration', 2);
+  var aColor = geometry.createAttribute('color', 3);
+  var aStartPosition = geometry.createAttribute('aStartPosition', 3);
+  var aControlPosition0 = geometry.createAttribute('aControlPosition0', 3);
+  var aControlPosition1 = geometry.createAttribute('aControlPosition1', 3);
+  var aEndPosition = geometry.createAttribute('aEndPosition', 3);
+  var aAxisAngle = geometry.createAttribute('aAxisAngle', 4);
+
+  var i, j, offset;
+
+  var delay;
+  var duration;
+  var minDuration = 0.25;
+  var maxDuration = 1.0;
+  var prefabDelay = 0.0;
+  var vertexDelay = 0.025;
+
+  for (i = 0, offset = 0; i < prefabCount; i++) {
+    delay = prefabDelay * i;
+    duration = THREE.Math.randFloat(minDuration, maxDuration);
+
+    for (j = 0; j < prefabGeometry.vertices.length; j++) {
+
+      aDelayDuration.array[offset++] = delay + vertexDelay * j;
+      aDelayDuration.array[offset++] = duration;
+    }
+  }
+
+  this.totalDuration = maxDuration + prefabDelay * prefabCount + vertexDelay * prefabGeometry.vertices.length;
+
+  var colorObj = new THREE.Color();
+  colorObj.setHSL(Math.random(), 1.0, 0.5);
+
+  var colorHSL = colorObj.getHSL();
+  var h, s, l;
+
+  for (i = 0, offset = 0; i < geometry.prefabCount; i++) {
+    h = colorHSL.h;
+    s = THREE.Math.randFloat(0.50, 1.00);
+    l = THREE.Math.randFloat(0.25, 0.75);
+    colorObj.setHSL(h, s, l);
+
+    for (j = 0; j < geometry.prefabVertexCount; j++) {
+      aColor.array[offset  ] = colorObj.r;
+      aColor.array[offset+1] = colorObj.g;
+      aColor.array[offset+2] = colorObj.b;
+
+      offset += 3;
+    }
+  }
+
+  var radiusX = 20;
+  var radiusY = 80;
+  var radiusZ = 20;
+
+  for (i = 0, offset = 0; i < prefabCount; i++) {
+    var ep = utils.randomSpherePoint();
+    var cp0 = utils.randomSpherePoint();
+    var cp1 = utils.randomSpherePoint();
+
+    for (j = 0; j < prefabGeometry.vertices.length; j++) {
+
+      aEndPosition.array[offset  ] = ep.x * radiusX;
+      aEndPosition.array[offset+1] = ep.y * radiusY;
+      aEndPosition.array[offset+2] = ep.z * radiusZ;
+
+      aControlPosition0.array[offset  ] = cp0.x * radiusX;
+      aControlPosition0.array[offset+1] = cp0.y * radiusY;
+      aControlPosition0.array[offset+2] = cp0.z * radiusZ;
+
+      aControlPosition1.array[offset  ] = cp1.x * radiusX;
+      aControlPosition1.array[offset+1] = cp1.y * radiusY;
+      aControlPosition1.array[offset+2] = cp1.z * radiusZ;
+
+      offset += 3;
+    }
+  }
+
+  // buffer rotation
+  var axis = new THREE.Vector3();
+  var angle = 0;
+
+  for (i = 0, offset = 0; i < prefabCount; i++) {
+    axis.x = 0;
+    axis.y = 0;
+    axis.z = 1;
+    axis.normalize();
+
+    angle = Math.PI * THREE.Math.randInt(1, 2);
+
+    for (j = 0; j < prefabGeometry.vertices.length; j++) {
+      aAxisAngle.array[offset++] = axis.x;
+      aAxisAngle.array[offset++] = axis.y;
+      aAxisAngle.array[offset++] = axis.z;
+      aAxisAngle.array[offset++] = angle;
+    }
+  }
+
+  var material = new THREE.BAS.BasicAnimationMaterial({
+      vertexColors: THREE.VertexColors,
+      uniforms: {
+        uTime: {type: 'f', value: 0},
+        uScale: {type: 'f', value: 1.0}
+      },
+      shaderFunctions: [
+        THREE.BAS.ShaderChunk['quaternion_rotation'],
+        THREE.BAS.ShaderChunk['cubic_bezier'],
+        THREE.BAS.ShaderChunk['ease_out_cubic']
+      ],
+      shaderParameters: [
+        'uniform float uTime;',
+
+        'attribute vec2 aDelayDuration;',
+        'attribute vec3 aStartPosition;',
+        'attribute vec3 aControlPosition0;',
+        'attribute vec3 aControlPosition1;',
+        'attribute vec3 aEndPosition;',
+        'attribute vec4 aAxisAngle;'
+      ],
+      shaderVertexInit: [
+        'float tDelay = aDelayDuration.x;',
+        'float tDuration = aDelayDuration.y;',
+        'float tTime = clamp(uTime - tDelay, 0.0, tDuration);',
+        'float tProgress = ease(tTime, 0.0, 1.0, tDuration);',
+
+        'float angle = aAxisAngle.w * tProgress;',
+        'vec4 tQuat = quatFromAxisAngle(aAxisAngle.xyz, angle);'
+      ],
+      shaderTransformPosition: [
+        'transformed = rotateVector(tQuat, transformed);',
+        'float scl = tProgress * 2.0 - 1.0;',
+        'transformed *= (1.0 - scl * scl);',
+        'transformed += cubicBezier(aStartPosition, aControlPosition0, aControlPosition1, aEndPosition, tProgress);'
+      ]
+    },{}
+  );
+
+  THREE.Mesh.call(this, geometry, material);
+  this.frustumCulled = false;
+
+  this.animation = TweenMax.fromTo(this.material.uniforms['uTime'], 2.0,
+    {value:0},
+    {value:this.totalDuration, ease:Power0.easeOut, repeat:-1}
+  );
+}
+ExplosionSystem.prototype = Object.create(THREE.Mesh.prototype);
+ExplosionSystem.prototype.constructor = ExplosionSystem;
+
+function ExplosionGeometry(prefab, count) {
+  THREE.BAS.PrefabBufferGeometry.call(this, prefab, count);
+}
+ExplosionGeometry.prototype = Object.create(THREE.BAS.PrefabBufferGeometry.prototype);
+ExplosionGeometry.prototype.constructor = ExplosionGeometry;
+ExplosionGeometry.prototype.bufferPositions = function() {
+  var positionBuffer = this.createAttribute('position', 3).array;
+
+  var scaleMatrix = new THREE.Matrix4();
+  var scale;
+  var p = new THREE.Vector3();
+
+  for (var i = 0, offset = 0; i < this.prefabCount; i++) {
+    for (var j = 0; j < this.prefabVertexCount; j++, offset += 3) {
+      var prefabVertex = this.prefabGeometry.vertices[j];
+
+      scale = Math.random();
+      scaleMatrix.identity().makeScale(scale, scale, scale);
+
+      p.copy(prefabVertex);
+      p.applyMatrix4(scaleMatrix);
+
+      positionBuffer[offset    ] = p.x;
+      positionBuffer[offset + 1] = p.y;
+      positionBuffer[offset + 2] = p.z;
+    }
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
 
 
 function THREERoot(params) {
@@ -408,26 +594,42 @@ var utils = {
   //   return utils.ease(ease, t, b, c, d);
   // },
   fibSpherePoint: (function() {
-    var v = {x:0, y:0, z:0};
+    var vec = {x:0, y:0, z:0};
     var G = Math.PI * (3 - Math.sqrt(5));
 
     return function(i, n, radius) {
       var step = 2.0 / n;
       var r, phi;
 
-      v.y = i * step - 1 + (step * 0.5);
-      r = Math.sqrt(1 - v.y * v.y);
+      vec.y = i * step - 1 + (step * 0.5);
+      r = Math.sqrt(1 - vec.y * vec.y);
       phi = i * G;
-      v.x = Math.cos(phi) * r;
-      v.z = Math.sin(phi) * r;
+      vec.x = Math.cos(phi) * r;
+      vec.z = Math.sin(phi) * r;
 
       radius = radius || 1;
 
-      v.x *= radius;
-      v.y *= radius;
-      v.z *= radius;
+      vec.x *= radius;
+      vec.y *= radius;
+      vec.z *= radius;
 
-      return v;
+      return vec;
+    }
+  })(),
+  randomSpherePoint: (function() {
+    var vec = {x:0, y:0, z:0};
+
+    return function() {
+      var u = Math.random();
+      var v = Math.random();
+      var theta = 2 * Math.PI * u;
+      var phi = Math.acos(2 * v - 1);
+
+      vec.x = (Math.sin(phi) * Math.cos(theta));
+      vec.y = (Math.sin(phi) * Math.sin(theta));
+      vec.z = (Math.cos(phi));
+
+      return vec;
     }
   })()
 };
