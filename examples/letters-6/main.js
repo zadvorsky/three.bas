@@ -348,7 +348,7 @@ function ExplosionAnimation(data) {
   var aAxisAngle = geometry.createAttribute('aAxisAngle', 4);
 
   var duration, delay;
-  var minDuration = 0.4;
+  var minDuration = 0.1;
   var maxDuration = 0.5;
   var vertexDelay = 0.02;
 
