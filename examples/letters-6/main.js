@@ -13,7 +13,7 @@ function init() {
 
   root.renderer.setClearColor(0x000000);
   root.renderer.setPixelRatio(window.devicePixelRatio || 1);
-  root.camera.position.set(0, 0, 200);
+  root.camera.position.set(0, 0, 250);
 
   new THREE.FontLoader().load('droid_sans_bold.typeface.js', function(font) {
 
@@ -51,7 +51,7 @@ function init() {
 
       group.add(light);
 
-      lightTl.fromTo(light, 0.25,
+      lightTl.fromTo(light, 0.4,
         {intensity:0}, {intensity:4.0, repeat:1, yoyo:true},
         (i * settings.letterTimeOffset) * (duration / maxTime));
     }
@@ -70,7 +70,7 @@ function init() {
 }
 
 function createTextAnimation(font) {
-  var text = 'BURSTING BUBBLES';
+  var text = 'BLOWN APART';
   var params = {
     size:36,
     height:8,
@@ -348,9 +348,9 @@ function ExplosionAnimation(data) {
   var aAxisAngle = geometry.createAttribute('aAxisAngle', 4);
 
   var duration, delay;
-  var minDuration = 0.1;
+  var minDuration = 0.25;
   var maxDuration = 0.5;
-  var vertexDelay = 0.02;
+  var vertexDelay = 0.0125;
 
   this.animationDuration = (maxDuration + vertexDelay * prefabGeometry.vertices.length) * letterCount * settings.letterTimeOffset;
 
