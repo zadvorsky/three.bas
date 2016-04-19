@@ -32,7 +32,7 @@ function init() {
     light.position.set(0, 0, 1);
     root.scene.add(light);
 
-    var maxTime = textAnimation.animationDuration;
+    var maxTime = 6.0;//textAnimation.animationDuration;
     var duration = 6.0;
 
     var tl = new TimelineMax({
@@ -162,15 +162,15 @@ function TextAnimation(data) {
     var delay = index * settings.letterTimeOffset;
 
     var pivot = new THREE.Vector3(
-      THREE.Math.randFloatSpread(100),
-      THREE.Math.randFloatSpread(100),
-      THREE.Math.randFloatSpread(100)
+      THREE.Math.randFloatSpread(50),
+      THREE.Math.randFloatSpread(50),
+      THREE.Math.randFloatSpread(50)
     );
-    axis.x = THREE.Math.randFloatSpread(2);
-    axis.y = THREE.Math.randFloatSpread(2);
-    axis.z = THREE.Math.randFloatSpread(2);
+    axis.x = 0;//THREE.Math.randFloatSpread(2);
+    axis.y = 0;//THREE.Math.randFloatSpread(2);
+    axis.z = 1;//THREE.Math.randFloatSpread(2);
     axis.normalize();
-    angle = Math.PI * THREE.Math.randFloat(4.0, 8.0);
+    angle = Math.PI * 2;//THREE.Math.randFloat(1.0, 2.0);
 
     for (i = s, i2 = s * 6, i3 = s * 9, i4 = s * 12; i < l; i++, i2 += 6, i3 += 9, i4 += 12) {
 
@@ -187,9 +187,7 @@ function TextAnimation(data) {
         delta.subVectors(vertex, glyphCenter);
 
         //var vertexDelay = (glyphSize.y * 0.5 - Math.abs(delta.y)) * 0.02;
-        var vertexDelay = (glyphSize.length() - delta.length()) * 0.02;
-
-        if (vertexDelay < 0) console.log('wat');
+        var vertexDelay = (glyphSize.length() - delta.length()) * 0.05;
 
         aAnimation.array[i2 + v    ] = delay + vertexDelay;
         aAnimation.array[i2 + v + 1] = duration;
@@ -202,7 +200,8 @@ function TextAnimation(data) {
         aStartPosition.array[i3 + v + 2] = centroid.z;
       }
       // end position
-      var dy = (centroid.y > glyphCenter.y) ? 1 : -1;
+      //var dy = (centroid.y > glyphCenter.y) ? 1 : -1;
+      var dy = 1;
 
       for (v = 0; v < 9; v += 3) {
         aEndPosition.array[i3 + v    ] = centroid.x;
@@ -256,15 +255,17 @@ function TextAnimation(data) {
          'float tProgress = tTime / tDuration;'
       ],
       shaderTransformPosition: [
-        // scale
-        //'transformed *= 1.0 - tProgress;',
 
-        // rotate
+        'transformed -= aPivot;',
+
+        'transformed *= 1.0 - tProgress;',
+
         'float angle = aAxisAngle.w * tProgress;',
         'vec4 tQuat = quatFromAxisAngle(aAxisAngle.xyz, angle);',
         'transformed = rotateVector(tQuat, transformed);',
 
-        // translate
+        'transformed += aPivot;',
+
         'transformed += mix(aStartPosition, aEndPosition, tProgress);'
       ]
     },
