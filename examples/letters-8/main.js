@@ -1,7 +1,7 @@
 window.onload = init;
 
 var settings = {
-  letterTimeOffset:0.0
+  teleportColor:0x3DD5FF
 };
 
 function init() {
@@ -11,7 +11,7 @@ function init() {
     fov:80
   });
 
-  root.renderer.setClearColor(0x000000);
+  root.renderer.setClearColor(0xffffff);
   root.renderer.setPixelRatio(window.devicePixelRatio || 1);
   root.camera.position.set(0, 0, 150);
 
@@ -44,9 +44,11 @@ function init() {
       yoyo:true
     });
 
-    tl.fromTo(beamAnimation, 1.0, {opacity:0.0}, {opacity:1.0});
-    tl.to(fragmentAnimation, 4.0, {time:maxTime, ease:Power0.easeIn}, '-=0.75');
-    tl.to(beamAnimation, 0.5, {opacity:0.0, ease:Circ.easeOut}, '-=0.25');
+    tl.fromTo(beamAnimation, 2.0, {opacity:0.0}, {opacity:1.0, ease:Circ.easeIn});
+    tl.to(fragmentAnimation, 4.0, {time:maxTime, ease:Power0.easeIn}, 0);
+    tl.to(beamAnimation, 2.0, {opacity:0.0, ease:Circ.easeOut}, '-=1.0');
+
+    tl.to(beamAnimation, tl.duration(), {alphaMapOffsetY:-5.0, ease:Circ.easeIn}, 0);
 
     createTweenScrubber(tl);
   });
@@ -132,7 +134,7 @@ function TextBeamAnimation(data) {
     // opacity: 0.5,
     // blending: THREE.AdditiveBlending,
     alphaMap: new THREE.Texture(),
-    color: 0x0085CC
+    color: settings.teleportColor
   };
 
   var material0 = new THREE.MeshPhongMaterial(params);
@@ -148,16 +150,16 @@ function TextBeamAnimation(data) {
       m.alphaMap.wrapT = THREE.RepeatWrapping;
       m.alphaMap.repeat.x = m.alphaMap.repeat.y = 0.01;
       m.alphaMap.needsUpdate = true;
-
-      TweenMax.to(m.alphaMap.offset, 1.0, {x:0.0, y:-1.0, repeat:-1, ease:Power0.easeOut, onUpdate:function() {
-        this.needsUpdate = true;
-      }, onUpdateScope:m.map});
     }
   });
 
   THREE.Mesh.call(this, geometry, new THREE.MeshFaceMaterial(materials));
 
   this.materials = materials;
+  //
+  // TweenMax.to(m.alphaMap.offset, 1.0, {x:0.0, y:-1.0, repeat:-1, ease:Power0.easeOut, onUpdate:function() {
+  //   this.needsUpdate = true;
+  // }, onUpdateScope:m.map});
 }
 TextBeamAnimation.prototype = Object.create(THREE.Mesh.prototype);
 TextBeamAnimation.prototype.constructor = TextBeamAnimation;
@@ -169,6 +171,16 @@ Object.defineProperty(TextBeamAnimation.prototype, 'opacity', {
   set: function(v) {
     for (var i = 0; i < this.materials.length; i++) {
       this.materials[i].opacity = v;
+    }
+  }
+});
+Object.defineProperty(TextBeamAnimation.prototype, 'alphaMapOffsetY', {
+  get: function() {
+    return this.materials[0].alphaMap.offset.y;
+  },
+  set: function(v) {
+    for (var i = 0; i < this.materials.length; i++) {
+      this.materials[i].alphaMap.offset.y = v;
     }
   }
 });
@@ -184,8 +196,6 @@ function TextFragmentAnimation(data) {
 
   var minDuration = 1.0;
   var maxDuration = 2.0;
-
-  this.animationDuration = maxDuration + data.info.length * settings.letterTimeOffset;
 
   var glyphSize = new THREE.Vector3();
   var glyphCenter = new THREE.Vector3();
@@ -230,7 +240,7 @@ function TextFragmentAnimation(data) {
         aStartPosition.array[i3 + v + 2] = centroid.z;
       }
       // end position
-      var dy = THREE.Math.randFloat(5, 20);
+      var dy = THREE.Math.randFloat(10, 20);
 
       for (v = 0; v < 9; v += 3) {
         aEndPosition.array[i3 + v    ] = centroid.x;
@@ -248,8 +258,8 @@ function TextFragmentAnimation(data) {
       // blending: THREE.AdditiveBlending,
       uniforms: {
         uTime: {type: 'f', value: 0},
-        uStartColor: {type: 'c', value: new THREE.Color(0xcccccc)},
-        uEndColor: {type: 'c', value: new THREE.Color(0x0000ff)}
+        uStartColor: {type: 'c', value: new THREE.Color(0x000000)},
+        uEndColor: {type: 'c', value: new THREE.Color(settings.teleportColor)}
       },
       shaderFunctions: [
         THREE.BAS.ShaderChunk['cubic_bezier'],
@@ -282,7 +292,7 @@ function TextFragmentAnimation(data) {
 
         'transformed += mix(aStartPosition, aEndPosition, tProgress);',
 
-        'vColor.xyz = mix(uStartColor.rgb, uEndColor.rgb, min(tProgress * 10.0, 1.0));'
+        'vColor.xyz = mix(uStartColor.rgb, uEndColor.rgb, tProgress);'
       ]
     },
     {
