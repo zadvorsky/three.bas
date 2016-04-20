@@ -6,24 +6,28 @@ var settings = {
 
 function init() {
   var root = new THREERoot({
-    createCameraControls:true,
+    createCameraControls:!true,
     antialias:(window.devicePixelRatio === 1),
     fov:80
   });
 
   root.renderer.setClearColor(0x000000);
   root.renderer.setPixelRatio(window.devicePixelRatio || 1);
-  root.camera.position.set(0, 0, 250);
+  root.camera.position.set(0, 0, 150);
 
   new THREE.FontLoader().load('droid_sans_bold.typeface.js', function(font) {
 
-    var textAnimationData = createTextAnimation(font);
+    var textAnimationData = createTextAnimationData(font);
 
     var group = new THREE.Group();
     root.scene.add(group);
 
-    var textAnimation = new TextAnimation(textAnimationData);
-    group.add(textAnimation);
+    var fragmentAnimation = new TextFragmentAnimation(textAnimationData);
+    group.add(fragmentAnimation);
+
+    var beamAnimation = new TextBeamAnimation(textAnimationData);
+    beamAnimation.scale.z = 1.1;
+    group.add(beamAnimation);
 
     var box = textAnimationData.geometry.boundingBox;
     group.position.copy(box.size()).multiplyScalar(-0.5);
@@ -33,20 +37,22 @@ function init() {
     root.scene.add(light);
 
     var maxTime = 9.0;//textAnimation.animationDuration;
-    var duration = 2.0;
 
     var tl = new TimelineMax({
       repeat:-1,
       repeatDelay:0.5,
       yoyo:true
     });
-    tl.to(textAnimation, duration, {time:maxTime, ease:Power0.easeIn}, 0);
 
-    //createTweenScrubber(tl);
+    tl.fromTo(beamAnimation, 1.0, {opacity:0.0}, {opacity:1.0});
+    tl.to(fragmentAnimation, 4.0, {time:maxTime, ease:Power0.easeIn}, '-=0.75');
+    tl.to(beamAnimation, 0.5, {opacity:0.0, ease:Circ.easeOut}, '-=0.25');
+
+    createTweenScrubber(tl);
   });
 }
 
-function createTextAnimation(font) {
+function createTextAnimationData(font) {
   var text = 'BEAM ME UP';
   var params = {
     size:36,
@@ -118,10 +124,59 @@ function generateSplitTextGeometry(text, params) {
 // CLASSES
 ////////////////////
 
-function TextAnimation(data) {
+function TextBeamAnimation(data) {
+  var geometry = data.geometry;
+
+  var params = {
+    transparent: true,
+    // opacity: 0.5,
+    // blending: THREE.AdditiveBlending,
+    alphaMap: new THREE.Texture(),
+    color: 0x0085CC
+  };
+
+  var material0 = new THREE.MeshPhongMaterial(params);
+  var material1 = new THREE.MeshPhongMaterial(params);
+  var materials = [material0, material1];
+
+  new THREE.ImageLoader().load('teleport_clr.png', function(image) {
+    for (var i = 0; i < materials.length; i++) {
+      var m = materials[i];
+
+      m.alphaMap.image = image;
+      m.alphaMap.wrapS = THREE.RepeatWrapping;
+      m.alphaMap.wrapT = THREE.RepeatWrapping;
+      m.alphaMap.repeat.x = m.alphaMap.repeat.y = 0.01;
+      m.alphaMap.needsUpdate = true;
+
+      TweenMax.to(m.alphaMap.offset, 1.0, {x:0.0, y:-1.0, repeat:-1, ease:Power0.easeOut, onUpdate:function() {
+        this.needsUpdate = true;
+      }, onUpdateScope:m.map});
+    }
+  });
+
+  THREE.Mesh.call(this, geometry, new THREE.MeshFaceMaterial(materials));
+
+  this.materials = materials;
+}
+TextBeamAnimation.prototype = Object.create(THREE.Mesh.prototype);
+TextBeamAnimation.prototype.constructor = TextBeamAnimation;
+
+Object.defineProperty(TextBeamAnimation.prototype, 'opacity', {
+  get: function() {
+    return this.materials[0].opacity;
+  },
+  set: function(v) {
+    for (var i = 0; i < this.materials.length; i++) {
+      this.materials[i].opacity = v;
+    }
+  }
+});
+
+function TextFragmentAnimation(data) {
   var textGeometry = data.geometry;
 
-  var bufferGeometry = new TextAnimationGeometry(textGeometry);
+  var bufferGeometry = new TextFragmentAnimationGeometry(textGeometry);
 
   var aAnimation = bufferGeometry.createAttribute('aAnimation', 2);
   var aStartPosition = bufferGeometry.createAttribute('aStartPosition', 3);
@@ -175,7 +230,7 @@ function TextAnimation(data) {
         aStartPosition.array[i3 + v + 2] = centroid.z;
       }
       // end position
-      var dy = THREE.Math.randFloat(5, 10);
+      var dy = THREE.Math.randFloat(5, 20);
 
       for (v = 0; v < 9; v += 3) {
         aEndPosition.array[i3 + v    ] = centroid.x;
@@ -189,11 +244,11 @@ function TextAnimation(data) {
       shading: THREE.FlatShading,
       side: THREE.DoubleSide,
       vertexColors: THREE.VertexColors,
-      transparent: true,
-      blending: THREE.AdditiveBlending,
+      // transparent: true,
+      // blending: THREE.AdditiveBlending,
       uniforms: {
         uTime: {type: 'f', value: 0},
-        uStartColor: {type: 'c', value: new THREE.Color(0xffffff)},
+        uStartColor: {type: 'c', value: new THREE.Color(0xcccccc)},
         uEndColor: {type: 'c', value: new THREE.Color(0x0000ff)}
       },
       shaderFunctions: [
@@ -242,9 +297,9 @@ function TextAnimation(data) {
 
   this.frustumCulled = false;
 }
-TextAnimation.prototype = Object.create(THREE.Mesh.prototype);
-TextAnimation.prototype.constructor = TextAnimation;
-Object.defineProperty(TextAnimation.prototype, 'time', {
+TextFragmentAnimation.prototype = Object.create(THREE.Mesh.prototype);
+TextFragmentAnimation.prototype.constructor = TextFragmentAnimation;
+Object.defineProperty(TextFragmentAnimation.prototype, 'time', {
   get: function() {
     return this.material.uniforms['uTime'].value;
   },
@@ -253,12 +308,12 @@ Object.defineProperty(TextAnimation.prototype, 'time', {
   }
 });
 
-function TextAnimationGeometry(model) {
+function TextFragmentAnimationGeometry(model) {
   THREE.BAS.ModelBufferGeometry.call(this, model);
 }
-TextAnimationGeometry.prototype = Object.create(THREE.BAS.ModelBufferGeometry.prototype);
-TextAnimationGeometry.prototype.constructor = TextAnimationGeometry;
-TextAnimationGeometry.prototype.bufferPositions = function() {
+TextFragmentAnimationGeometry.prototype = Object.create(THREE.BAS.ModelBufferGeometry.prototype);
+TextFragmentAnimationGeometry.prototype.constructor = TextFragmentAnimationGeometry;
+TextFragmentAnimationGeometry.prototype.bufferPositions = function() {
   var positionBuffer = this.createAttribute('position', 3).array;
 
   for (var i = 0; i < this.faceCount; i++) {
