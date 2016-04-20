@@ -32,8 +32,8 @@ function init() {
     light.position.set(0, 0, 1);
     root.scene.add(light);
 
-    var maxTime = 6.0;//textAnimation.animationDuration;
-    var duration = 6.0;
+    var maxTime = 9.0;//textAnimation.animationDuration;
+    var duration = 2.0;
 
     var tl = new TimelineMax({
       repeat:-1,
@@ -50,7 +50,7 @@ function createTextAnimation(font) {
   var text = 'BEAM ME UP';
   var params = {
     size:36,
-    height:8,
+    height:0,
     font:font,
     curveSegments:12,
     bevelEnabled:true,
@@ -128,18 +128,13 @@ function TextAnimation(data) {
   var aEndPosition = bufferGeometry.createAttribute('aEndPosition', 3);
 
   var minDuration = 1.0;
-  var maxDuration = 1.0;
+  var maxDuration = 2.0;
 
   this.animationDuration = maxDuration + data.info.length * settings.letterTimeOffset;
-
-  var axis = new THREE.Vector3();
-  var angle;
 
   var glyphSize = new THREE.Vector3();
   var glyphCenter = new THREE.Vector3();
   var delta = new THREE.Vector3();
-
-  var keys = ['a', 'b', 'c'];
 
   for (var f = 0; f < data.info.length; f++) {
     bufferChar(data.info[f], f);
@@ -169,9 +164,7 @@ function TextAnimation(data) {
       var delay = (glyphSize.y - delta.y) * 0.1;
 
       for (v = 0; v < 6; v += 2) {
-        var vertexDelay = Math.random() * 0.01;
-
-        aAnimation.array[i2 + v    ] = delay + vertexDelay;
+        aAnimation.array[i2 + v    ] = delay + Math.random() * 0.5 * duration;
         aAnimation.array[i2 + v + 1] = duration;
       }
 
@@ -182,7 +175,7 @@ function TextAnimation(data) {
         aStartPosition.array[i3 + v + 2] = centroid.z;
       }
       // end position
-      var dy = THREE.Math.randFloat(100, 200);
+      var dy = THREE.Math.randFloat(5, 10);
 
       for (v = 0; v < 9; v += 3) {
         aEndPosition.array[i3 + v    ] = centroid.x;
@@ -195,14 +188,17 @@ function TextAnimation(data) {
   var material = new THREE.BAS.PhongAnimationMaterial({
       shading: THREE.FlatShading,
       side: THREE.DoubleSide,
-      // transparent: true,
-      // blending: THREE.AdditiveBlending,
+      vertexColors: THREE.VertexColors,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
       uniforms: {
-        uTime: {type: 'f', value: 0}
+        uTime: {type: 'f', value: 0},
+        uStartColor: {type: 'c', value: new THREE.Color(0xffffff)},
+        uEndColor: {type: 'c', value: new THREE.Color(0x0000ff)}
       },
       shaderFunctions: [
         THREE.BAS.ShaderChunk['cubic_bezier'],
-        THREE.BAS.ShaderChunk['ease_out_cubic'],
+        THREE.BAS.ShaderChunk['ease_in_cubic'],
         THREE.BAS.ShaderChunk['quaternion_rotation']
       ],
       shaderParameters: [
@@ -213,19 +209,25 @@ function TextAnimation(data) {
         'attribute vec3 aStartPosition;',
         'attribute vec3 aEndPosition;',
         'attribute vec3 aPivot;',
-        'attribute vec4 aAxisAngle;'
+        'attribute vec4 aAxisAngle;',
+
+        'uniform vec3 uStartColor;',
+        'uniform vec3 uEndColor;'
       ],
       shaderVertexInit: [
         'float tDelay = aAnimation.x;',
         'float tDuration = aAnimation.y;',
         'float tTime = clamp(uTime - tDelay, 0.0, tDuration);',
-        //'float tProgress = ease(tTime, 0.0, 1.0, tDuration);'
-         'float tProgress = tTime / tDuration;'
+        'float tProgress = ease(tTime, 0.0, 1.0, tDuration);',
+        // 'float tProgress = tTime / tDuration;',
+        'float tnProgress = 1.0 - tProgress;'
       ],
       shaderTransformPosition: [
-        'transformed.xz *= 1.0 - tProgress;',
+        'transformed.xz *= tnProgress;',
 
-        'transformed += mix(aStartPosition, aEndPosition, tProgress);'
+        'transformed += mix(aStartPosition, aEndPosition, tProgress);',
+
+        'vColor.xyz = mix(uStartColor.rgb, uEndColor.rgb, min(tProgress * 10.0, 1.0));'
       ]
     },
     {
