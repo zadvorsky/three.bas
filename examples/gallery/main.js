@@ -9,7 +9,7 @@ function init() {
 
   root.renderer.setClearColor(0x000000);
   root.renderer.setPixelRatio(window.devicePixelRatio || 1);
-  root.camera.position.set(0, 0, 250);
+  root.camera.position.set(0, 0, 100);
 
   var light = new THREE.DirectionalLight();
   light.position.set(0, 0, 1);
@@ -19,6 +19,8 @@ function init() {
   var height = 60;
   var slide = new Slide(width, height);
   root.scene.add(slide);
+
+  TweenMax.to(slide, 10, {time:3.0, ease:Power0.easeInOut, repeat:-1})
 }
 
 ////////////////////
@@ -26,7 +28,7 @@ function init() {
 ////////////////////
 
 function Slide(width, height) {
-  var plane = new THREE.PlaneGeometry(width, height, width, height);
+  var plane = new THREE.PlaneGeometry(width, height, width / 4, height / 4);
 
   THREE.BAS.Utils.separateFaces(plane);
 
@@ -38,6 +40,8 @@ function Slide(width, height) {
 
   var aAnimation = geometry.createAttribute('aAnimation', 2);
   var aStartPosition = geometry.createAttribute('aStartPosition', 3);
+  var aControl0 = geometry.createAttribute('aControl0', 3);
+  var aControl1 = geometry.createAttribute('aControl1', 3);
   var aEndPosition = geometry.createAttribute('aEndPosition', 3);
 
   var i, i2, i3, i4, v;
@@ -45,32 +49,55 @@ function Slide(width, height) {
   var minDuration = 1.0;
   var maxDuration = 2.0;
 
+  var delta = new THREE.Vector3();
+  var control0 = new THREE.Vector3();
+  var control1 = new THREE.Vector3();
+
   for (i = 0, i2 = 0, i3 = 0, i4 = 0; i < geometry.faceCount; i++, i2 += 6, i3 += 9, i4 += 12) {
     var face = plane.faces[i];
     var centroid = THREE.BAS.Utils.computeCentroid(plane, face);
 
     // animation
     var duration = THREE.Math.randFloat(minDuration, maxDuration);
+    var delay = THREE.Math.mapLinear(centroid.x, -width * 0.5, width * 0.5, 1.0, 0.0);
 
     for (v = 0; v < 6; v += 2) {
-      aAnimation.array[i2 + v]     = 0;
+      aAnimation.array[i2 + v]     = delay + (Math.random() * 0.1);
       aAnimation.array[i2 + v + 1] = duration;
     }
 
-    // start position (centroid)
+    // position
+
+    delta.x = THREE.Math.randFloat(24, 64);
+    delta.y = THREE.Math.randFloat(-24, 24);
+    delta.z = THREE.Math.randFloat(-24, 24);
+
+    control0.copy(delta).multiplyScalar(0.25);
+    control0.x += THREE.Math.randFloatSpread(12);
+    control0.y += THREE.Math.randFloatSpread(12);
+    control0.z += THREE.Math.randFloatSpread(12);
+
+    control1.copy(delta).multiplyScalar(0.75);
+    control1.x += THREE.Math.randFloatSpread(12);
+    control1.y += THREE.Math.randFloatSpread(12);
+    control1.z += THREE.Math.randFloatSpread(12);
 
     for (v = 0; v < 9; v += 3) {
       aStartPosition.array[i3 + v]     = centroid.x;
       aStartPosition.array[i3 + v + 1] = centroid.y;
       aStartPosition.array[i3 + v + 2] = centroid.z;
-    }
 
-    // end position
+      aControl0.array[i3 + v]     = centroid.x + control0.x;
+      aControl0.array[i3 + v + 1] = centroid.y + control0.y;
+      aControl0.array[i3 + v + 2] = centroid.z + control0.z;
 
-    for (v = 0; v < 9; v += 3) {
-      aEndPosition.array[i3 + v]     = centroid.x;
-      aEndPosition.array[i3 + v + 1] = centroid.y;
-      aEndPosition.array[i3 + v + 2] = centroid.z;
+      aControl1.array[i3 + v]     = centroid.x + control1.x;
+      aControl1.array[i3 + v + 1] = centroid.y + control1.y;
+      aControl1.array[i3 + v + 2] = centroid.z + control1.z;
+
+      aEndPosition.array[i3 + v]     = centroid.x + delta.x;
+      aEndPosition.array[i3 + v + 1] = centroid.y + delta.y;
+      aEndPosition.array[i3 + v + 2] = centroid.z + delta.z;
     }
   }
 
@@ -90,6 +117,8 @@ function Slide(width, height) {
         'uniform float uTime;',
         'attribute vec2 aAnimation;',
         'attribute vec3 aStartPosition;',
+        'attribute vec3 aControl0;',
+        'attribute vec3 aControl1;',
         'attribute vec3 aEndPosition;',
       ],
       shaderVertexInit: [
@@ -100,7 +129,7 @@ function Slide(width, height) {
         'float tProgress = tTime / tDuration;'
       ],
       shaderTransformPosition: [
-        'transformed += mix(aStartPosition, aEndPosition, tProgress);',
+        'transformed += cubicBezier(aStartPosition, aControl0, aControl1, aEndPosition, tProgress);',
       ]
     },
     {
