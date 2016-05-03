@@ -9,7 +9,7 @@ function init() {
 
   root.renderer.setClearColor(0x000000);
   root.renderer.setPixelRatio(window.devicePixelRatio || 1);
-  root.camera.position.set(0, 0, 100);
+  root.camera.position.set(0, 0, 150);
 
   var light = new THREE.DirectionalLight();
   light.position.set(0, 0, 1);
@@ -17,10 +17,21 @@ function init() {
 
   var width = 100;
   var height = 60;
+
   var slide = new Slide(width, height);
+  slide.setImage(new THREE.ImageLoader().load('image.jpg'));
   root.scene.add(slide);
 
-  TweenMax.to(slide, 10, {time:3.0, ease:Power0.easeInOut, repeat:-1})
+  var slide2 = new Slide(width, height);
+  slide2.setImage(new THREE.ImageLoader().load('image2.jpg'));
+  root.scene.add(slide2);
+
+  var tl = new TimelineMax({repeat:-1, repeatDelay:1.0});
+
+  tl.add(slide.transitionOut(), 0);
+  tl.add(slide2.transitionIn(), 0);
+
+  //TweenMax.to(slide2, 2, {time:3.0, ease:Power0.easeInOut, repeat:-1});
 }
 
 ////////////////////
@@ -28,7 +39,7 @@ function init() {
 ////////////////////
 
 function Slide(width, height) {
-  var plane = new THREE.PlaneGeometry(width, height, width / 4, height / 4);
+  var plane = new THREE.PlaneGeometry(width, height, width, height);
 
   THREE.BAS.Utils.separateFaces(plane);
 
@@ -59,28 +70,32 @@ function Slide(width, height) {
 
     // animation
     var duration = THREE.Math.randFloat(minDuration, maxDuration);
-    var delay = THREE.Math.mapLinear(centroid.x, -width * 0.5, width * 0.5, 1.0, 0.0);
+    var delayX = THREE.Math.mapLinear(centroid.x, -width * 0.5, width * 0.5, 0.5, 0.0);
+    //var delayY = THREE.Math.mapLinear(centroid.y, -height * 0.5, height * 0.5, 0.5, 0.0);
 
     for (v = 0; v < 6; v += 2) {
-      aAnimation.array[i2 + v]     = delay + (Math.random() * 0.1);
+      aAnimation.array[i2 + v]     = delayX + (Math.random() * 0.15);
       aAnimation.array[i2 + v + 1] = duration;
     }
 
-    // position
+    // positions
 
-    delta.x = THREE.Math.randFloat(24, 64);
-    delta.y = THREE.Math.randFloat(-24, 24);
-    delta.z = THREE.Math.randFloat(-24, 24);
+    var signX = Math.sign(centroid.x);
+    var signY = Math.sign(centroid.y);
 
-    control0.copy(delta).multiplyScalar(0.25);
-    control0.x += THREE.Math.randFloatSpread(12);
-    control0.y += THREE.Math.randFloatSpread(12);
-    control0.z += THREE.Math.randFloatSpread(12);
+    control0.x = THREE.Math.randFloat(24, 32);
+    control0.y = -signY * THREE.Math.randFloat(64, 96);
+    //control0.z = signY * THREE.Math.randFloat(64, 96);
+    control0.z = THREE.Math.randFloatSpread(32);
 
-    control1.copy(delta).multiplyScalar(0.75);
-    control1.x += THREE.Math.randFloatSpread(12);
-    control1.y += THREE.Math.randFloatSpread(12);
-    control1.z += THREE.Math.randFloatSpread(12);
+    control1.x = THREE.Math.randFloat(32, 48);
+    control1.y = signY * THREE.Math.randFloat(64, 96);
+    //control1.z = -signY * THREE.Math.randFloat(64, 96);
+    control1.z = THREE.Math.randFloatSpread(32);
+
+    delta.x = 0;
+    delta.y = -signY * THREE.Math.randFloat(32, 48);
+    delta.z = 0;
 
     for (v = 0; v < 9; v += 3) {
       aStartPosition.array[i3 + v]     = centroid.x;
@@ -106,7 +121,8 @@ function Slide(width, height) {
       shading: THREE.FlatShading,
       side: THREE.DoubleSide,
       uniforms: {
-        uTime: {type: 'f', value: 0}
+        uTime: {type: 'f', value: 0},
+        uDir: {type: 'f', value: 1.0}
       },
       shaderFunctions: [
         THREE.BAS.ShaderChunk['cubic_bezier'],
@@ -115,6 +131,7 @@ function Slide(width, height) {
       ],
       shaderParameters: [
         'uniform float uTime;',
+        'uniform float uDir;',
         'attribute vec2 aAnimation;',
         'attribute vec3 aStartPosition;',
         'attribute vec3 aControl0;',
@@ -125,15 +142,16 @@ function Slide(width, height) {
         'float tDelay = aAnimation.x;',
         'float tDuration = aAnimation.y;',
         'float tTime = clamp(uTime - tDelay, 0.0, tDuration);',
-        //'float tProgress = ease(tTime, 0.0, 1.0, tDuration);'
-        'float tProgress = tTime / tDuration;'
+        'float tProgress = ease(tTime, 0.0, 1.0, tDuration);'
+        //'float tProgress = tTime / tDuration;'
       ],
       shaderTransformPosition: [
-        'transformed += cubicBezier(aStartPosition, aControl0, aControl1, aEndPosition, tProgress);',
+        'transformed *= 1.0 - tProgress;',
+        'transformed += cubicBezier(aStartPosition, aControl0 * uDir, aControl1 * uDir, aEndPosition, tProgress);',
       ]
     },
     {
-      map: new THREE.TextureLoader().load('image.jpg')
+      map: new THREE.Texture()
     }
   );
 
@@ -151,6 +169,22 @@ Object.defineProperty(Slide.prototype, 'time', {
     this.material.uniforms['uTime'].value = v;
   }
 });
+
+Slide.prototype.setImage = function(image) {
+  this.material.uniforms.map.value.image = image;
+  this.material.uniforms.map.value.needsUpdate = true;
+};
+
+Slide.prototype.transitionIn = function() {
+  this.material.uniforms.uDir.value = -1.0;
+  return TweenMax.fromTo(this, 2, {time:3.0}, {time:0.0, ease:Power0.easeInOut});
+};
+Slide.prototype.transitionOut = function() {
+  this.material.uniforms.uDir.value = 1.0;
+  return TweenMax.fromTo(this, 2, {time:0.0}, {time:3.0, ease:Power0.easeInOut});
+};
+
+
 
 function SlideGeometry(model) {
   THREE.BAS.ModelBufferGeometry.call(this, model);
