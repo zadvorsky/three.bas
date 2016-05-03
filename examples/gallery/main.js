@@ -33,7 +33,11 @@ function init() {
 
   createTweenScrubber(tl);
 
-  //TweenMax.to(slide2, 2, {time:3.0, ease:Power0.easeInOut, repeat:-1});
+  //window.addEventListener('keyup', function(e) {
+  //  if (e.keyCode === 80) {
+  //    tl.paused(!tl.paused());
+  //  }
+  //});
 }
 
 ////////////////////
@@ -61,7 +65,7 @@ function Slide(width, height, animationPhase) {
   var maxDuration = 1.0;
   var maxDelayX = 1.0;
   var maxDelayY = 0.25;
-  var stretch = 0.1;
+  var stretch = 0.18;
 
   this.totalDuration = maxDuration + maxDelayX + maxDelayY + stretch;
 
@@ -75,9 +79,9 @@ function Slide(width, height, animationPhase) {
   function getControlPoint0(centroid) {
     var signY = Math.sign(centroid.y);
 
-    tempPoint.x = THREE.Math.randFloat(12, 32);
-    tempPoint.y = signY * THREE.Math.randFloat(32, 48);
-    tempPoint.z = THREE.Math.randFloatSpread(32);
+    tempPoint.x = THREE.Math.randFloat(0.1, 0.2) * 200;
+    tempPoint.y = signY * THREE.Math.randFloat(0.1, 0.9) * 50;
+    tempPoint.z = 0;//THREE.Math.randFloatSpread(16);
 
     return tempPoint;
   }
@@ -85,9 +89,9 @@ function Slide(width, height, animationPhase) {
   function getControlPoint1(centroid) {
     var signY = Math.sign(centroid.y);
 
-    tempPoint.x = THREE.Math.randFloat(32, 48);
-    tempPoint.y = -signY * THREE.Math.randFloat(32, 48);
-    tempPoint.z = THREE.Math.randFloatSpread(32);
+    tempPoint.x = THREE.Math.randFloat(0.1, 0.2) * 200;
+    tempPoint.y = -signY * THREE.Math.randFloat(0.1, 0.9) * 50;
+    tempPoint.z = 0;//THREE.Math.randFloatSpread(16);
 
     return tempPoint;
   }
@@ -99,7 +103,14 @@ function Slide(width, height, animationPhase) {
     // animation
     var duration = THREE.Math.randFloat(minDuration, maxDuration);
     var delayX = THREE.Math.mapLinear(centroid.x, -width * 0.5, width * 0.5, 0.0, maxDelayX);
-    var delayY = THREE.Math.mapLinear(Math.abs(centroid.y), 0, height * 0.5, maxDelayY, 0.0);
+    var delayY;
+
+    if (animationPhase === 'in') {
+      delayY = THREE.Math.mapLinear(Math.abs(centroid.y), 0, height * 0.5, 0.0, maxDelayY)
+    }
+    else {
+      delayY = THREE.Math.mapLinear(Math.abs(centroid.y), 0, height * 0.5, maxDelayY, 0.0)
+    }
 
     for (v = 0; v < 6; v += 2) {
       aAnimation.array[i2 + v]     = delayX + delayY + (Math.random() * stretch * duration);
