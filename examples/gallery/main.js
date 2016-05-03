@@ -9,7 +9,7 @@ function init() {
 
   root.renderer.setClearColor(0x000000);
   root.renderer.setPixelRatio(window.devicePixelRatio || 1);
-  root.camera.position.set(0, 0, 120);
+  root.camera.position.set(0, 0, 100);
 
   var light = new THREE.DirectionalLight();
   light.position.set(0, 0, 1);
@@ -59,10 +59,11 @@ function Slide(width, height, animationPhase) {
 
   var minDuration = 0.8;
   var maxDuration = 1.0;
-  var maxDelay = 1.0;
-  var stretch = 0.075;
+  var maxDelayX = 1.0;
+  var maxDelayY = 0.25;
+  var stretch = 0.1;
 
-  this.totalDuration = maxDuration + maxDelay + stretch;
+  this.totalDuration = maxDuration + maxDelayX + maxDelayY + stretch;
 
   var startPosition = new THREE.Vector3();
   var control0 = new THREE.Vector3();
@@ -74,8 +75,8 @@ function Slide(width, height, animationPhase) {
   function getControlPoint0(centroid) {
     var signY = Math.sign(centroid.y);
 
-    tempPoint.x = THREE.Math.randFloat(24, 32);
-    tempPoint.y = -signY * THREE.Math.randFloat(64, 96);
+    tempPoint.x = THREE.Math.randFloat(12, 32);
+    tempPoint.y = signY * THREE.Math.randFloat(32, 48);
     tempPoint.z = THREE.Math.randFloatSpread(32);
 
     return tempPoint;
@@ -85,7 +86,7 @@ function Slide(width, height, animationPhase) {
     var signY = Math.sign(centroid.y);
 
     tempPoint.x = THREE.Math.randFloat(32, 48);
-    tempPoint.y = signY * THREE.Math.randFloat(64, 96);
+    tempPoint.y = -signY * THREE.Math.randFloat(32, 48);
     tempPoint.z = THREE.Math.randFloatSpread(32);
 
     return tempPoint;
@@ -97,10 +98,11 @@ function Slide(width, height, animationPhase) {
 
     // animation
     var duration = THREE.Math.randFloat(minDuration, maxDuration);
-    var delayX = THREE.Math.mapLinear(centroid.x, -width * 0.5, width * 0.5, maxDelay, 0.0);
+    var delayX = THREE.Math.mapLinear(centroid.x, -width * 0.5, width * 0.5, 0.0, maxDelayX);
+    var delayY = THREE.Math.mapLinear(Math.abs(centroid.y), 0, height * 0.5, maxDelayY, 0.0);
 
     for (v = 0; v < 6; v += 2) {
-      aAnimation.array[i2 + v]     = delayX + (Math.random() * stretch * duration);
+      aAnimation.array[i2 + v]     = delayX + delayY + (Math.random() * stretch * duration);
       aAnimation.array[i2 + v + 1] = duration;
     }
 
@@ -171,7 +173,7 @@ function Slide(width, height, animationPhase) {
       ]
     },
     {
-      map: new THREE.Texture()
+      map: new THREE.Texture(),
     }
   );
 
