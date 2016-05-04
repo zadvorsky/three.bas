@@ -9,7 +9,7 @@ function init() {
 
   root.renderer.setClearColor(0x000000);
   root.renderer.setPixelRatio(window.devicePixelRatio || 1);
-  root.camera.position.set(0, 0, 100);
+  root.camera.position.set(0, 0, 60);
 
   var light = new THREE.DirectionalLight();
   light.position.set(0, 0, 1);
@@ -63,9 +63,9 @@ function Slide(width, height, animationPhase) {
 
   var minDuration = 0.8;
   var maxDuration = 1.0;
-  var maxDelayX = 1.0;
-  var maxDelayY = 0.25;
-  var stretch = 0.18;
+  var maxDelayX = 0.75;
+  var maxDelayY = 0.125;
+  var stretch = 0.1;
 
   this.totalDuration = maxDuration + maxDelayX + maxDelayY + stretch;
 
@@ -79,9 +79,9 @@ function Slide(width, height, animationPhase) {
   function getControlPoint0(centroid) {
     var signY = Math.sign(centroid.y);
 
-    tempPoint.x = THREE.Math.randFloat(0.1, 0.2) * 200;
+    tempPoint.x = THREE.Math.randFloat(0.1, 0.4) * 50;
     tempPoint.y = signY * THREE.Math.randFloat(0.1, 0.9) * 50;
-    tempPoint.z = 0;//THREE.Math.randFloatSpread(16);
+    tempPoint.z = THREE.Math.randFloatSpread(20);
 
     return tempPoint;
   }
@@ -89,9 +89,9 @@ function Slide(width, height, animationPhase) {
   function getControlPoint1(centroid) {
     var signY = Math.sign(centroid.y);
 
-    tempPoint.x = THREE.Math.randFloat(0.1, 0.2) * 200;
+    tempPoint.x = THREE.Math.randFloat(0.4, 0.6) * 50;
     tempPoint.y = -signY * THREE.Math.randFloat(0.1, 0.9) * 50;
-    tempPoint.z = 0;//THREE.Math.randFloatSpread(16);
+    tempPoint.z = THREE.Math.randFloatSpread(20);
 
     return tempPoint;
   }
@@ -150,7 +150,7 @@ function Slide(width, height, animationPhase) {
     }
   }
 
-  var material = new THREE.BAS.PhongAnimationMaterial(
+  var material = new THREE.BAS.BasicAnimationMaterial(
     {
       shading: THREE.FlatShading,
       side: THREE.DoubleSide,
