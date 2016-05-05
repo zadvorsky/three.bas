@@ -7,7 +7,7 @@ function init() {
     fov: 80
   });
 
-  root.renderer.setClearColor(0x000000);
+  root.renderer.setClearColor(0x000000, 0);
   root.renderer.setPixelRatio(window.devicePixelRatio || 1);
   root.camera.position.set(0, 0, 60);
 
@@ -19,11 +19,11 @@ function init() {
   var height = 60;
 
   var slide = new Slide(width, height, 'out');
-  slide.setImage(new THREE.ImageLoader().load('image.jpg'));
+  slide.setImage(new THREE.ImageLoader().load('winter.jpg'));
   root.scene.add(slide);
 
   var slide2 = new Slide(width, height, 'in');
-  slide2.setImage(new THREE.ImageLoader().load('image2.jpg'));
+  slide2.setImage(new THREE.ImageLoader().load('spring.jpg'));
   root.scene.add(slide2);
 
   var tl = new TimelineMax({repeat:-1, repeatDelay:1.0, yoyo: true});
@@ -33,11 +33,11 @@ function init() {
 
   createTweenScrubber(tl);
 
-  //window.addEventListener('keyup', function(e) {
-  //  if (e.keyCode === 80) {
-  //    tl.paused(!tl.paused());
-  //  }
-  //});
+  window.addEventListener('keyup', function(e) {
+    if (e.keyCode === 80) {
+      tl.paused(!tl.paused());
+    }
+  });
 }
 
 ////////////////////
@@ -62,10 +62,10 @@ function Slide(width, height, animationPhase) {
   var i, i2, i3, i4, v;
 
   var minDuration = 0.8;
-  var maxDuration = 1.0;
-  var maxDelayX = 0.75;
+  var maxDuration = 1.2;
+  var maxDelayX = 0.9;
   var maxDelayY = 0.125;
-  var stretch = 0.1;
+  var stretch = 0.11;
 
   this.totalDuration = maxDuration + maxDelayX + maxDelayY + stretch;
 
@@ -79,8 +79,8 @@ function Slide(width, height, animationPhase) {
   function getControlPoint0(centroid) {
     var signY = Math.sign(centroid.y);
 
-    tempPoint.x = THREE.Math.randFloat(0.1, 0.4) * 50;
-    tempPoint.y = signY * THREE.Math.randFloat(0.1, 0.9) * 50;
+    tempPoint.x = THREE.Math.randFloat(0.1, 0.3) * 50;
+    tempPoint.y = signY * THREE.Math.randFloat(0.1, 0.3) * 70;
     tempPoint.z = THREE.Math.randFloatSpread(20);
 
     return tempPoint;
@@ -89,8 +89,8 @@ function Slide(width, height, animationPhase) {
   function getControlPoint1(centroid) {
     var signY = Math.sign(centroid.y);
 
-    tempPoint.x = THREE.Math.randFloat(0.4, 0.6) * 50;
-    tempPoint.y = -signY * THREE.Math.randFloat(0.1, 0.9) * 50;
+    tempPoint.x = THREE.Math.randFloat(0.3, 0.6) * 50;
+    tempPoint.y = -signY * THREE.Math.randFloat(0.3, 0.6) * 70;
     tempPoint.z = THREE.Math.randFloatSpread(20);
 
     return tempPoint;
@@ -209,7 +209,7 @@ Slide.prototype.setImage = function(image) {
 };
 
 Slide.prototype.transition = function() {
-  return TweenMax.fromTo(this, 2.0, {time:0.0}, {time:this.totalDuration, ease:Power0.easeInOut});
+  return TweenMax.fromTo(this, 10.0, {time:0.0}, {time:this.totalDuration, ease:Power0.easeInOut});
 };
 
 
@@ -254,7 +254,8 @@ function THREERoot(params) {
   }, params);
 
   this.renderer = new THREE.WebGLRenderer({
-    antialias: params.antialias
+    antialias: params.antialias,
+    alpha: true
   });
   this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
   document.getElementById('three-container').appendChild(this.renderer.domElement);
