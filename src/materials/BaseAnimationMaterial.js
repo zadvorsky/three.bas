@@ -13,6 +13,7 @@ THREE.BAS.BaseAnimationMaterial = function (parameters) {
   this.fragmentFunctions = [];
   this.fragmentParameters = [];
   this.fragmentInit = [];
+  this.fragmentAlpha = [];
 
   this.setValues(parameters);
 };

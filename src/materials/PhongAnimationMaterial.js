@@ -1,6 +1,4 @@
 THREE.BAS.PhongAnimationMaterial = function (parameters, uniformValues) {
-
-  this.fragmentAlpha = [];
   this.fragmentEmissive = [];
   this.fragmentSpecular = [];
 

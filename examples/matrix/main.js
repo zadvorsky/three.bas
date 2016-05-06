@@ -83,7 +83,7 @@ function Slide() {
   }
 
 
-  var material = new THREE.BAS.PhongAnimationMaterial(
+  var material = new THREE.BAS.BasicAnimationMaterial(
     {
       shading: THREE.FlatShading,
       side: THREE.DoubleSide,
@@ -118,13 +118,13 @@ function Slide() {
         //'vec4 tQuat = quatFromAxisAngle(aAxisAngle.xyz, angle);',
         //'transformed = rotateVector(tQuat, transformed);',
 
-        'transformed += aPosition;',
-
+        'transformed += aPosition;'
+      ],
+      vertexColor: [
         'vShininess = abs(aPosition.x) * 20.0;',
         'vSpecular = normalize(abs(aPosition));',
         'vAlpha = 1.0;'
       ],
-
       fragmentParameters: [
       ],
       fragmentAlpha: [
@@ -138,7 +138,6 @@ function Slide() {
         'material.specularShininess = vShininess;',
         'material.specularColor = vSpecular;'
       ]
-
     },{
       specular:0xff00ff,
       shininess:100
