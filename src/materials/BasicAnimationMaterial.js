@@ -18,7 +18,7 @@ THREE.BAS.BasicAnimationMaterial.prototype = Object.create(THREE.BAS.BaseAnimati
 THREE.BAS.BasicAnimationMaterial.prototype.constructor = THREE.BAS.BasicAnimationMaterial;
 
 THREE.BAS.BasicAnimationMaterial.prototype._concatVertexShader = function() {
-  // based on THREE.ShaderLib.phong
+  // based on THREE.ShaderLib.basic
   return [
 
     THREE.ShaderChunk[ "common" ],
@@ -30,13 +30,14 @@ THREE.BAS.BasicAnimationMaterial.prototype._concatVertexShader = function() {
     THREE.ShaderChunk[ "skinning_pars_vertex" ],
     THREE.ShaderChunk[ "logdepthbuf_pars_vertex" ],
 
-    this._concatFunctions(),
+    this._stringifyChunk('vertexFunctions'),
 
-    this._concatParameters(),
+    this._stringifyChunk('vertexParameters'),
+    this._stringifyChunk('varyingParameters'),
 
     "void main() {",
 
-    this._concatVertexInit(),
+    this._stringifyChunk('vertexInit'),
 
     THREE.ShaderChunk[ "uv_vertex" ],
     THREE.ShaderChunk[ "uv2_vertex" ],
@@ -47,7 +48,7 @@ THREE.BAS.BasicAnimationMaterial.prototype._concatVertexShader = function() {
 
     THREE.ShaderChunk[ "beginnormal_vertex" ],
 
-    this._concatTransformNormal(),
+    this._stringifyChunk('vertexNormal'),
 
     THREE.ShaderChunk[ "morphnormal_vertex" ],
     THREE.ShaderChunk[ "skinnormal_vertex" ],
@@ -57,7 +58,8 @@ THREE.BAS.BasicAnimationMaterial.prototype._concatVertexShader = function() {
 
     THREE.ShaderChunk[ "begin_vertex" ],
 
-    this._concatTransformPosition(),
+    this._stringifyChunk('vertexPosition'),
+    this._stringifyChunk('vertexColor'),
 
     THREE.ShaderChunk[ "morphtarget_vertex" ],
     THREE.ShaderChunk[ "skinning_vertex" ],

@@ -1,11 +1,18 @@
 THREE.BAS.BaseAnimationMaterial = function (parameters) {
   THREE.ShaderMaterial.call(this);
 
-  this.shaderFunctions = [];
-  this.shaderParameters = [];
-  this.shaderVertexInit = [];
-  this.shaderTransformNormal = [];
-  this.shaderTransformPosition = [];
+  this.varyingParameters = [];
+
+  this.vertexFunctions = [];
+  this.vertexParameters = [];
+  this.vertexInit = [];
+  this.vertexNormal = [];
+  this.vertexPosition = [];
+  this.vertexColor = [];
+
+  this.fragmentFunctions = [];
+  this.fragmentParameters = [];
+  this.fragmentInit = [];
 
   this.setValues(parameters);
 };
@@ -16,23 +23,9 @@ THREE.BAS.BaseAnimationMaterial.prototype.constructor = THREE.BAS.BaseAnimationM
 THREE.BAS.BaseAnimationMaterial.prototype._concatVertexShader = function () {
   return '';
 };
-
-THREE.BAS.BaseAnimationMaterial.prototype._concatFunctions = function () {
-  return this.shaderFunctions.join('\n');
+THREE.BAS.BaseAnimationMaterial.prototype._concatFragmentShader = function () {
+  return '';
 };
-THREE.BAS.BaseAnimationMaterial.prototype._concatParameters = function () {
-  return this.shaderParameters.join('\n');
-};
-THREE.BAS.BaseAnimationMaterial.prototype._concatVertexInit = function () {
-  return this.shaderVertexInit.join('\n');
-};
-THREE.BAS.BaseAnimationMaterial.prototype._concatTransformNormal = function () {
-  return this.shaderTransformNormal.join('\n');
-};
-THREE.BAS.BaseAnimationMaterial.prototype._concatTransformPosition = function () {
-  return this.shaderTransformPosition.join('\n');
-};
-
 
 THREE.BAS.BaseAnimationMaterial.prototype.setUniformValues = function (values) {
   for (var key in values) {
@@ -57,4 +50,8 @@ THREE.BAS.BaseAnimationMaterial.prototype.setUniformValues = function (values) {
       }
     }
   }
+};
+
+THREE.BAS.BaseAnimationMaterial.prototype._stringifyChunk = function(name) {
+  return this[name].join('\n');
 };

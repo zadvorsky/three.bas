@@ -886,11 +886,18 @@ THREE.BAS.PrefabBufferGeometry.prototype.setAttribute2 = function (name, data) {
 THREE.BAS.BaseAnimationMaterial = function (parameters) {
   THREE.ShaderMaterial.call(this);
 
-  this.shaderFunctions = [];
-  this.shaderParameters = [];
-  this.shaderVertexInit = [];
-  this.shaderTransformNormal = [];
-  this.shaderTransformPosition = [];
+  this.varyingParameters = [];
+
+  this.vertexFunctions = [];
+  this.vertexParameters = [];
+  this.vertexInit = [];
+  this.vertexNormal = [];
+  this.vertexPosition = [];
+  this.vertexColor = [];
+
+  this.fragmentFunctions = [];
+  this.fragmentParameters = [];
+  this.fragmentInit = [];
 
   this.setValues(parameters);
 };
@@ -901,23 +908,9 @@ THREE.BAS.BaseAnimationMaterial.prototype.constructor = THREE.BAS.BaseAnimationM
 THREE.BAS.BaseAnimationMaterial.prototype._concatVertexShader = function () {
   return '';
 };
-
-THREE.BAS.BaseAnimationMaterial.prototype._concatFunctions = function () {
-  return this.shaderFunctions.join('\n');
+THREE.BAS.BaseAnimationMaterial.prototype._concatFragmentShader = function () {
+  return '';
 };
-THREE.BAS.BaseAnimationMaterial.prototype._concatParameters = function () {
-  return this.shaderParameters.join('\n');
-};
-THREE.BAS.BaseAnimationMaterial.prototype._concatVertexInit = function () {
-  return this.shaderVertexInit.join('\n');
-};
-THREE.BAS.BaseAnimationMaterial.prototype._concatTransformNormal = function () {
-  return this.shaderTransformNormal.join('\n');
-};
-THREE.BAS.BaseAnimationMaterial.prototype._concatTransformPosition = function () {
-  return this.shaderTransformPosition.join('\n');
-};
-
 
 THREE.BAS.BaseAnimationMaterial.prototype.setUniformValues = function (values) {
   for (var key in values) {
@@ -944,6 +937,10 @@ THREE.BAS.BaseAnimationMaterial.prototype.setUniformValues = function (values) {
   }
 };
 
+THREE.BAS.BaseAnimationMaterial.prototype._stringifyChunk = function(name) {
+  return this[name].join('\n');
+};
+
 THREE.BAS.BasicAnimationMaterial = function(parameters, uniformValues) {
   THREE.BAS.BaseAnimationMaterial.call(this, parameters);
 
@@ -964,7 +961,7 @@ THREE.BAS.BasicAnimationMaterial.prototype = Object.create(THREE.BAS.BaseAnimati
 THREE.BAS.BasicAnimationMaterial.prototype.constructor = THREE.BAS.BasicAnimationMaterial;
 
 THREE.BAS.BasicAnimationMaterial.prototype._concatVertexShader = function() {
-  // based on THREE.ShaderLib.phong
+  // based on THREE.ShaderLib.basic
   return [
 
     THREE.ShaderChunk[ "common" ],
@@ -976,13 +973,14 @@ THREE.BAS.BasicAnimationMaterial.prototype._concatVertexShader = function() {
     THREE.ShaderChunk[ "skinning_pars_vertex" ],
     THREE.ShaderChunk[ "logdepthbuf_pars_vertex" ],
 
-    this._concatFunctions(),
+    this._stringifyChunk('vertexFunctions'),
 
-    this._concatParameters(),
+    this._stringifyChunk('vertexParameters'),
+    this._stringifyChunk('varyingParameters'),
 
     "void main() {",
 
-    this._concatVertexInit(),
+    this._stringifyChunk('vertexInit'),
 
     THREE.ShaderChunk[ "uv_vertex" ],
     THREE.ShaderChunk[ "uv2_vertex" ],
@@ -993,7 +991,7 @@ THREE.BAS.BasicAnimationMaterial.prototype._concatVertexShader = function() {
 
     THREE.ShaderChunk[ "beginnormal_vertex" ],
 
-    this._concatTransformNormal(),
+    this._stringifyChunk('vertexNormal'),
 
     THREE.ShaderChunk[ "morphnormal_vertex" ],
     THREE.ShaderChunk[ "skinnormal_vertex" ],
@@ -1003,7 +1001,8 @@ THREE.BAS.BasicAnimationMaterial.prototype._concatVertexShader = function() {
 
     THREE.ShaderChunk[ "begin_vertex" ],
 
-    this._concatTransformPosition(),
+    this._stringifyChunk('vertexPosition'),
+    this._stringifyChunk('vertexColor'),
 
     THREE.ShaderChunk[ "morphtarget_vertex" ],
     THREE.ShaderChunk[ "skinning_vertex" ],
@@ -1020,8 +1019,9 @@ THREE.BAS.BasicAnimationMaterial.prototype._concatVertexShader = function() {
 
 THREE.BAS.PhongAnimationMaterial = function (parameters, uniformValues) {
 
-  this.fragmentShaderParameters = [];
-  this.fragmentShaderAlpha = [];
+  this.fragmentAlpha = [];
+  this.fragmentEmissive = [];
+  this.fragmentSpecular = [];
 
   THREE.BAS.BaseAnimationMaterial.call(this, parameters);
 
@@ -1066,20 +1066,20 @@ THREE.BAS.PhongAnimationMaterial.prototype._concatVertexShader = function () {
     THREE.ShaderChunk["shadowmap_pars_vertex"],
     THREE.ShaderChunk["logdepthbuf_pars_vertex"],
 
-    this._concatFunctions(),
-
-    this._concatParameters(),
+    this._stringifyChunk('vertexFunctions'),
+    this._stringifyChunk('vertexParameters'),
+    this._stringifyChunk('varyingParameters'),
 
     "void main() {",
 
-    this._concatVertexInit(),
+    this._stringifyChunk('vertexInit'),
 
     THREE.ShaderChunk["uv_vertex"],
     THREE.ShaderChunk["uv2_vertex"],
     THREE.ShaderChunk["color_vertex"],
     THREE.ShaderChunk["beginnormal_vertex"],
 
-    this._concatTransformNormal(),
+    this._stringifyChunk('vertexInit'),
 
     THREE.ShaderChunk["morphnormal_vertex"],
     THREE.ShaderChunk["skinbase_vertex"],
@@ -1094,7 +1094,8 @@ THREE.BAS.PhongAnimationMaterial.prototype._concatVertexShader = function () {
 
     THREE.ShaderChunk["begin_vertex"],
 
-    this._concatTransformPosition(),
+    this._stringifyChunk('vertexPosition'),
+    this._stringifyChunk('vertexColor'),
 
     THREE.ShaderChunk["displacementmap_vertex"],
     THREE.ShaderChunk["morphtarget_vertex"],
@@ -1124,7 +1125,9 @@ THREE.BAS.PhongAnimationMaterial.prototype._concatFragmentShader = function () {
     "uniform float shininess;",
     "uniform float opacity;",
 
-    this._concatChunk('fragmentShaderParameters'),
+    this._stringifyChunk('fragmentFunctions'),
+    this._stringifyChunk('fragmentParameters'),
+    this._stringifyChunk('varyingParameters'),
 
     THREE.ShaderChunk[ "common" ],
     THREE.ShaderChunk[ "color_pars_fragment" ],
@@ -1149,6 +1152,8 @@ THREE.BAS.PhongAnimationMaterial.prototype._concatFragmentShader = function () {
 
     "void main() {",
 
+    this._stringifyChunk('fragmentInit'),
+
     "	vec4 diffuseColor = vec4( diffuse, opacity );",
     "	ReflectedLight reflectedLight = ReflectedLight( vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ) );",
     "	vec3 totalEmissiveLight = emissive;",
@@ -1157,16 +1162,22 @@ THREE.BAS.PhongAnimationMaterial.prototype._concatFragmentShader = function () {
     THREE.ShaderChunk[ "map_fragment" ],
     THREE.ShaderChunk[ "color_fragment" ],
 
-    this._concatChunk('fragmentShaderAlpha'),
+    this._stringifyChunk('fragmentAlpha'),
 
     THREE.ShaderChunk[ "alphamap_fragment" ],
     THREE.ShaderChunk[ "alphatest_fragment" ],
     THREE.ShaderChunk[ "specularmap_fragment" ],
     THREE.ShaderChunk[ "normal_fragment" ],
+
+    this._stringifyChunk('fragmentEmissive'),
+
     THREE.ShaderChunk[ "emissivemap_fragment" ],
 
     // accumulation
     THREE.ShaderChunk[ "lights_phong_fragment" ],
+
+    this._stringifyChunk('fragmentSpecular'),
+
     THREE.ShaderChunk[ "lights_template" ],
 
     // modulation
@@ -1184,10 +1195,4 @@ THREE.BAS.PhongAnimationMaterial.prototype._concatFragmentShader = function () {
     "}"
 
   ].join( "\n" )
-};
-
-
-
-THREE.BAS.PhongAnimationMaterial.prototype._concatChunk = function(name) {
-  return this[name].join('\n');
 };

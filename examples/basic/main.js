@@ -137,7 +137,7 @@ function initParticleSystem() {
             // 'objectNormal' is the temporary register used inside THREE.MeshPhongMaterial.vertexShader
             // this code will be inserted before any other transformations
             shaderTransformNormal: [
-                // use the quaternion created in 'shaderVertexInit' to rotate the normal
+                // use the quaternion created in 'vertexInit' to rotate the normal
                 // the 'rotateVector' function is defined in THREE.BAS.ShaderChunk['quaternion_rotation']
                 'objectNormal = rotateVector(tQuat, objectNormal);'
             ],
@@ -145,7 +145,7 @@ function initParticleSystem() {
             // 'transformed' is the temporary register used inside THREE.MeshPhongMaterial.vertexShader
             // this code will be inserted before any other transformations
             shaderTransformPosition: [
-                // use the quaternion created in 'shaderVertexInit' to rotate the vertex position
+                // use the quaternion created in 'vertexInit' to rotate the vertex position
                 'transformed = rotateVector(tQuat, transformed);',
                 // translate the rotated vertex position
                 // the order of transformation matters, just like with matrices

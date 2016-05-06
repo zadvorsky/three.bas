@@ -7,16 +7,20 @@ function init() {
     fov: 80
   });
 
-  root.renderer.setClearColor(0x000000, 0);
+  root.renderer.setClearColor(0x000000);
   root.renderer.setPixelRatio(window.devicePixelRatio || 1);
   root.camera.position.set(0, 0, 12);
 
   var slide = new Slide();
   root.scene.add(slide);
 
-  var light = new THREE.DirectionalLight();
+  var light = new THREE.DirectionalLight(0xffffff, 1.0);
   light.position.set(0, 0, 1);
   root.scene.add(light);
+
+  root.addUpdateCallback(function() {
+    //light.position.copy(root.camera.position);
+  });
 }
 
 ////////////////////
@@ -24,20 +28,17 @@ function init() {
 ////////////////////
 
 function Slide() {
-  var prefabGeometry = new THREE.BoxGeometry(1, 1, 1);
+  var prefabGeometry = new THREE.SphereGeometry(1, 64, 64);
   var prefabCount = 20;
-
-  prefabGeometry.applyMatrix(new THREE.Matrix4().makeRotationY(Math.random() * Math.PI));
-
   var geometry = new THREE.BAS.PrefabBufferGeometry(prefabGeometry, prefabCount);
 
-  var minDuration = 0.8;
-  var maxDuration = 1.2;
-  var maxDelayX = 0.9;
-  var maxDelayY = 0.125;
-  var stretch = 0.11;
-
-  this.totalDuration = maxDuration + maxDelayX + maxDelayY + stretch;
+  //var minDuration = 0.8;
+  //var maxDuration = 1.2;
+  //var maxDelayX = 0.9;
+  //var maxDelayY = 0.125;
+  //var stretch = 0.11;
+  //
+  //this.totalDuration = maxDuration + maxDelayX + maxDelayY + stretch;
 
   var i, j, offset;
 
@@ -51,7 +52,6 @@ function Slide() {
     position.z = THREE.Math.randFloatSpread(10);
 
     for (j = 0; j < prefabGeometry.vertices.length; j++) {
-
       aPosition.array[offset  ] = position.x;
       aPosition.array[offset+1] = position.y;
       aPosition.array[offset+2] = position.z;
@@ -59,6 +59,29 @@ function Slide() {
       offset += 3;
     }
   }
+
+  // axis angle
+  var aAxisAngle = geometry.createAttribute('aAxisAngle', 4);
+  var axis = new THREE.Vector3();
+  var angle;
+
+  for (i = 0, offset = 0; i < prefabCount; i++) {
+    axis.x = THREE.Math.randFloatSpread(2);
+    axis.y = THREE.Math.randFloatSpread(2);
+    axis.z = THREE.Math.randFloatSpread(2);
+    axis.normalize();
+    angle = Math.random() * Math.PI * 2;
+
+    for (j = 0; j < prefabGeometry.vertices.length; j++) {
+      aAxisAngle.array[offset  ] = axis.x;
+      aAxisAngle.array[offset+1] = axis.y;
+      aAxisAngle.array[offset+2] = axis.z;
+      aAxisAngle.array[offset+3] = angle;
+
+      offset += 4;
+    }
+  }
+
 
   var material = new THREE.BAS.PhongAnimationMaterial(
     {
@@ -68,36 +91,58 @@ function Slide() {
       uniforms: {
         uTime: {type: 'f', value: 0}
       },
-      shaderFunctions: [
+      vertexFunctions: [
+        THREE.BAS.ShaderChunk['quaternion_rotation']
       ],
-      shaderParameters: [
+      vertexParameters: [
         'uniform float uTime;',
         //'attribute vec2 aAnimation;',
         'attribute vec3 aPosition;',
-
+        'attribute vec4 aAxisAngle;'
+      ],
+      varyingParameters: [
+        'varying float vShininess;',
+        //'varying vec3 vEmissive;',
+        'varying vec3 vSpecular;',
         'varying float vAlpha;'
       ],
-      shaderVertexInit: [
+      vertexInit: [
         //'float tDelay = aAnimation.x;',
         //'float tDuration = aAnimation.y;',
         //'float tTime = clamp(uTime - tDelay, 0.0, tDuration);',
         //'float tProgress = ease(tTime, 0.0, 1.0, tDuration);'
         //'float tProgress = tTime / tDuration;'
       ],
-      shaderTransformPosition: [
+      vertexPosition: [
+        //'float angle = aAxisAngle.w * 1.0;',
+        //'vec4 tQuat = quatFromAxisAngle(aAxisAngle.xyz, angle);',
+        //'transformed = rotateVector(tQuat, transformed);',
+
         'transformed += aPosition;',
 
-        'vAlpha = 0.5;'
+        'vShininess = abs(aPosition.x) * 20.0;',
+        'vSpecular = normalize(abs(aPosition));',
+        'vAlpha = 1.0;'
       ],
 
-      fragmentShaderParameters: [
-        'varying float vAlpha;'
+      fragmentParameters: [
       ],
-      fragmentShaderAlpha: [
+      fragmentAlpha: [
         'diffuseColor.a *= vAlpha;'
+      ],
+      fragmentEmissive: [
+        //'totalEmissiveLight = vEmissive;' // default emissive = (0, 0, 0)
+      ],
+      fragmentSpecular: [
+        //'material.specularStrength = 0.25;'
+        'material.specularShininess = vShininess;',
+        'material.specularColor = vSpecular;'
       ]
 
-    },{}
+    },{
+      specular:0xff00ff,
+      shininess:100
+    }
   );
 
   THREE.Mesh.call(this, geometry, material);
@@ -128,6 +173,9 @@ function THREERoot(params) {
     createCameraControls: true
   }, params);
 
+  this.updateCallbacks = [];
+  this.resizeCallbacks = [];
+
   this.renderer = new THREE.WebGLRenderer({
     antialias: params.antialias
   });
@@ -156,13 +204,22 @@ function THREERoot(params) {
   window.addEventListener('resize', this.resize, false);
 }
 THREERoot.prototype = {
+  addUpdateCallback:function(callback) {
+    this.updateCallbacks.push(callback);
+  },
+  addResizeCallback:function(callback) {
+    this.resizeCallbacks.push(callback);
+  },
+
   tick: function () {
     this.update();
     this.render();
+
     requestAnimationFrame(this.tick);
   },
   update: function () {
     this.controls && this.controls.update();
+    this.updateCallbacks.forEach(function(callback) {callback()});
   },
   render: function () {
     this.renderer.render(this.scene, this.camera);
