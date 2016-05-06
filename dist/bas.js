@@ -1018,94 +1018,176 @@ THREE.BAS.BasicAnimationMaterial.prototype._concatVertexShader = function() {
   ].join( "\n" );
 };
 
-THREE.BAS.PhongAnimationMaterial = function(parameters, uniformValues) {
-    THREE.BAS.BaseAnimationMaterial.call(this, parameters);
+THREE.BAS.PhongAnimationMaterial = function (parameters, uniformValues) {
 
-    var phongShader = THREE.ShaderLib['phong'];
+  this.fragmentShaderParameters = [];
+  this.fragmentShaderAlpha = [];
 
-    this.uniforms = THREE.UniformsUtils.merge([phongShader.uniforms, this.uniforms]);
-    this.lights = true;
-    this.vertexShader = this._concatVertexShader();
-    this.fragmentShader = phongShader.fragmentShader;
+  THREE.BAS.BaseAnimationMaterial.call(this, parameters);
 
-    // todo add missing default defines
-    uniformValues.map && (this.defines['USE_MAP'] = '');
-    uniformValues.normalMap && (this.defines['USE_NORMALMAP'] = '');
+  var phongShader = THREE.ShaderLib['phong'];
 
-    this.setUniformValues(uniformValues);
+  this.uniforms = THREE.UniformsUtils.merge([phongShader.uniforms, this.uniforms]);
+  this.lights = true;
+  this.vertexShader = this._concatVertexShader();
+  this.fragmentShader = this._concatFragmentShader();
+
+  // todo add missing default defines
+  uniformValues.map && (this.defines['USE_MAP'] = '');
+  uniformValues.normalMap && (this.defines['USE_NORMALMAP'] = '');
+
+  this.setUniformValues(uniformValues);
 };
 THREE.BAS.PhongAnimationMaterial.prototype = Object.create(THREE.BAS.BaseAnimationMaterial.prototype);
 THREE.BAS.PhongAnimationMaterial.prototype.constructor = THREE.BAS.PhongAnimationMaterial;
 
-THREE.BAS.PhongAnimationMaterial.prototype._concatVertexShader = function() {
-    // based on THREE.ShaderLib.phong
-    return [
-        "#define PHONG",
+THREE.BAS.PhongAnimationMaterial.prototype._concatVertexShader = function () {
+  // based on THREE.ShaderLib.phong
+  return [
+    "#define PHONG",
 
-        "varying vec3 vViewPosition;",
+    "varying vec3 vViewPosition;",
 
-        "#ifndef FLAT_SHADED",
+    "#ifndef FLAT_SHADED",
 
-        "	varying vec3 vNormal;",
+    "	varying vec3 vNormal;",
 
-        "#endif",
+    "#endif",
 
-        THREE.ShaderChunk[ "common" ],
-        THREE.ShaderChunk[ "uv_pars_vertex" ],
-        THREE.ShaderChunk[ "uv2_pars_vertex" ],
-        THREE.ShaderChunk[ "displacementmap_pars_vertex" ],
-        THREE.ShaderChunk[ "envmap_pars_vertex" ],
-        THREE.ShaderChunk[ "lights_phong_pars_vertex" ],
-        THREE.ShaderChunk[ "color_pars_vertex" ],
-        THREE.ShaderChunk[ "morphtarget_pars_vertex" ],
-        THREE.ShaderChunk[ "skinning_pars_vertex" ],
-        THREE.ShaderChunk[ "shadowmap_pars_vertex" ],
-        THREE.ShaderChunk[ "logdepthbuf_pars_vertex" ],
+    THREE.ShaderChunk["common"],
+    THREE.ShaderChunk["uv_pars_vertex"],
+    THREE.ShaderChunk["uv2_pars_vertex"],
+    THREE.ShaderChunk["displacementmap_pars_vertex"],
+    THREE.ShaderChunk["envmap_pars_vertex"],
+    THREE.ShaderChunk["lights_phong_pars_vertex"],
+    THREE.ShaderChunk["color_pars_vertex"],
+    THREE.ShaderChunk["morphtarget_pars_vertex"],
+    THREE.ShaderChunk["skinning_pars_vertex"],
+    THREE.ShaderChunk["shadowmap_pars_vertex"],
+    THREE.ShaderChunk["logdepthbuf_pars_vertex"],
 
-        this._concatFunctions(),
+    this._concatFunctions(),
 
-        this._concatParameters(),
+    this._concatParameters(),
 
-        "void main() {",
+    "void main() {",
 
-        this._concatVertexInit(),
+    this._concatVertexInit(),
 
-        THREE.ShaderChunk[ "uv_vertex" ],
-        THREE.ShaderChunk[ "uv2_vertex" ],
-        THREE.ShaderChunk[ "color_vertex" ],
-        THREE.ShaderChunk[ "beginnormal_vertex" ],
+    THREE.ShaderChunk["uv_vertex"],
+    THREE.ShaderChunk["uv2_vertex"],
+    THREE.ShaderChunk["color_vertex"],
+    THREE.ShaderChunk["beginnormal_vertex"],
 
-        this._concatTransformNormal(),
+    this._concatTransformNormal(),
 
-        THREE.ShaderChunk[ "morphnormal_vertex" ],
-        THREE.ShaderChunk[ "skinbase_vertex" ],
-        THREE.ShaderChunk[ "skinnormal_vertex" ],
-        THREE.ShaderChunk[ "defaultnormal_vertex" ],
+    THREE.ShaderChunk["morphnormal_vertex"],
+    THREE.ShaderChunk["skinbase_vertex"],
+    THREE.ShaderChunk["skinnormal_vertex"],
+    THREE.ShaderChunk["defaultnormal_vertex"],
 
-        "#ifndef FLAT_SHADED", // Normal computed with derivatives when FLAT_SHADED
+    "#ifndef FLAT_SHADED", // Normal computed with derivatives when FLAT_SHADED
 
-        "	vNormal = normalize( transformedNormal );",
+    "	vNormal = normalize( transformedNormal );",
 
-        "#endif",
+    "#endif",
 
-        THREE.ShaderChunk[ "begin_vertex" ],
+    THREE.ShaderChunk["begin_vertex"],
 
-        this._concatTransformPosition(),
+    this._concatTransformPosition(),
 
-        THREE.ShaderChunk[ "displacementmap_vertex" ],
-        THREE.ShaderChunk[ "morphtarget_vertex" ],
-        THREE.ShaderChunk[ "skinning_vertex" ],
-        THREE.ShaderChunk[ "project_vertex" ],
-        THREE.ShaderChunk[ "logdepthbuf_vertex" ],
+    THREE.ShaderChunk["displacementmap_vertex"],
+    THREE.ShaderChunk["morphtarget_vertex"],
+    THREE.ShaderChunk["skinning_vertex"],
+    THREE.ShaderChunk["project_vertex"],
+    THREE.ShaderChunk["logdepthbuf_vertex"],
 
-        "	vViewPosition = - mvPosition.xyz;",
+    "	vViewPosition = - mvPosition.xyz;",
 
-        THREE.ShaderChunk[ "worldpos_vertex" ],
-        THREE.ShaderChunk[ "envmap_vertex" ],
-        THREE.ShaderChunk[ "lights_phong_vertex" ],
-        THREE.ShaderChunk[ "shadowmap_vertex" ],
+    THREE.ShaderChunk["worldpos_vertex"],
+    THREE.ShaderChunk["envmap_vertex"],
+    THREE.ShaderChunk["lights_phong_vertex"],
+    THREE.ShaderChunk["shadowmap_vertex"],
 
-        "}"
+    "}"
 
-    ].join( "\n" );
+  ].join("\n");
+};
+
+THREE.BAS.PhongAnimationMaterial.prototype._concatFragmentShader = function () {
+  return [
+    "#define PHONG",
+
+    "uniform vec3 diffuse;",
+    "uniform vec3 emissive;",
+    "uniform vec3 specular;",
+    "uniform float shininess;",
+    "uniform float opacity;",
+
+    this._concatChunk('fragmentShaderParameters'),
+
+    THREE.ShaderChunk[ "common" ],
+    THREE.ShaderChunk[ "color_pars_fragment" ],
+    THREE.ShaderChunk[ "uv_pars_fragment" ],
+    THREE.ShaderChunk[ "uv2_pars_fragment" ],
+    THREE.ShaderChunk[ "map_pars_fragment" ],
+    THREE.ShaderChunk[ "alphamap_pars_fragment" ],
+    THREE.ShaderChunk[ "aomap_pars_fragment" ],
+    THREE.ShaderChunk[ "lightmap_pars_fragment" ],
+    THREE.ShaderChunk[ "emissivemap_pars_fragment" ],
+    THREE.ShaderChunk[ "envmap_pars_fragment" ],
+    THREE.ShaderChunk[ "fog_pars_fragment" ],
+    THREE.ShaderChunk[ "bsdfs" ],
+    THREE.ShaderChunk[ "ambient_pars" ],
+    THREE.ShaderChunk[ "lights_pars" ],
+    THREE.ShaderChunk[ "lights_phong_pars_fragment" ],
+    THREE.ShaderChunk[ "shadowmap_pars_fragment" ],
+    THREE.ShaderChunk[ "bumpmap_pars_fragment" ],
+    THREE.ShaderChunk[ "normalmap_pars_fragment" ],
+    THREE.ShaderChunk[ "specularmap_pars_fragment" ],
+    THREE.ShaderChunk[ "logdepthbuf_pars_fragment" ],
+
+    "void main() {",
+
+    "	vec4 diffuseColor = vec4( diffuse, opacity );",
+    "	ReflectedLight reflectedLight = ReflectedLight( vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ) );",
+    "	vec3 totalEmissiveLight = emissive;",
+
+    THREE.ShaderChunk[ "logdepthbuf_fragment" ],
+    THREE.ShaderChunk[ "map_fragment" ],
+    THREE.ShaderChunk[ "color_fragment" ],
+
+    this._concatChunk('fragmentShaderAlpha'),
+
+    THREE.ShaderChunk[ "alphamap_fragment" ],
+    THREE.ShaderChunk[ "alphatest_fragment" ],
+    THREE.ShaderChunk[ "specularmap_fragment" ],
+    THREE.ShaderChunk[ "normal_fragment" ],
+    THREE.ShaderChunk[ "emissivemap_fragment" ],
+
+    // accumulation
+    THREE.ShaderChunk[ "lights_phong_fragment" ],
+    THREE.ShaderChunk[ "lights_template" ],
+
+    // modulation
+    THREE.ShaderChunk[ "aomap_fragment" ],
+
+    "vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + reflectedLight.directSpecular + reflectedLight.indirectSpecular + totalEmissiveLight;",
+
+    THREE.ShaderChunk[ "envmap_fragment" ],
+    THREE.ShaderChunk[ "linear_to_gamma_fragment" ],
+
+    THREE.ShaderChunk[ "fog_fragment" ],
+
+    "	gl_FragColor = vec4( outgoingLight, diffuseColor.a );",
+
+    "}"
+
+  ].join( "\n" )
+};
+
+
+
+THREE.BAS.PhongAnimationMaterial.prototype._concatChunk = function(name) {
+  return this[name].join('\n');
 };
