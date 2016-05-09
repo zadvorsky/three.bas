@@ -1,4 +1,17 @@
 THREE.BAS.PhongAnimationMaterial = function (parameters, uniformValues) {
+  this.varyingParameters = [];
+
+  this.vertexFunctions = [];
+  this.vertexParameters = [];
+  this.vertexInit = [];
+  this.vertexNormal = [];
+  this.vertexPosition = [];
+  this.vertexColor = [];
+
+  this.fragmentFunctions = [];
+  this.fragmentParameters = [];
+  this.fragmentInit = [];
+  this.fragmentAlpha = [];
   this.fragmentEmissive = [];
   this.fragmentSpecular = [];
 
@@ -10,6 +23,7 @@ THREE.BAS.PhongAnimationMaterial = function (parameters, uniformValues) {
   this.lights = true;
   this.vertexShader = this._concatVertexShader();
   this.fragmentShader = this._concatFragmentShader();
+  //this.fragmentShader = phongShader.fragmentShader;
 
   // todo add missing default defines
   uniformValues.map && (this.defines['USE_MAP'] = '');
@@ -58,7 +72,7 @@ THREE.BAS.PhongAnimationMaterial.prototype._concatVertexShader = function () {
     THREE.ShaderChunk["color_vertex"],
     THREE.ShaderChunk["beginnormal_vertex"],
 
-    this._stringifyChunk('vertexInit'),
+    this._stringifyChunk('vertexNormal'),
 
     THREE.ShaderChunk["morphnormal_vertex"],
     THREE.ShaderChunk["skinbase_vertex"],
@@ -109,6 +123,7 @@ THREE.BAS.PhongAnimationMaterial.prototype._concatFragmentShader = function () {
     this._stringifyChunk('varyingParameters'),
 
     THREE.ShaderChunk[ "common" ],
+    THREE.ShaderChunk[ "packing" ],
     THREE.ShaderChunk[ "color_pars_fragment" ],
     THREE.ShaderChunk[ "uv_pars_fragment" ],
     THREE.ShaderChunk[ "uv2_pars_fragment" ],

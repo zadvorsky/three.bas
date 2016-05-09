@@ -1,4 +1,18 @@
 THREE.BAS.BasicAnimationMaterial = function(parameters, uniformValues) {
+  this.varyingParameters = [];
+
+  this.vertexFunctions = [];
+  this.vertexParameters = [];
+  this.vertexInit = [];
+  this.vertexNormal = [];
+  this.vertexPosition = [];
+  this.vertexColor = [];
+
+  this.fragmentFunctions = [];
+  this.fragmentParameters = [];
+  this.fragmentInit = [];
+  this.fragmentAlpha = [];
+
   THREE.BAS.BaseAnimationMaterial.call(this, parameters);
 
   var basicShader = THREE.ShaderLib['basic'];

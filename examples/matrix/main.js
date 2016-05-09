@@ -4,23 +4,78 @@ function init() {
   var root = new THREERoot({
     createCameraControls: true,
     antialias: (window.devicePixelRatio === 1),
-    fov: 80
+    fov: 60
   });
 
   root.renderer.setClearColor(0x000000);
   root.renderer.setPixelRatio(window.devicePixelRatio || 1);
-  root.camera.position.set(0, 0, 12);
+  root.renderer.shadowMap.enabled = true;
+  root.renderer.shadowMap.type = THREE.BasicShadowMap;
+
+  root.camera.position.set(0, 40, 40);
+
+  var dirLight = new THREE.DirectionalLight(0xffffff, 1);
+  dirLight.name = 'Dir. Light';
+  dirLight.position.set(0, 10, 0);
+  dirLight.castShadow = true;
+  dirLight.shadow.camera.near = 1;
+  dirLight.shadow.camera.far = 12;
+  dirLight.shadow.camera.right = 15;
+  dirLight.shadow.camera.left = -15;
+  dirLight.shadow.camera.top = 15;
+  dirLight.shadow.camera.bottom = -15;
+  dirLight.shadow.mapSize.width = 2048;
+  dirLight.shadow.mapSize.height = 2048;
+
+  root.scene.add(dirLight);
+  root.scene.add(new THREE.CameraHelper(dirLight.shadow.camera));
+
+
+  var geometry = new THREE.BoxGeometry(3, 3, 3);
+  var material = new THREE.MeshPhongMaterial({
+    color: 0xff0000,
+    shininess: 150,
+    specular: 0x222222,
+    shading: THREE.SmoothShading
+  });
+  var cube = new THREE.Mesh(geometry, material);
+  cube.position.set(8, 3, 8);
+  cube.castShadow = true;
+  cube.receiveShadow = true;
+  root.scene.add(cube);
+
+
+  var geometry = new THREE.BoxGeometry(10, 0.15, 10);
+  var material = new THREE.MeshPhongMaterial({
+    color: 0xa0adaf,
+    shininess: 150,
+    specular: 0xffffff,
+    shading: THREE.SmoothShading
+  });
+  var ground = new THREE.Mesh(geometry, material);
+  ground.scale.multiplyScalar(3);
+  ground.position.set(0, -1, 0);
+  ground.castShadow = false;
+  ground.receiveShadow = true;
+  root.scene.add(ground);
 
   var slide = new Slide();
+  slide.castShadow = true;
+  slide.receiveShadow = true;
+
+  var depthPars = {
+    vertexFunctions: slide.material.vertexFunctions,
+    vertexParameters: slide.material.vertexParameters,
+    vertexInit: slide.material.vertexInit,
+    vertexPosition: slide.material.vertexPosition
+  };
+
+  console.log(depthPars);
+
+  slide.customDepthMaterial = new THREE.BAS.DepthAnimationMaterial(depthPars);
+
+
   root.scene.add(slide);
-
-  var light = new THREE.DirectionalLight(0xffffff, 1.0);
-  light.position.set(0, 0, 1);
-  root.scene.add(light);
-
-  root.addUpdateCallback(function() {
-    //light.position.copy(root.camera.position);
-  });
 }
 
 ////////////////////
@@ -28,8 +83,8 @@ function init() {
 ////////////////////
 
 function Slide() {
-  var prefabGeometry = new THREE.SphereGeometry(1, 64, 64);
-  var prefabCount = 20;
+  var prefabGeometry = new THREE.TetrahedronGeometry(0.5);
+  var prefabCount = 40;
   var geometry = new THREE.BAS.PrefabBufferGeometry(prefabGeometry, prefabCount);
 
   //var minDuration = 0.8;
@@ -47,14 +102,14 @@ function Slide() {
   var position = new THREE.Vector3();
 
   for (i = 0, offset = 0; i < prefabCount; i++) {
-    position.x = THREE.Math.randFloatSpread(10);
-    position.y = THREE.Math.randFloatSpread(10);
-    position.z = THREE.Math.randFloatSpread(10);
+    position.x = THREE.Math.randFloatSpread(4);
+    position.y = THREE.Math.randFloat(2, 8);
+    position.z = THREE.Math.randFloatSpread(4);
 
     for (j = 0; j < prefabGeometry.vertices.length; j++) {
-      aPosition.array[offset  ] = position.x;
-      aPosition.array[offset+1] = position.y;
-      aPosition.array[offset+2] = position.z;
+      aPosition.array[offset] = position.x;
+      aPosition.array[offset + 1] = position.y;
+      aPosition.array[offset + 2] = position.z;
 
       offset += 3;
     }
@@ -73,20 +128,20 @@ function Slide() {
     angle = Math.random() * Math.PI * 2;
 
     for (j = 0; j < prefabGeometry.vertices.length; j++) {
-      aAxisAngle.array[offset  ] = axis.x;
-      aAxisAngle.array[offset+1] = axis.y;
-      aAxisAngle.array[offset+2] = axis.z;
-      aAxisAngle.array[offset+3] = angle;
+      aAxisAngle.array[offset] = axis.x;
+      aAxisAngle.array[offset + 1] = axis.y;
+      aAxisAngle.array[offset + 2] = axis.z;
+      aAxisAngle.array[offset + 3] = angle;
 
       offset += 4;
     }
   }
 
 
-  var material = new THREE.BAS.BasicAnimationMaterial(
+  var material = new THREE.BAS.PhongAnimationMaterial(
     {
       shading: THREE.FlatShading,
-      side: THREE.DoubleSide,
+      //side: THREE.DoubleSide,
       transparent: true,
       uniforms: {
         uTime: {type: 'f', value: 0}
@@ -125,8 +180,7 @@ function Slide() {
         'vSpecular = normalize(abs(aPosition));',
         'vAlpha = 1.0;'
       ],
-      fragmentParameters: [
-      ],
+      fragmentParameters: [],
       fragmentAlpha: [
         'diffuseColor.a *= vAlpha;'
       ],
@@ -138,9 +192,9 @@ function Slide() {
         'material.specularShininess = vShininess;',
         'material.specularColor = vSpecular;'
       ]
-    },{
-      specular:0xff00ff,
-      shininess:100
+    }, {
+      specular: 0xff00ff,
+      shininess: 100
     }
   );
 
@@ -159,8 +213,8 @@ Object.defineProperty(Slide.prototype, 'time', {
   }
 });
 
-Slide.prototype.transition = function() {
-  return TweenMax.fromTo(this, 10.0, {time:0.0}, {time:this.totalDuration, ease:Power0.easeInOut});
+Slide.prototype.transition = function () {
+  return TweenMax.fromTo(this, 10.0, {time: 0.0}, {time: this.totalDuration, ease: Power0.easeInOut});
 };
 
 function THREERoot(params) {
@@ -203,10 +257,10 @@ function THREERoot(params) {
   window.addEventListener('resize', this.resize, false);
 }
 THREERoot.prototype = {
-  addUpdateCallback:function(callback) {
+  addUpdateCallback: function (callback) {
     this.updateCallbacks.push(callback);
   },
-  addResizeCallback:function(callback) {
+  addResizeCallback: function (callback) {
     this.resizeCallbacks.push(callback);
   },
 
@@ -218,7 +272,9 @@ THREERoot.prototype = {
   },
   update: function () {
     this.controls && this.controls.update();
-    this.updateCallbacks.forEach(function(callback) {callback()});
+    this.updateCallbacks.forEach(function (callback) {
+      callback()
+    });
   },
   render: function () {
     this.renderer.render(this.scene, this.camera);
@@ -294,11 +350,11 @@ function createTweenScrubber(tween, seekSpeed) {
   seekSpeed = seekSpeed || 0.001;
 
   function stop() {
-    TweenMax.to(tween, 1, {timeScale:0});
+    TweenMax.to(tween, 1, {timeScale: 0});
   }
 
   function resume() {
-    TweenMax.to(tween, 1, {timeScale:1});
+    TweenMax.to(tween, 1, {timeScale: 1});
   }
 
   function seek(dx) {
@@ -314,18 +370,18 @@ function createTweenScrubber(tween, seekSpeed) {
   var mouseDown = false;
   document.body.style.cursor = 'pointer';
 
-  window.addEventListener('mousedown', function(e) {
+  window.addEventListener('mousedown', function (e) {
     mouseDown = true;
     document.body.style.cursor = 'ew-resize';
     _cx = e.clientX;
     stop();
   });
-  window.addEventListener('mouseup', function(e) {
+  window.addEventListener('mouseup', function (e) {
     mouseDown = false;
     document.body.style.cursor = 'pointer';
     resume();
   });
-  window.addEventListener('mousemove', function(e) {
+  window.addEventListener('mousemove', function (e) {
     if (mouseDown === true) {
       var cx = e.clientX;
       var dx = cx - _cx;
@@ -335,16 +391,16 @@ function createTweenScrubber(tween, seekSpeed) {
     }
   });
   // mobile
-  window.addEventListener('touchstart', function(e) {
+  window.addEventListener('touchstart', function (e) {
     _cx = e.touches[0].clientX;
     stop();
     e.preventDefault();
   });
-  window.addEventListener('touchend', function(e) {
+  window.addEventListener('touchend', function (e) {
     resume();
     e.preventDefault();
   });
-  window.addEventListener('touchmove', function(e) {
+  window.addEventListener('touchmove', function (e) {
     var cx = e.touches[0].clientX;
     var dx = cx - _cx;
     _cx = cx;
