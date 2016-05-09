@@ -1,4 +1,4 @@
-THREE.BAS.DepthAnimationMaterial = function (parameters) {
+THREE.BAS.DistanceAnimationMaterial = function (parameters) {
   this.depthPacking = THREE.RGBADepthPacking;
   this.clipping = true;
 
@@ -9,23 +9,22 @@ THREE.BAS.DepthAnimationMaterial = function (parameters) {
 
   THREE.BAS.BaseAnimationMaterial.call(this, parameters);
 
-  var depthShader = THREE.ShaderLib['depth'];
+  var distanceShader = THREE.ShaderLib['distanceRGBA'];
 
-  this.uniforms = THREE.UniformsUtils.merge([depthShader.uniforms, this.uniforms]);
+  this.uniforms = THREE.UniformsUtils.merge([distanceShader.uniforms, this.uniforms]);
   this.vertexShader = this._concatVertexShader();
-  this.fragmentShader = depthShader.fragmentShader;
+  this.fragmentShader = distanceShader.fragmentShader;
 };
-THREE.BAS.DepthAnimationMaterial.prototype = Object.create(THREE.BAS.BaseAnimationMaterial.prototype);
-THREE.BAS.DepthAnimationMaterial.prototype.constructor = THREE.BAS.DepthAnimationMaterial;
+THREE.BAS.DistanceAnimationMaterial.prototype = Object.create(THREE.BAS.BaseAnimationMaterial.prototype);
+THREE.BAS.DistanceAnimationMaterial.prototype.constructor = THREE.BAS.DistanceAnimationMaterial;
 
-THREE.BAS.DepthAnimationMaterial.prototype._concatVertexShader = function () {
+THREE.BAS.DistanceAnimationMaterial.prototype._concatVertexShader = function () {
   return [
+    'varying vec4 vWorldPosition;',
+
     THREE.ShaderChunk["common"],
-    THREE.ShaderChunk["uv_pars_vertex"],
-    THREE.ShaderChunk["displacementmap_pars_vertex"],
     THREE.ShaderChunk["morphtarget_pars_vertex"],
     THREE.ShaderChunk["skinning_pars_vertex"],
-    THREE.ShaderChunk["logdepthbuf_pars_vertex"],
     THREE.ShaderChunk["clipping_planes_pars_vertex"],
 
     this._stringifyChunk('vertexFunctions'),
@@ -35,20 +34,18 @@ THREE.BAS.DepthAnimationMaterial.prototype._concatVertexShader = function () {
 
     this._stringifyChunk('vertexInit'),
 
-    THREE.ShaderChunk["uv_vertex"],
     THREE.ShaderChunk["skinbase_vertex"],
-
     THREE.ShaderChunk["begin_vertex"],
 
     this._stringifyChunk('vertexPosition'),
 
-
-    THREE.ShaderChunk["displacementmap_vertex"],
     THREE.ShaderChunk["morphtarget_vertex"],
     THREE.ShaderChunk["skinning_vertex"],
     THREE.ShaderChunk["project_vertex"],
-    THREE.ShaderChunk["logdepthbuf_vertex"],
+    THREE.ShaderChunk["worldpos_vertex"],
     THREE.ShaderChunk["clipping_planes_vertex"],
+
+    'vWorldPosition = worldPosition;',
 
     '}'
 

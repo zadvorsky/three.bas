@@ -7,73 +7,69 @@ function init() {
     fov: 60
   });
 
-  root.renderer.setClearColor(0x000000);
+  root.renderer.setClearColor(0x222222);
   root.renderer.setPixelRatio(window.devicePixelRatio || 1);
   root.renderer.shadowMap.enabled = true;
   root.renderer.shadowMap.type = THREE.BasicShadowMap;
+
+
+  root.scene.add(new THREE.AxisHelper(20));
 
   root.camera.position.set(0, 40, 40);
 
   var dirLight = new THREE.DirectionalLight(0xffffff, 1);
   dirLight.name = 'Dir. Light';
-  dirLight.position.set(0, 10, 0);
+  dirLight.position.set(0, 20, 0);
   dirLight.castShadow = true;
-  dirLight.shadow.camera.near = 1;
-  dirLight.shadow.camera.far = 12;
-  dirLight.shadow.camera.right = 15;
-  dirLight.shadow.camera.left = -15;
-  dirLight.shadow.camera.top = 15;
-  dirLight.shadow.camera.bottom = -15;
+  dirLight.shadow.camera.near = 0;
+  dirLight.shadow.camera.far = 40;
+  dirLight.shadow.camera.right = 20;
+  dirLight.shadow.camera.left = -20;
+  dirLight.shadow.camera.top = 20;
+  dirLight.shadow.camera.bottom = -20;
   dirLight.shadow.mapSize.width = 2048;
   dirLight.shadow.mapSize.height = 2048;
-
   root.scene.add(dirLight);
   root.scene.add(new THREE.CameraHelper(dirLight.shadow.camera));
 
 
-  var geometry = new THREE.BoxGeometry(3, 3, 3);
-  var material = new THREE.MeshPhongMaterial({
-    color: 0xff0000,
-    shininess: 150,
-    specular: 0x222222,
-    shading: THREE.SmoothShading
-  });
-  var cube = new THREE.Mesh(geometry, material);
-  cube.position.set(8, 3, 8);
-  cube.castShadow = true;
-  cube.receiveShadow = true;
-  root.scene.add(cube);
+  var spotLight = new THREE.SpotLight( 0xffffff );
+  spotLight.name = 'Spot Light';
+  spotLight.angle = Math.PI / 5;
+  spotLight.penumbra = 0.3;
+  spotLight.position.set( 10, 10, 5 );
+  spotLight.castShadow = true;
+  spotLight.shadow.camera.near = 1;
+  spotLight.shadow.camera.far = 30;
+  spotLight.shadow.mapSize.width = 2048;
+  spotLight.shadow.mapSize.height = 2048;
+  root.scene.add( spotLight );
+  root.scene.add( new THREE.CameraHelper( spotLight.shadow.camera ) );
 
 
-  var geometry = new THREE.BoxGeometry(10, 0.15, 10);
+  var pointLight = new THREE.PointLight();
+  pointLight.castShadow = true;
+  pointLight.shadow.camera.near = 1;
+  pointLight.shadow.camera.far = 30;
+  pointLight.shadow.bias = 0.01;
+  root.scene.add( pointLight );
+  root.scene.add( new THREE.CameraHelper( pointLight.shadow.camera ) );
+
+
+  var geometry = new THREE.BoxGeometry(40, 40, 40);
   var material = new THREE.MeshPhongMaterial({
     color: 0xa0adaf,
-    shininess: 150,
-    specular: 0xffffff,
-    shading: THREE.SmoothShading
+    shading: THREE.SmoothShading,
+    side: THREE.BackSide
   });
   var ground = new THREE.Mesh(geometry, material);
-  ground.scale.multiplyScalar(3);
-  ground.position.set(0, -1, 0);
   ground.castShadow = false;
   ground.receiveShadow = true;
   root.scene.add(ground);
 
-  var slide = new Slide();
-  slide.castShadow = true;
-  slide.receiveShadow = true;
+  var slide = new ParticleSystem();
 
-  var depthPars = {
-    vertexFunctions: slide.material.vertexFunctions,
-    vertexParameters: slide.material.vertexParameters,
-    vertexInit: slide.material.vertexInit,
-    vertexPosition: slide.material.vertexPosition
-  };
-
-  console.log(depthPars);
-
-  slide.customDepthMaterial = new THREE.BAS.DepthAnimationMaterial(depthPars);
-
+  slide.transition();
 
   root.scene.add(slide);
 }
@@ -82,29 +78,42 @@ function init() {
 // CLASSES
 ////////////////////
 
-function Slide() {
+function ParticleSystem() {
   var prefabGeometry = new THREE.TetrahedronGeometry(0.5);
-  var prefabCount = 40;
+  var prefabCount = 400;
   var geometry = new THREE.BAS.PrefabBufferGeometry(prefabGeometry, prefabCount);
 
-  //var minDuration = 0.8;
-  //var maxDuration = 1.2;
-  //var maxDelayX = 0.9;
-  //var maxDelayY = 0.125;
-  //var stretch = 0.11;
-  //
-  //this.totalDuration = maxDuration + maxDelayX + maxDelayY + stretch;
-
   var i, j, offset;
+
+  // animation
+  var aAnimation = geometry.createAttribute('aAnimation', 3);
+
+  var minDuration = 1.0;
+  var maxDuration = 1.0;
+  var maxDelay = 0;
+
+  this.totalDuration = maxDuration + maxDelay;
+
+  for (i = 0, offset = 0; i < prefabCount; i++) {
+    var delay = 0;
+    var duration = THREE.Math.randFloat(minDuration, maxDuration);
+
+    for (j = 0; j < prefabGeometry.vertices.length; j++) {
+      aAnimation.array[offset] = delay;
+      aAnimation.array[offset + 1] = duration;
+
+      offset += 3;
+    }
+  }
 
   // position
   var aPosition = geometry.createAttribute('aPosition', 3);
   var position = new THREE.Vector3();
 
   for (i = 0, offset = 0; i < prefabCount; i++) {
-    position.x = THREE.Math.randFloatSpread(4);
-    position.y = THREE.Math.randFloat(2, 8);
-    position.z = THREE.Math.randFloatSpread(4);
+    position.x = THREE.Math.randFloatSpread(40);
+    position.y = THREE.Math.randFloatSpread(40);
+    position.z = THREE.Math.randFloatSpread(40);
 
     for (j = 0; j < prefabGeometry.vertices.length; j++) {
       aPosition.array[offset] = position.x;
@@ -125,7 +134,7 @@ function Slide() {
     axis.y = THREE.Math.randFloatSpread(2);
     axis.z = THREE.Math.randFloatSpread(2);
     axis.normalize();
-    angle = Math.random() * Math.PI * 2;
+    angle = Math.PI * 2;
 
     for (j = 0; j < prefabGeometry.vertices.length; j++) {
       aAxisAngle.array[offset] = axis.x;
@@ -151,7 +160,7 @@ function Slide() {
       ],
       vertexParameters: [
         'uniform float uTime;',
-        //'attribute vec2 aAnimation;',
+        'attribute vec2 aAnimation;',
         'attribute vec3 aPosition;',
         'attribute vec4 aAxisAngle;'
       ],
@@ -162,16 +171,16 @@ function Slide() {
         'varying float vAlpha;'
       ],
       vertexInit: [
-        //'float tDelay = aAnimation.x;',
-        //'float tDuration = aAnimation.y;',
-        //'float tTime = clamp(uTime - tDelay, 0.0, tDuration);',
-        //'float tProgress = ease(tTime, 0.0, 1.0, tDuration);'
-        //'float tProgress = tTime / tDuration;'
+        'float tDelay = aAnimation.x;',
+        'float tDuration = aAnimation.y;',
+        'float tTime = clamp(uTime - tDelay, 0.0, tDuration);',
+        //'float tProgress = ease(tTime, 0.0, 1.0, tDuration);',
+        'float tProgress = tTime / tDuration;'
       ],
       vertexPosition: [
-        //'float angle = aAxisAngle.w * 1.0;',
-        //'vec4 tQuat = quatFromAxisAngle(aAxisAngle.xyz, angle);',
-        //'transformed = rotateVector(tQuat, transformed);',
+        'float angle = aAxisAngle.w * tProgress;',
+        'vec4 tQuat = quatFromAxisAngle(aAxisAngle.xyz, angle);',
+        'transformed = rotateVector(tQuat, transformed);',
 
         'transformed += aPosition;'
       ],
@@ -201,20 +210,27 @@ function Slide() {
   THREE.Mesh.call(this, geometry, material);
 
   this.frustumCulled = false;
+  this.castShadow = true;
+  this.receiveShadow = true;
+
+  this.customDepthMaterial = THREE.BAS.Utils.createDepthAnimationMaterial(material);
+  this.customDistanceMaterial = THREE.BAS.Utils.createDistanceAnimationMaterial(material);
 }
-Slide.prototype = Object.create(THREE.Mesh.prototype);
-Slide.prototype.constructor = Slide;
-Object.defineProperty(Slide.prototype, 'time', {
+ParticleSystem.prototype = Object.create(THREE.Mesh.prototype);
+ParticleSystem.prototype.constructor = ParticleSystem;
+Object.defineProperty(ParticleSystem.prototype, 'time', {
   get: function () {
     return this.material.uniforms['uTime'].value;
   },
   set: function (v) {
     this.material.uniforms['uTime'].value = v;
+    this.customDepthMaterial.uniforms['uTime'].value = v;
+    this.customDistanceMaterial.uniforms['uTime'].value = v;
   }
 });
 
-Slide.prototype.transition = function () {
-  return TweenMax.fromTo(this, 10.0, {time: 0.0}, {time: this.totalDuration, ease: Power0.easeInOut});
+ParticleSystem.prototype.transition = function () {
+  return TweenMax.fromTo(this, 2.0, {time: 0.0}, {time: this.totalDuration, ease: Power0.easeInOut, repeat:-1});
 };
 
 function THREERoot(params) {

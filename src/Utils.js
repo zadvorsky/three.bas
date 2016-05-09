@@ -576,5 +576,27 @@ THREE.BAS.Utils = {
 
       return v;
     }
-  })()
+  })(),
+
+  createDepthAnimationMaterial: function(sourceMaterial) {
+    // todo morph & skinning support
+    return new THREE.BAS.DepthAnimationMaterial({
+      uniforms: sourceMaterial.uniforms,
+      vertexFunctions: sourceMaterial.vertexFunctions,
+      vertexParameters: sourceMaterial.vertexParameters,
+      vertexInit: sourceMaterial.vertexInit,
+      vertexPosition: sourceMaterial.vertexPosition
+    });
+  },
+
+  createDistanceAnimationMaterial: function(sourceMaterial) {
+    // todo morph & skinning support
+    return new THREE.BAS.DistanceAnimationMaterial({
+      uniforms: sourceMaterial.uniforms,
+      vertexFunctions: sourceMaterial.vertexFunctions,
+      vertexParameters: sourceMaterial.vertexParameters,
+      vertexInit: sourceMaterial.vertexInit,
+      vertexPosition: sourceMaterial.vertexPosition
+    });
+  }
 };

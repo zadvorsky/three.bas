@@ -599,7 +599,29 @@ THREE.BAS.Utils = {
 
       return v;
     }
-  })()
+  })(),
+
+  createDepthAnimationMaterial: function(sourceMaterial) {
+    // todo morph & skinning support
+    return new THREE.BAS.DepthAnimationMaterial({
+      uniforms: sourceMaterial.uniforms,
+      vertexFunctions: sourceMaterial.vertexFunctions,
+      vertexParameters: sourceMaterial.vertexParameters,
+      vertexInit: sourceMaterial.vertexInit,
+      vertexPosition: sourceMaterial.vertexPosition
+    });
+  },
+
+  createDistanceAnimationMaterial: function(sourceMaterial) {
+    // todo morph & skinning support
+    return new THREE.BAS.DistanceAnimationMaterial({
+      uniforms: sourceMaterial.uniforms,
+      vertexFunctions: sourceMaterial.vertexFunctions,
+      vertexParameters: sourceMaterial.vertexParameters,
+      vertexInit: sourceMaterial.vertexInit,
+      vertexPosition: sourceMaterial.vertexPosition
+    });
+  }
 };
 THREE.BAS.ModelBufferGeometry = function (model) {
   THREE.BufferGeometry.call(this);
@@ -1073,7 +1095,6 @@ THREE.BAS.BasicAnimationMaterial.prototype._concatFragmentShader = function() {
 };
 
 THREE.BAS.DepthAnimationMaterial = function (parameters) {
-
   this.depthPacking = THREE.RGBADepthPacking;
   this.clipping = true;
 
@@ -1087,7 +1108,6 @@ THREE.BAS.DepthAnimationMaterial = function (parameters) {
   var depthShader = THREE.ShaderLib['depth'];
 
   this.uniforms = THREE.UniformsUtils.merge([depthShader.uniforms, this.uniforms]);
-  //this.vertexShader = depthShader.vertexShader;
   this.vertexShader = this._concatVertexShader();
   this.fragmentShader = depthShader.fragmentShader;
 };
@@ -1125,6 +1145,60 @@ THREE.BAS.DepthAnimationMaterial.prototype._concatVertexShader = function () {
     THREE.ShaderChunk["project_vertex"],
     THREE.ShaderChunk["logdepthbuf_vertex"],
     THREE.ShaderChunk["clipping_planes_vertex"],
+
+    '}'
+
+  ].join('\n');
+};
+
+THREE.BAS.DistanceAnimationMaterial = function (parameters) {
+  this.depthPacking = THREE.RGBADepthPacking;
+  this.clipping = true;
+
+  this.vertexFunctions = [];
+  this.vertexParameters = [];
+  this.vertexInit = [];
+  this.vertexPosition = [];
+
+  THREE.BAS.BaseAnimationMaterial.call(this, parameters);
+
+  var distanceShader = THREE.ShaderLib['distanceRGBA'];
+
+  this.uniforms = THREE.UniformsUtils.merge([distanceShader.uniforms, this.uniforms]);
+  this.vertexShader = this._concatVertexShader();
+  this.fragmentShader = distanceShader.fragmentShader;
+};
+THREE.BAS.DistanceAnimationMaterial.prototype = Object.create(THREE.BAS.BaseAnimationMaterial.prototype);
+THREE.BAS.DistanceAnimationMaterial.prototype.constructor = THREE.BAS.DistanceAnimationMaterial;
+
+THREE.BAS.DistanceAnimationMaterial.prototype._concatVertexShader = function () {
+  return [
+    'varying vec4 vWorldPosition;',
+
+    THREE.ShaderChunk["common"],
+    THREE.ShaderChunk["morphtarget_pars_vertex"],
+    THREE.ShaderChunk["skinning_pars_vertex"],
+    THREE.ShaderChunk["clipping_planes_pars_vertex"],
+
+    this._stringifyChunk('vertexFunctions'),
+    this._stringifyChunk('vertexParameters'),
+
+    'void main() {',
+
+    this._stringifyChunk('vertexInit'),
+
+    THREE.ShaderChunk["skinbase_vertex"],
+    THREE.ShaderChunk["begin_vertex"],
+
+    this._stringifyChunk('vertexPosition'),
+
+    THREE.ShaderChunk["morphtarget_vertex"],
+    THREE.ShaderChunk["skinning_vertex"],
+    THREE.ShaderChunk["project_vertex"],
+    THREE.ShaderChunk["worldpos_vertex"],
+    THREE.ShaderChunk["clipping_planes_vertex"],
+
+    'vWorldPosition = worldPosition;',
 
     '}'
 
