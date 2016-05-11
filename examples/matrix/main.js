@@ -11,6 +11,8 @@ function init() {
   root.renderer.setPixelRatio(window.devicePixelRatio || 1);
   root.renderer.shadowMap.enabled = true;
   root.renderer.shadowMap.type = THREE.BasicShadowMap;
+  //root.renderer.shadowMap.type = THREE.PCFShadowMap;
+  //root.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 
   root.scene.add(new THREE.AxisHelper(20));
@@ -80,7 +82,7 @@ function init() {
 
 function ParticleSystem() {
   var prefabGeometry = new THREE.TetrahedronGeometry(0.5);
-  var prefabCount = 400;
+  var prefabCount = 2000;
   var geometry = new THREE.BAS.PrefabBufferGeometry(prefabGeometry, prefabCount);
 
   var i, j, offset;
