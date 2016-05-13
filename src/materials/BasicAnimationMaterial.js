@@ -11,6 +11,7 @@ THREE.BAS.BasicAnimationMaterial = function(parameters, uniformValues) {
   this.fragmentFunctions = [];
   this.fragmentParameters = [];
   this.fragmentInit = [];
+  this.fragmentMap = [];
   this.fragmentAlpha = [];
 
   THREE.BAS.BaseAnimationMaterial.call(this, parameters);
@@ -121,7 +122,8 @@ THREE.BAS.BasicAnimationMaterial.prototype._concatFragmentShader = function() {
     "	vec4 diffuseColor = vec4( diffuse, opacity );",
 
     THREE.ShaderChunk[ "logdepthbuf_fragment" ],
-    THREE.ShaderChunk[ "map_fragment" ],
+    (this._stringifyChunk('fragmentMap') || THREE.ShaderChunk[ "map_fragment" ]),
+
     THREE.ShaderChunk[ "color_fragment" ],
 
     this._stringifyChunk('fragmentAlpha'),
