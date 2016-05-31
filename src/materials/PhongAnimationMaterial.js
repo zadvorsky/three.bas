@@ -23,13 +23,14 @@ THREE.BAS.PhongAnimationMaterial = function (parameters, uniformValues) {
   this.lights = true;
   this.vertexShader = this._concatVertexShader();
   this.fragmentShader = this._concatFragmentShader();
-  //this.fragmentShader = phongShader.fragmentShader;
 
-  // todo add missing default defines
-  uniformValues.map && (this.defines['USE_MAP'] = '');
-  uniformValues.normalMap && (this.defines['USE_NORMALMAP'] = '');
+  // todo add missing default defines and move to BaseAnimationMaterial
+  if (uniformValues) {
+    uniformValues.map && (this.defines['USE_MAP'] = '');
+    uniformValues.normalMap && (this.defines['USE_NORMALMAP'] = '');
 
-  this.setUniformValues(uniformValues);
+    this.setUniformValues(uniformValues);
+  }
 };
 THREE.BAS.PhongAnimationMaterial.prototype = Object.create(THREE.BAS.BaseAnimationMaterial.prototype);
 THREE.BAS.PhongAnimationMaterial.prototype.constructor = THREE.BAS.PhongAnimationMaterial;

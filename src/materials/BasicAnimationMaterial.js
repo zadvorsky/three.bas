@@ -23,11 +23,13 @@ THREE.BAS.BasicAnimationMaterial = function(parameters, uniformValues) {
   this.vertexShader = this._concatVertexShader();
   this.fragmentShader = this._concatFragmentShader();
 
-  // todo add missing default defines
-  uniformValues.map && (this.defines['USE_MAP'] = '');
-  uniformValues.normalMap && (this.defines['USE_NORMALMAP'] = '');
+  // todo add missing default defines and move to BaseAnimationMaterial
+  if (uniformValues) {
+    uniformValues.map && (this.defines['USE_MAP'] = '');
+    uniformValues.normalMap && (this.defines['USE_NORMALMAP'] = '');
 
-  this.setUniformValues(uniformValues);
+    this.setUniformValues(uniformValues);
+  }
 };
 THREE.BAS.BasicAnimationMaterial.prototype = Object.create(THREE.BAS.BaseAnimationMaterial.prototype);
 THREE.BAS.BasicAnimationMaterial.prototype.constructor = THREE.BAS.BasicAnimationMaterial;
