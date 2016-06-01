@@ -7,11 +7,33 @@ function init() {
     fov: 60
   });
   root.renderer.setClearColor(0x222222);
-
   root.camera.position.set(0, 0, 200);
 
-  var particleSystem = new ParticleSystem();
-  particleSystem.animate();
+  var grid = new THREE.GridHelper(50, 10);
+  grid.setColors(0x333333, 0x333333);
+  grid.rotation.x = Math.PI * 0.5;
+  root.scene.add(grid);
+
+
+  //var ease = 'ease_back_in';
+  //var ease = 'ease_back_out';
+  //var ease = 'ease_back_in_out';
+  //var ease = 'ease_cubic_in';
+  //var ease = 'ease_cubic_out';
+  var ease = 'ease_cubic_in_out';
+  //var ease = 'ease_quad_in';
+  //var ease = 'ease_quad_out';
+  //var ease = 'ease_quad_in_out';
+  //var ease = 'ease_quart_in';
+  //var ease = 'ease_quart_out';
+  //var ease = 'ease_quart_in_out';
+  //var ease = 'ease_quint_in';
+  //var ease = 'ease_quint_out';
+  //var ease = 'ease_quint_in_out';
+
+  var particleSystem = new ParticleSystem(ease);
+  particleSystem.animate(2, {ease: Power0.easeIn, repeat:-1, repeatDelay:0.25, yoyo: true});
+
   root.scene.add(particleSystem);
 }
 
@@ -19,9 +41,13 @@ function init() {
 // CLASSES
 ////////////////////
 
-function ParticleSystem() {
-  var prefabGeometry = new THREE.CubeGeometry(1.0, 1.0, 1.0);
-  var prefabCount = 2000;
+function ParticleSystem(ease) {
+  var rangeX = 100;
+  var rangeY = 100;
+  var prefabCount = 1000;
+  var size = rangeY / prefabCount;
+
+  var prefabGeometry = new THREE.PlaneGeometry(size * 2, size);
   var geometry = new THREE.BAS.PrefabBufferGeometry(prefabGeometry, prefabCount);
 
   var i, j, offset;
@@ -29,18 +55,17 @@ function ParticleSystem() {
   // animation
   var aAnimation = geometry.createAttribute('aAnimation', 3);
 
-  var minDuration = 1.0;
-  var maxDuration = 1.0;
-  var maxDelay = 0;
+  var duration = 1.0;
+  var maxPrefabDelay = 0.5;
+  var maxVertexDelay = 0.1;
 
-  this.totalDuration = maxDuration + maxDelay;
+  this.totalDuration = duration + maxPrefabDelay + maxVertexDelay * 2;
 
   for (i = 0, offset = 0; i < prefabCount; i++) {
-    var delay = 0;
-    var duration = THREE.Math.randFloat(minDuration, maxDuration);
+    var delay = THREE.Math.mapLinear(i, 0, prefabCount, 0.0, maxPrefabDelay);
 
     for (j = 0; j < prefabGeometry.vertices.length; j++) {
-      aAnimation.array[offset] = delay;
+      aAnimation.array[offset] = delay + (2 - j % 2) * maxVertexDelay;
       aAnimation.array[offset + 1] = duration;
 
       offset += 3;
@@ -52,16 +77,15 @@ function ParticleSystem() {
   var aEndPosition = geometry.createAttribute('aEndPosition', 3);
   var startPosition = new THREE.Vector3();
   var endPosition = new THREE.Vector3();
-  var range = 100;
 
   for (i = 0, offset = 0; i < prefabCount; i++) {
-    startPosition.x = THREE.Math.randFloatSpread(range);
-    startPosition.y = THREE.Math.randFloatSpread(range);
-    startPosition.z = THREE.Math.randFloatSpread(range);
+    startPosition.x = -rangeX * 0.5;
+    startPosition.y = THREE.Math.mapLinear(i, 0, prefabCount, -rangeY * 0.5, rangeY * 0.5);
+    startPosition.z = 0;
 
-    endPosition.x = THREE.Math.randFloatSpread(range);
-    endPosition.y = THREE.Math.randFloatSpread(range);
-    endPosition.z = THREE.Math.randFloatSpread(range);
+    endPosition.x = rangeX * 0.5;
+    endPosition.y = startPosition.y;
+    endPosition.z = 0;
 
     for (j = 0; j < prefabGeometry.vertices.length; j++) {
       aStartPosition.array[offset] = startPosition.x;
@@ -76,52 +100,40 @@ function ParticleSystem() {
     }
   }
 
-  //var ease = 'ease_back_in';
-  //var ease = 'ease_back_out';
-  //var ease = 'ease_back_in_out';
-  //var ease = 'ease_cubic_in';
-  //var ease = 'ease_cubic_out';
-  //var ease = 'ease_cubic_in_out';
-  //var ease = 'ease_quad_in';
-  //var ease = 'ease_quad_out';
-  //var ease = 'ease_quad_in_out';
-  //var ease = 'ease_quart_in';
-  //var ease = 'ease_quart_out';
-  //var ease = 'ease_quart_in_out';
-  //var ease = 'ease_quint_in';
-  //var ease = 'ease_quint_out';
-  var ease = 'ease_quint_in_out';
+  // from names to to camel case (i.e. ease_back_in -> easeBackIn)
+  function underscoreToCamelCase(str) {
+    return str.replace(/_([a-z])/g, function (g) {return g[1].toUpperCase();});
+  }
 
-  var material = new THREE.BAS.BasicAnimationMaterial(
-    {
-      shading: THREE.FlatShading,
-      transparent: true,
-      uniforms: {
-        uTime: {type: 'f', value: 0}
-      },
-      vertexFunctions: [
-        THREE.BAS.ShaderChunk['quaternion_rotation'],
-        THREE.BAS.ShaderChunk[ease],
-      ],
-      vertexParameters: [
-        'uniform float uTime;',
-        'attribute vec2 aAnimation;',
-        'attribute vec3 aStartPosition;',
-        'attribute vec3 aEndPosition;'
-      ],
-      vertexInit: [
-        'float tDelay = aAnimation.x;',
-        'float tDuration = aAnimation.y;',
-        'float tTime = clamp(uTime - tDelay, 0.0, tDuration);',
-        'float tProgress = ' + underscoreToCamelCase(ease) + '(tTime, 0.0, 1.0, tDuration);',
-        // linear
-        //'float tProgress = tTime / tDuration;'
-      ],
-      vertexPosition: [
-        'transformed += mix(aStartPosition, aEndPosition, tProgress);'
-      ]
-    }
-  );
+  var material = new THREE.BAS.BasicAnimationMaterial({
+    shading: THREE.FlatShading,
+    transparent: true,
+    side: THREE.DoubleSide,
+    uniforms: {
+      uTime: {type: 'f', value: 0}
+    },
+    vertexFunctions: [
+      THREE.BAS.ShaderChunk['quaternion_rotation'],
+      THREE.BAS.ShaderChunk[ease]
+    ],
+    vertexParameters: [
+      'uniform float uTime;',
+      'attribute vec2 aAnimation;',
+      'attribute vec3 aStartPosition;',
+      'attribute vec3 aEndPosition;'
+    ],
+    vertexInit: [
+      'float tDelay = aAnimation.x;',
+      'float tDuration = aAnimation.y;',
+      'float tTime = clamp(uTime - tDelay, 0.0, tDuration);',
+      'float tProgress = ' + underscoreToCamelCase(ease) + '(tTime, 0.0, 1.0, tDuration);',
+      // linear
+      //'float tProgress = tTime / tDuration;'
+    ],
+    vertexPosition: [
+      'transformed += mix(aStartPosition, aEndPosition, tProgress);'
+    ]
+  });
 
   THREE.Mesh.call(this, geometry, material);
 
@@ -138,12 +150,9 @@ Object.defineProperty(ParticleSystem.prototype, 'time', {
   }
 });
 
-ParticleSystem.prototype.animate = function () {
-  return TweenMax.fromTo(this, 2.0, {time: 0.0}, {time: this.totalDuration, ease: Power0.easeInOut, repeat:-1, yoyo: true});
+ParticleSystem.prototype.animate = function (duration, options) {
+  options = options || {};
+  options.time = this.totalDuration;
+
+  return TweenMax.fromTo(this, duration, {time: 0.0}, options);
 };
-
-// utils
-
-function underscoreToCamelCase(str) {
-  return str.replace(/_([a-z])/g, function (g) {return g[1].toUpperCase();});
-}
