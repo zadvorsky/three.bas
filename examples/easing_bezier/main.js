@@ -40,7 +40,7 @@ function ParticleSystem() {
 
   var duration = 1.0;
   var maxPrefabDelay = 0.5;
-  var maxVertexDelay = 0.0;
+  var maxVertexDelay = 0.1;
 
   this.totalDuration = duration + maxPrefabDelay + maxVertexDelay * 2;
 
@@ -89,8 +89,8 @@ function ParticleSystem() {
     side: THREE.DoubleSide,
     uniforms: {
       uTime: {type: 'f', value: 0},
-      uBezier0: {type: 'v2', value: new THREE.Vector2(0.0, 0.99)},
-      uBezier1: {type: 'v2', value: new THREE.Vector2(1.0, 0.01)}
+      // bezier ease definition same as css, see http://cubic-bezier.com/
+      uBezierEase: {type: 'v4', value: new THREE.Vector4(0.0, 1.5, 1.0, -1.5)}
     },
     vertexFunctions: [
       THREE.BAS.ShaderChunk['quaternion_rotation'],
@@ -98,20 +98,13 @@ function ParticleSystem() {
     ],
     vertexParameters: [
       'uniform float uTime;',
-      'uniform vec2 uBezier0;',
-      'uniform vec2 uBezier1;',
+      'uniform vec4 uBezierEase;',
       'attribute vec2 aAnimation;',
       'attribute vec3 aStartPosition;',
       'attribute vec3 aEndPosition;'
     ],
     vertexInit: [
-      'float tDelay = aAnimation.x;',
-      'float tDuration = aAnimation.y;',
-      'float tTime = clamp(uTime - tDelay, 0.0, tDuration);',
-      //'float tProgress = easeBezier(tTime, 0.0, 1.0, tDuration);',
-      'float tProgress = easeBezier(tTime, 0.0, 1.0, tDuration, uBezier0, uBezier1);'
-      // linear
-      //'float tProgress = tTime / tDuration;'
+      'float tProgress = easeBezier(uTime, aAnimation, uBezierEase);'
     ],
     vertexPosition: [
       'transformed += mix(aStartPosition, aEndPosition, tProgress);'
