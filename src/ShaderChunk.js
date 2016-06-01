@@ -10,6 +10,8 @@ THREE.BAS.ShaderChunk["ease_back_in_out"] = "float easeBackInOut(float t, float 
 
 THREE.BAS.ShaderChunk["ease_back_out"] = "float easeBackOut(float t, float b, float c, float d, float s) {\n  return c*((t=t/d-1.0)*t*((s+1.0)*t + s) + 1.0) + b;\n}\n\nfloat easeBackOut(float t, float b, float c, float d) {\n  return easeBackOut(t, b, c, d, 1.70158);\n}\n";
 
+THREE.BAS.ShaderChunk["ease_bounce"] = "float easeBounceOut(float t, float b, float c, float d) {\n    if ((t/=d) < (1.0/2.75)) {\n        return c*(7.5625*t*t) + b;\n    } else if (t < (2.0/2.75)) {\n        return c*(7.5625*(t-=(1.5/2.75))*t + .75) + b;\n    } else if (t < (2.5/2.75)) {\n        return c*(7.5625*(t-=(2.25/2.75))*t + .9375) + b;\n    } else {\n        return c*(7.5625*(t-=(2.625/2.75))*t + .984375) + b;\n    }\n}\n\nfloat easeBounceIn(float t, float b, float c, float d) {\n    return c - easeBounceOut(d-t, 0.0, c, d) + b;\n}\n\nfloat easeBounceInOut(float t, float b, float c, float d) {\n    if (t < d/2.0) return easeBounceIn(t * 2.0, 0.0, c, d) * .5 + b;\n    return easeBounceOut(t * 2.0 - d, 0.0, c, d) * .5 + c * .5 + b;\n}\n";
+
 THREE.BAS.ShaderChunk["ease_circ_in"] = "float easeCircIn(float t, float b, float c, float d) {\n  return -c * (sqrt(1.0 - (t/=d)*t) - 1.0) + b;\n}\n";
 
 THREE.BAS.ShaderChunk["ease_circ_in_out"] = "float easeCircInOut(float t, float b, float c, float d) {\n  if ((t/=d/2.0) < 1.0) return -c/2.0 * (sqrt(1.0 - t*t) - 1.0) + b;\n  return c/2.0 * (sqrt(1.0 - (t-=2.0)*t) + 1.0) + b;\n}\n";
@@ -21,6 +23,18 @@ THREE.BAS.ShaderChunk["ease_cubic_in"] = "float easeCubicIn(float t, float b, fl
 THREE.BAS.ShaderChunk["ease_cubic_in_out"] = "float easeCubicInOut(float t, float b, float c, float d) {\n  if ((t/=d/2.0) < 1.0) return c/2.0*t*t*t + b;\n  return c/2.0*((t-=2.0)*t*t + 2.0) + b;\n}\n";
 
 THREE.BAS.ShaderChunk["ease_cubic_out"] = "float easeCubicOut(float t, float b, float c, float d) {\n  return c*((t=t/d - 1.0)*t*t + 1.0) + b;\n}\n";
+
+THREE.BAS.ShaderChunk["ease_elastic_in"] = "float easeElasticIn(float t, float b, float c, float d, float s, float p) {\n    float a=c;\n\n    if (t==0.0) return b;  if ((t/=d)==1.0) return b+c;  if (p == 0.0) p=d*.3;\n    if (a < abs(c)) { a=c; s=p/4.0; }\n    else s = p/PI2 * asin (c/a);\n    return -(a*pow(2.0,10.0*(t-=1.0)) * sin( (t*d-s)*PI2/p )) + b;\n}\n\nfloat easeElasticIn(float t, float b, float c, float d) {\n    float s=1.0;\n    float p=0.3;\n\n    return easeElasticIn(t, b, c, d, s, p);\n}\n";
+
+THREE.BAS.ShaderChunk["ease_elastic_in_out"] = "float easeElasticInOut(float t, float b, float c, float d, float s, float p) {\n    float a=c;\n\n    if (t==0.0) return b;  if ((t/=d/2.0)==2.0) return b+c;  if (p == 0.0) p=d*(0.449);\n    if (a < abs(c)) { a=c; s=p/4.0; }\n    else s = p/(2.0*PI) * asin(c/a);\n    if (t < 1.0) return -.5*(a*pow(2.0,10.0*(t-=1.0)) * sin( (t*d-s)*(2.0*PI)/p )) + b;\n    return a*pow(2.0,-10.0*(t-=1.0)) * sin( (t*d-s)*(2.0*PI)/p )*.5 + c + b;\n}\n\nfloat easeElasticInOut(float t, float b, float c, float d) {\n    float s=1.0;\n    float p=0.3;\n\n    return easeElasticInOut(t, b, c, d, s, p);\n}\n";
+
+THREE.BAS.ShaderChunk["ease_elastic_out"] = "float easeElasticOut(float t, float b, float c, float d, float s, float p) {\n    float a=c;\n\n    if (t==0.0) return b;  if ((t/=d)==1.0) return b+c;  if (p == 0.0) p=d*.3;\n    if (a < abs(c)) { a=c; s=p/4.0; }\n    else s = p/PI2 * asin(c/a);\n    return a*pow(2.0,-10.0*t) * sin( (t*d-s)*(PI2)/p ) + c + b;\n}\n\nfloat easeElasticOut(float t, float b, float c, float d) {\n    float s=1.0;\n    float p=0.3;\n\n    return easeElasticOut(t, b, c, d, s, p);\n}\n";
+
+THREE.BAS.ShaderChunk["ease_expo_in"] = "float easeExpoIn(float t, float b, float c, float d) {\n  return (t==0.0) ? b : c * pow(2.0, 10.0 * (t/d - 1.0)) + b;\n}\n";
+
+THREE.BAS.ShaderChunk["ease_expo_in_out"] = "float easeExpoInOut(float t, float b, float c, float d) {\n    if (t==0.0) return b;\n    if (t==d) return b+c;\n    if ((t/=d/2.0) < 1.0) return c/2.0 * pow(2.0, 10.0 * (t - 1.0)) + b;\n    return c/2.0 * (-pow(2.0, -10.0 * --t) + 2.0) + b;\n}\n";
+
+THREE.BAS.ShaderChunk["ease_expo_out"] = "float easeExpoOut(float t, float b, float c, float d) {\n  return (t==d) ? b+c : c * (-pow(2.0, -10.0 * t/d) + 1.0) + b;\n}\n";
 
 THREE.BAS.ShaderChunk["ease_quad_in"] = "float easeQuadIn(float t, float b, float c, float d) {\n  return c*(t/=d)*t + b;\n}\n";
 

@@ -16,6 +16,18 @@ function init() {
   root.scene.add(grid);
 
   var eases = [
+    'ease_bounce_in',
+    'ease_bounce_out',
+    'ease_bounce_in_out',
+
+    'ease_elastic_in',
+    'ease_elastic_out',
+    'ease_elastic_in_out',
+
+    'ease_expo_in',
+    'ease_expo_out',
+    'ease_expo_in_out',
+
     'ease_sine_in',
     'ease_sine_out',
     'ease_sine_in_out',
@@ -51,7 +63,6 @@ function init() {
   var elPrev = document.querySelector('.button.prev');
   var elEaseName = document.querySelector('.ease_name');
 
-
   elNext.addEventListener('click', function() {
     if (++index === eases.length) index = 0;
     setCurrentSystem(index);
@@ -65,13 +76,14 @@ function init() {
     var ease = eases[i];
     var system = systems[ease];
 
+    // lazy init so we don't blow up computers
     if (!system) {
       system = systems[ease] = new ParticleSystem(ease);
     }
 
     currentSystem && root.remove(currentSystem);
     currentSystem = system;
-    currentSystem.animate(2, {ease: Power0.easeIn, repeat:-1, repeatDelay:0.25, yoyo: true});
+    currentSystem.animate(2.0, {ease: Power0.easeIn, repeat:-1, repeatDelay:0.25, yoyo: true});
 
     elEaseName.innerHTML = currentSystem.ease;
 
@@ -85,8 +97,8 @@ function init() {
 // CLASSES
 ////////////////////
 
-function ParticleSystem(ease) {
-  this.ease = ease;
+function ParticleSystem(easeName) {
+  this.ease = easeName;
 
   var rangeX = 100;
   var rangeY = 100;
@@ -151,6 +163,16 @@ function ParticleSystem(ease) {
     return str.replace(/_([a-z])/g, function (g) {return g[1].toUpperCase();});
   }
 
+  var easeChunk;
+
+  // workaround of all bounce eases being defined in the same file
+  if (easeName.indexOf('bounce')) {
+    easeChunk = 'ease_bounce';
+  }
+  else {
+    easeChunk = easeName;
+  }
+
   var material = new THREE.BAS.BasicAnimationMaterial({
     shading: THREE.FlatShading,
     transparent: true,
@@ -160,7 +182,7 @@ function ParticleSystem(ease) {
     },
     vertexFunctions: [
       THREE.BAS.ShaderChunk['quaternion_rotation'],
-      THREE.BAS.ShaderChunk[ease]
+      THREE.BAS.ShaderChunk[easeChunk]
     ],
     vertexParameters: [
       'uniform float uTime;',
@@ -172,7 +194,7 @@ function ParticleSystem(ease) {
       'float tDelay = aAnimation.x;',
       'float tDuration = aAnimation.y;',
       'float tTime = clamp(uTime - tDelay, 0.0, tDuration);',
-      'float tProgress = ' + underscoreToCamelCase(ease) + '(tTime, 0.0, 1.0, tDuration);',
+      'float tProgress = ' + underscoreToCamelCase(easeName) + '(tTime, 0.0, 1.0, tDuration);',
       // linear
       //'float tProgress = tTime / tDuration;'
     ],
