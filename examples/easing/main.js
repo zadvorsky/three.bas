@@ -114,7 +114,7 @@ function ParticleSystem(easeName) {
   var i, j, offset;
 
   // animation
-  var aAnimation = geometry.createAttribute('aAnimation', 3);
+  var aDelayDuration = geometry.createAttribute('aDelayDuration', 3);
 
   var duration = 1.0;
   var maxPrefabDelay = 0.5;
@@ -126,8 +126,8 @@ function ParticleSystem(easeName) {
     var delay = THREE.Math.mapLinear(i, 0, prefabCount, 0.0, maxPrefabDelay);
 
     for (j = 0; j < prefabGeometry.vertices.length; j++) {
-      aAnimation.array[offset] = delay + (2 - j % 2) * maxVertexDelay;
-      aAnimation.array[offset + 1] = duration;
+      aDelayDuration.array[offset] = delay + (2 - j % 2) * maxVertexDelay;
+      aDelayDuration.array[offset + 1] = duration;
 
       offset += 3;
     }
@@ -190,15 +190,18 @@ function ParticleSystem(easeName) {
     ],
     vertexParameters: [
       'uniform float uTime;',
-      'attribute vec2 aAnimation;',
+      'attribute vec2 aDelayDuration;',
       'attribute vec3 aStartPosition;',
       'attribute vec3 aEndPosition;'
     ],
     vertexInit: [
-      'float tDelay = aAnimation.x;',
-      'float tDuration = aAnimation.y;',
-      'float tTime = clamp(uTime - tDelay, 0.0, tDuration);',
-      'float tProgress = ' + easeFunctionName + '(tTime, 0.0, 1.0, tDuration);',
+      'float tTime = clamp(uTime - aDelayDuration.x, 0.0, aDelayDuration.y);',
+      'float tProgress = ' + easeFunctionName + '(tTime, 0.0, 1.0, aDelayDuration.y);',
+      
+      // alternate signature
+      //'float tTime = clamp(uTime - aDelayDuration.x, 0.0, aDelayDuration.y);',
+      //'float tProgress = ' + easeFunctionName + '(tTime);'
+
       // linear
       //'float tProgress = tTime / tDuration;'
     ],
