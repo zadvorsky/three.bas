@@ -16,9 +16,18 @@ function init() {
   root.scene.add(grid);
 
   var eases = [
+    'ease_sine_in',
+    'ease_sine_out',
+    'ease_sine_in_out',
+
+    'ease_circ_in',
+    'ease_circ_out',
+    'ease_circ_in_out',
+
     'ease_back_in',
     'ease_back_out',
     'ease_back_in_out',
+
     'ease_quad_in',
     'ease_quad_out',
     'ease_quad_in_out',
