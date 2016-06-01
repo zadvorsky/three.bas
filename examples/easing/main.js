@@ -16,17 +16,21 @@ function init() {
   root.scene.add(grid);
 
   var eases = [
-    'ease_bounce_in',
-    'ease_bounce_out',
-    'ease_bounce_in_out',
+    'ease_quad_in',
+    'ease_quad_out',
+    'ease_quad_in_out',
 
-    'ease_elastic_in',
-    'ease_elastic_out',
-    'ease_elastic_in_out',
+    'ease_cubic_in',
+    'ease_cubic_out',
+    'ease_cubic_in_out',
 
-    'ease_expo_in',
-    'ease_expo_out',
-    'ease_expo_in_out',
+    'ease_quart_in',
+    'ease_quart_out',
+    'ease_quart_in_out',
+
+    'ease_quint_in',
+    'ease_quint_out',
+    'ease_quint_in_out',
 
     'ease_sine_in',
     'ease_sine_out',
@@ -36,22 +40,21 @@ function init() {
     'ease_circ_out',
     'ease_circ_in_out',
 
+    'ease_expo_in',
+    'ease_expo_out',
+    'ease_expo_in_out',
+
     'ease_back_in',
     'ease_back_out',
     'ease_back_in_out',
 
-    'ease_quad_in',
-    'ease_quad_out',
-    'ease_quad_in_out',
-    'ease_cubic_in',
-    'ease_cubic_out',
-    'ease_cubic_in_out',
-    'ease_quart_in',
-    'ease_quart_out',
-    'ease_quart_in_out',
-    'ease_quint_in',
-    'ease_quint_out',
-    'ease_quint_in_out'
+    'ease_elastic_in',
+    'ease_elastic_out',
+    'ease_elastic_in_out',
+
+    'ease_bounce_in',
+    'ease_bounce_out',
+    'ease_bounce_in_out'
   ];
   var systems = {};
 
@@ -163,14 +166,15 @@ function ParticleSystem(easeName) {
     return str.replace(/_([a-z])/g, function (g) {return g[1].toUpperCase();});
   }
 
-  var easeChunk;
+  var easeFunctionName = underscoreToCamelCase(easeName);
+  var easeChunkName;
 
   // workaround of all bounce eases being defined in the same file
-  if (easeName.indexOf('bounce')) {
-    easeChunk = 'ease_bounce';
+  if (easeName.indexOf('bounce') >= 0) {
+    easeChunkName = 'ease_bounce';
   }
   else {
-    easeChunk = easeName;
+    easeChunkName = easeName;
   }
 
   var material = new THREE.BAS.BasicAnimationMaterial({
@@ -182,7 +186,7 @@ function ParticleSystem(easeName) {
     },
     vertexFunctions: [
       THREE.BAS.ShaderChunk['quaternion_rotation'],
-      THREE.BAS.ShaderChunk[easeChunk]
+      THREE.BAS.ShaderChunk[easeChunkName]
     ],
     vertexParameters: [
       'uniform float uTime;',
@@ -194,7 +198,7 @@ function ParticleSystem(easeName) {
       'float tDelay = aAnimation.x;',
       'float tDuration = aAnimation.y;',
       'float tTime = clamp(uTime - tDelay, 0.0, tDuration);',
-      'float tProgress = ' + underscoreToCamelCase(easeName) + '(tTime, 0.0, 1.0, tDuration);',
+      'float tProgress = ' + easeFunctionName + '(tTime, 0.0, 1.0, tDuration);',
       // linear
       //'float tProgress = tTime / tDuration;'
     ],
