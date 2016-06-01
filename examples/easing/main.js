@@ -7,34 +7,69 @@ function init() {
     fov: 60
   });
   root.renderer.setClearColor(0x222222);
-  root.camera.position.set(0, 0, 200);
+  root.camera.position.set(0, 0, 150);
 
   var grid = new THREE.GridHelper(50, 10);
+  grid.material.depthWrite = false;
   grid.setColors(0x333333, 0x333333);
   grid.rotation.x = Math.PI * 0.5;
   root.scene.add(grid);
 
+  var eases = [
+    'ease_back_in',
+    'ease_back_out',
+    'ease_back_in_out',
+    'ease_quad_in',
+    'ease_quad_out',
+    'ease_quad_in_out',
+    'ease_cubic_in',
+    'ease_cubic_out',
+    'ease_cubic_in_out',
+    'ease_quart_in',
+    'ease_quart_out',
+    'ease_quart_in_out',
+    'ease_quint_in',
+    'ease_quint_out',
+    'ease_quint_in_out'
+  ];
+  var systems = {};
 
-  //var ease = 'ease_back_in';
-  //var ease = 'ease_back_out';
-  //var ease = 'ease_back_in_out';
-  //var ease = 'ease_cubic_in';
-  //var ease = 'ease_cubic_out';
-  var ease = 'ease_cubic_in_out';
-  //var ease = 'ease_quad_in';
-  //var ease = 'ease_quad_out';
-  //var ease = 'ease_quad_in_out';
-  //var ease = 'ease_quart_in';
-  //var ease = 'ease_quart_out';
-  //var ease = 'ease_quart_in_out';
-  //var ease = 'ease_quint_in';
-  //var ease = 'ease_quint_out';
-  //var ease = 'ease_quint_in_out';
+  var index = 0;
+  var currentSystem;
 
-  var particleSystem = new ParticleSystem(ease);
-  particleSystem.animate(2, {ease: Power0.easeIn, repeat:-1, repeatDelay:0.25, yoyo: true});
+  // dom stuff
+  var elNext = document.querySelector('.button.next');
+  var elPrev = document.querySelector('.button.prev');
+  var elEaseName = document.querySelector('.ease_name');
 
-  root.scene.add(particleSystem);
+
+  elNext.addEventListener('click', function() {
+    if (++index === eases.length) index = 0;
+    setCurrentSystem(index);
+  });
+  elPrev.addEventListener('click', function() {
+    if (--index === -1) index = eases.length - 1;
+    setCurrentSystem(index);
+  });
+
+  function setCurrentSystem(i) {
+    var ease = eases[i];
+    var system = systems[ease];
+
+    if (!system) {
+      system = systems[ease] = new ParticleSystem(ease);
+    }
+
+    currentSystem && root.remove(currentSystem);
+    currentSystem = system;
+    currentSystem.animate(2, {ease: Power0.easeIn, repeat:-1, repeatDelay:0.25, yoyo: true});
+
+    elEaseName.innerHTML = currentSystem.ease;
+
+    root.add(currentSystem);
+  }
+
+  setCurrentSystem(index);
 }
 
 ////////////////////
@@ -42,6 +77,8 @@ function init() {
 ////////////////////
 
 function ParticleSystem(ease) {
+  this.ease = ease;
+
   var rangeX = 100;
   var rangeY = 100;
   var prefabCount = 1000;

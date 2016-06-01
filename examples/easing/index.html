@@ -7,11 +7,46 @@
       body {
         margin: 0;
         overflow: hidden;
+        font-family: monospace;
       }
+
+      .controls {
+        position: absolute;
+        bottom: 60px;
+        left: 0;
+        right: 0;
+        color: white;
+        text-align: center;
+        -moz-user-select: none;
+        -webkit-user-select: none;
+        font-size: 18px;
+      }
+
+      .button {
+        font-weight: bold;
+        cursor: pointer;
+        padding: 8px;
+        transition: color 0.2s;
+      }
+      .button:hover {
+        color: #aaa;
+      }
+
+      .ease_name {
+        display: inline-block;
+        width: 250px;
+        pointer-events: none;
+      }
+
     </style>
 </head>
 <body>
 <div id="three-container"></div>
+<div class="controls">
+  <span class="prev button"><</span>
+  <span class="ease_name"></span>
+  <span class="next button">></span>
+</div>
 
 <script src="../../bower_components/gsap/src/minified/TweenMax.min.js"></script>
 <script src="../../bower_components/three.js/build/three.js"></script>
