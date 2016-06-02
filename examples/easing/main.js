@@ -58,13 +58,14 @@ function init() {
   ];
   var systems = {};
 
-  var index = 0;
-  var currentSystem;
+  // cycle through the eases above
 
-  // dom stuff
   var elNext = document.querySelector('.button.next');
   var elPrev = document.querySelector('.button.prev');
   var elEaseName = document.querySelector('.ease_name');
+
+  var index = 0;
+  var currentSystem;
 
   elNext.addEventListener('click', function() {
     if (++index === eases.length) index = 0;
@@ -81,7 +82,7 @@ function init() {
 
     // lazy init so we don't blow up computers
     if (!system) {
-      system = systems[ease] = new ParticleSystem(ease);
+      system = systems[ease] = new EaseSystem(ease);
     }
 
     currentSystem && root.remove(currentSystem);
@@ -100,7 +101,7 @@ function init() {
 // CLASSES
 ////////////////////
 
-function ParticleSystem(ease) {
+function EaseSystem(ease) {
   this.ease = ease;
 
   var rangeX = 100;
@@ -113,7 +114,9 @@ function ParticleSystem(ease) {
 
   var i, j, offset;
 
-  // animation
+  // Animation
+
+  // x = animation delay, y = animation duration
   var aDelayDuration = geometry.createAttribute('aDelayDuration', 3);
 
   var duration = 2.0;
@@ -123,23 +126,30 @@ function ParticleSystem(ease) {
   this.totalDuration = duration + maxPrefabDelay + maxVertexDelay * 2;
 
   for (i = 0, offset = 0; i < prefabCount; i++) {
-    var delay = THREE.Math.mapLinear(i, 0, prefabCount, 0.0, maxPrefabDelay);
+    var prefabDelay = THREE.Math.mapLinear(i, 0, prefabCount, 0.0, maxPrefabDelay);
 
     for (j = 0; j < prefabGeometry.vertices.length; j++) {
-      aDelayDuration.array[offset] = delay + (2 - j % 2) * maxVertexDelay;
+      // give top right and bottom right corner of the plane a longer delay
+      // this causes the plane to stretch
+      aDelayDuration.array[offset    ] = prefabDelay + (2 - j % 2) * maxVertexDelay;
       aDelayDuration.array[offset + 1] = duration;
 
       offset += 3;
     }
   }
 
-  // startPosition
+  // Position
+
+  // planes will move from aStartPosition to aEndPosition
   var aStartPosition = geometry.createAttribute('aStartPosition', 3);
   var aEndPosition = geometry.createAttribute('aEndPosition', 3);
+
+  // temp vars so we don't create redundant objects
   var startPosition = new THREE.Vector3();
   var endPosition = new THREE.Vector3();
 
   for (i = 0, offset = 0; i < prefabCount; i++) {
+    // movement over the x axis, y and z are the same
     startPosition.x = -rangeX * 0.5;
     startPosition.y = THREE.Math.mapLinear(i, 0, prefabCount, -rangeY * 0.5, rangeY * 0.5);
     startPosition.z = 0;
@@ -148,12 +158,13 @@ function ParticleSystem(ease) {
     endPosition.y = startPosition.y;
     endPosition.z = 0;
 
+    // store the same values per prefab
     for (j = 0; j < prefabGeometry.vertices.length; j++) {
-      aStartPosition.array[offset] = startPosition.x;
+      aStartPosition.array[offset    ] = startPosition.x;
       aStartPosition.array[offset + 1] = startPosition.y;
       aStartPosition.array[offset + 2] = startPosition.z;
 
-      aEndPosition.array[offset] = endPosition.x;
+      aEndPosition.array[offset    ] = endPosition.x;
       aEndPosition.array[offset + 1] = endPosition.y;
       aEndPosition.array[offset + 2] = endPosition.z;
 
@@ -166,19 +177,19 @@ function ParticleSystem(ease) {
     return str.replace(/_([a-z])/g, function (g) {return g[1].toUpperCase();});
   }
 
-  var easeFunctionName = underscoreToCamelCase(ease);
-
   var material = new THREE.BAS.BasicAnimationMaterial({
-    shading: THREE.FlatShading,
-    transparent: true,
     side: THREE.DoubleSide,
+    // uniforms for the material
     uniforms: {
       uTime: {type: 'f', value: 0}
     },
+    // functions for the vertex shader
     vertexFunctions: [
-      THREE.BAS.ShaderChunk['quaternion_rotation'],
+      // get the easing function definition
       THREE.BAS.ShaderChunk[ease]
     ],
+    // uniform names must correspond to material.uniforms keys
+    // attribute names must correspond to geometry.attribute names
     vertexParameters: [
       'uniform float uTime;',
       'attribute vec2 aDelayDuration;',
@@ -186,15 +197,28 @@ function ParticleSystem(ease) {
       'attribute vec3 aEndPosition;'
     ],
     vertexInit: [
+      // all ease functions have two signatures
+
+      // one in the form of easeFunctionName(t, b, c, d)
+      // t: time
+      // b: begin value
+      // c: change in value
+      // d: duration
+      // which looks like this:
       //'float tTime = clamp(uTime - aDelayDuration.x, 0.0, aDelayDuration.y);',
       //'float tProgress = ' + easeFunctionName + '(tTime, 0.0, 1.0, aDelayDuration.y);',
-      'float tTime = clamp(uTime - aDelayDuration.x, 0.0, aDelayDuration.y) / aDelayDuration.y;',
-      'float tProgress = ' + easeFunctionName + '(tTime);'
 
-      // linear
+      // and another in the form of easeFunctionName(p);
+      // here p is expected to be in range 0.0 to 1.0
+      // which looks like this:
+      'float tProgress = clamp(uTime - aDelayDuration.x, 0.0, aDelayDuration.y) / aDelayDuration.y;',
+      'tProgress = ' + underscoreToCamelCase(ease) + '(tProgress);'
+
+      // linear progress looks like this:
       //'float tProgress = tTime / aDelayDuration.y;'
     ],
     vertexPosition: [
+      // simple linear interpolation between start and end positions
       'transformed += mix(aStartPosition, aEndPosition, tProgress);'
     ]
   });
@@ -203,9 +227,11 @@ function ParticleSystem(ease) {
 
   this.frustumCulled = false;
 }
-ParticleSystem.prototype = Object.create(THREE.Mesh.prototype);
-ParticleSystem.prototype.constructor = ParticleSystem;
-Object.defineProperty(ParticleSystem.prototype, 'time', {
+EaseSystem.prototype = Object.create(THREE.Mesh.prototype);
+EaseSystem.prototype.constructor = EaseSystem;
+
+// helper method to set the uTime uniform value
+Object.defineProperty(EaseSystem.prototype, 'time', {
   get: function () {
     return this.material.uniforms['uTime'].value;
   },
@@ -214,7 +240,8 @@ Object.defineProperty(ParticleSystem.prototype, 'time', {
   }
 });
 
-ParticleSystem.prototype.animate = function (duration, options) {
+// helper method to animate uTime uniform based on totalDuration (which is calculated in the constructor)
+EaseSystem.prototype.animate = function (duration, options) {
   options = options || {};
   options.time = this.totalDuration;
 
