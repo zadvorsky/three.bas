@@ -16,37 +16,37 @@ function init() {
   root.scene.add(grid);
 
   var eases = [
-    'ease_quad_in',
-    'ease_quad_out',
-    'ease_quad_in_out',
+    //'ease_quad_in',
+    //'ease_quad_out',
+    //'ease_quad_in_out',
+    //
+    //'ease_cubic_in',
+    //'ease_cubic_out',
+    //'ease_cubic_in_out',
+    //
+    //'ease_quart_in',
+    //'ease_quart_out',
+    //'ease_quart_in_out',
+    //
+    //'ease_quint_in',
+    //'ease_quint_out',
+    //'ease_quint_in_out',
+    //
+    //'ease_sine_in',
+    //'ease_sine_out',
+    //'ease_sine_in_out',
 
-    'ease_cubic_in',
-    'ease_cubic_out',
-    'ease_cubic_in_out',
+    //'ease_circ_in',
+    //'ease_circ_out',
+    //'ease_circ_in_out',
 
-    'ease_quart_in',
-    'ease_quart_out',
-    'ease_quart_in_out',
+    //'ease_expo_in',
+    //'ease_expo_out',
+    //'ease_expo_in_out',
 
-    'ease_quint_in',
-    'ease_quint_out',
-    'ease_quint_in_out',
-
-    'ease_sine_in',
-    'ease_sine_out',
-    'ease_sine_in_out',
-
-    'ease_circ_in',
-    'ease_circ_out',
-    'ease_circ_in_out',
-
-    'ease_expo_in',
-    'ease_expo_out',
-    'ease_expo_in_out',
-
-    'ease_back_in',
-    'ease_back_out',
-    'ease_back_in_out',
+    //'ease_back_in',
+    //'ease_back_out',
+    //'ease_back_in_out',
 
     'ease_elastic_in',
     'ease_elastic_out',
@@ -116,9 +116,9 @@ function ParticleSystem(easeName) {
   // animation
   var aDelayDuration = geometry.createAttribute('aDelayDuration', 3);
 
-  var duration = 1.0;
-  var maxPrefabDelay = 0.5;
-  var maxVertexDelay = 0.1;
+  var duration = 2.0;
+  var maxPrefabDelay = 1.0;
+  var maxVertexDelay = 0.2;
 
   this.totalDuration = duration + maxPrefabDelay + maxVertexDelay * 2;
 
@@ -195,15 +195,13 @@ function ParticleSystem(easeName) {
       'attribute vec3 aEndPosition;'
     ],
     vertexInit: [
-      'float tTime = clamp(uTime - aDelayDuration.x, 0.0, aDelayDuration.y);',
-      'float tProgress = ' + easeFunctionName + '(tTime, 0.0, 1.0, aDelayDuration.y);',
-      
-      // alternate signature
       //'float tTime = clamp(uTime - aDelayDuration.x, 0.0, aDelayDuration.y);',
-      //'float tProgress = ' + easeFunctionName + '(tTime);'
+      //'float tProgress = ' + easeFunctionName + '(tTime, 0.0, 1.0, aDelayDuration.y);',
+      'float tTime = clamp(uTime - aDelayDuration.x, 0.0, aDelayDuration.y) / aDelayDuration.y;',
+      'float tProgress = ' + easeFunctionName + '(tTime);'
 
       // linear
-      //'float tProgress = tTime / tDuration;'
+      //'float tProgress = tTime / aDelayDuration.y;'
     ],
     vertexPosition: [
       'transformed += mix(aStartPosition, aEndPosition, tProgress);'
