@@ -1,15 +1,15 @@
-float easeBackIn(float t, float b, float c, float d, float s) {
-  return c*(t/=d)*t*((s+1.0)*t - s) + b;
+float easeBackIn(float p, float amplitude) {
+    return p * p * ((amplitude + 1.0) * p - amplitude);
+}
+
+float easeBackIn(float p) {
+    return easeBackIn(p, 1.70158);
+}
+
+float easeBackIn(float t, float b, float c, float d, float amplitude) {
+    return b + easeBackIn(t / d, amplitude) * c;
 }
 
 float easeBackIn(float t, float b, float c, float d) {
-  return easeBackIn(t, b, c, d, 1.70158);
-}
-
-float easeBackIn(float t, float s) {
-  return t*t*((s+1.0)*t - s);
-}
-
-float easeBackIn(float t) {
-  return easeBackIn(t, 1.70158);
+    return b + easeBackIn(t / d) * c;
 }

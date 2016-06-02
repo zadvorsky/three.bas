@@ -15,5 +15,5 @@ float easeElasticInOut(float t, float b, float c, float d, float amplitude, floa
 }
 
 float easeElasticInOut(float t, float b, float c, float d) {
-    return easeElasticInOut(t, b, c, d, 1.0, 0.3);
+    return b + easeElasticInOut(t / d) * c;
 }
