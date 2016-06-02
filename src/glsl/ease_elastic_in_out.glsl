@@ -6,14 +6,14 @@ float easeElasticInOut(float p, float amplitude, float period) {
     return ((p *= 2.0) < 1.0) ? -0.5 * (p1 * pow(2.0, 10.0 * (p -= 1.0)) * sin((p - p3) * PI2 / p2)) : p1 * pow(2.0, -10.0 * (p -= 1.0)) * sin((p - p3) * PI2 / p2) * 0.5 + 1.0;
 }
 
+float easeElasticInOut(float p) {
+    return easeElasticInOut(p, 1.0, 0.3);
+}
+
 float easeElasticInOut(float t, float b, float c, float d, float amplitude, float period) {
     return b + easeElasticInOut(t / d, amplitude, period) * c;
 }
 
 float easeElasticInOut(float t, float b, float c, float d) {
     return easeElasticInOut(t, b, c, d, 1.0, 0.3);
-}
-
-float easeElasticInOut(float p) {
-    return easeElasticInOut(p, 1.0, 0.3);
 }

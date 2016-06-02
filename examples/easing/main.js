@@ -48,9 +48,9 @@ function init() {
     //'ease_back_out',
     //'ease_back_in_out',
 
-    'ease_elastic_in',
-    'ease_elastic_out',
-    'ease_elastic_in_out',
+    //'ease_elastic_in',
+    //'ease_elastic_out',
+    //'ease_elastic_in_out',
 
     'ease_bounce_in',
     'ease_bounce_out',
@@ -100,8 +100,8 @@ function init() {
 // CLASSES
 ////////////////////
 
-function ParticleSystem(easeName) {
-  this.ease = easeName;
+function ParticleSystem(ease) {
+  this.ease = ease;
 
   var rangeX = 100;
   var rangeY = 100;
@@ -166,16 +166,7 @@ function ParticleSystem(easeName) {
     return str.replace(/_([a-z])/g, function (g) {return g[1].toUpperCase();});
   }
 
-  var easeFunctionName = underscoreToCamelCase(easeName);
-  var easeChunkName;
-
-  // workaround of all bounce eases being defined in the same file
-  if (easeName.indexOf('bounce') >= 0) {
-    easeChunkName = 'ease_bounce';
-  }
-  else {
-    easeChunkName = easeName;
-  }
+  var easeFunctionName = underscoreToCamelCase(ease);
 
   var material = new THREE.BAS.BasicAnimationMaterial({
     shading: THREE.FlatShading,
@@ -186,7 +177,7 @@ function ParticleSystem(easeName) {
     },
     vertexFunctions: [
       THREE.BAS.ShaderChunk['quaternion_rotation'],
-      THREE.BAS.ShaderChunk[easeChunkName]
+      THREE.BAS.ShaderChunk[ease]
     ],
     vertexParameters: [
       'uniform float uTime;',
