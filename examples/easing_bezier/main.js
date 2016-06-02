@@ -15,7 +15,7 @@ function init() {
   grid.rotation.x = Math.PI * 0.5;
   root.scene.add(grid);
 
-  var system = new ParticleSystem();
+  var system = new EaseSystem();
   system.animate(2.0, {ease: Power0.easeIn, repeat:-1, repeatDelay:0.25, yoyo: true});
   root.add(system);
 }
@@ -24,7 +24,7 @@ function init() {
 // CLASSES
 ////////////////////
 
-function ParticleSystem() {
+function EaseSystem() {
   var rangeX = 100;
   var rangeY = 100;
   var prefabCount = 1000;
@@ -90,21 +90,21 @@ function ParticleSystem() {
     uniforms: {
       uTime: {type: 'f', value: 0},
       // bezier ease definition same as css, see http://cubic-bezier.com/
-      uBezierEase: {type: 'v4', value: new THREE.Vector4(0.0, 1.5, 1.0, -1.5)}
+      uBezierCurve: {type: 'v4', value: new THREE.Vector4(0.0, 1.5, 1.0, -1.5)}
     },
     vertexFunctions: [
-      THREE.BAS.ShaderChunk['quaternion_rotation'],
       THREE.BAS.ShaderChunk['ease_bezier']
     ],
     vertexParameters: [
       'uniform float uTime;',
-      'uniform vec4 uBezierEase;',
+      'uniform vec4 uBezierCurve;',
       'attribute vec2 aDelayDuration;',
       'attribute vec3 aStartPosition;',
       'attribute vec3 aEndPosition;'
     ],
     vertexInit: [
-      'float tProgress = easeBezier(uTime, aDelayDuration, uBezierEase);'
+      'float tProgress = clamp(uTime - aDelayDuration.x, 0.0, aDelayDuration.y) / aDelayDuration.y;',
+      'tProgress = easeBezier(tProgress, uBezierCurve);'
     ],
     vertexPosition: [
       'transformed += mix(aStartPosition, aEndPosition, tProgress);'
@@ -115,9 +115,9 @@ function ParticleSystem() {
 
   this.frustumCulled = false;
 }
-ParticleSystem.prototype = Object.create(THREE.Mesh.prototype);
-ParticleSystem.prototype.constructor = ParticleSystem;
-Object.defineProperty(ParticleSystem.prototype, 'time', {
+EaseSystem.prototype = Object.create(THREE.Mesh.prototype);
+EaseSystem.prototype.constructor = EaseSystem;
+Object.defineProperty(EaseSystem.prototype, 'time', {
   get: function () {
     return this.material.uniforms['uTime'].value;
   },
@@ -126,7 +126,7 @@ Object.defineProperty(ParticleSystem.prototype, 'time', {
   }
 });
 
-ParticleSystem.prototype.animate = function (duration, options) {
+EaseSystem.prototype.animate = function (duration, options) {
   options = options || {};
   options.time = this.totalDuration;
 
