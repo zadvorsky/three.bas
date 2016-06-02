@@ -1,15 +1,19 @@
-float easeElasticOut(float t, float b, float c, float d, float s, float p) {
-    float a=c;
+float easeElasticOut(float p, float amplitude, float period) {
+    float p1 = max(amplitude, 1.0);
+    float p2 = period / min(amplitude, 1.0);
+    float p3 = p2 / PI2 * (asin(1.0 / p1));
 
-    if (t==0.0) return b;  if ((t/=d)==1.0) return b+c;  if (p == 0.0) p=d*.3;
-    if (a < abs(c)) { a=c; s=p/4.0; }
-    else s = p/PI2 * asin(c/a);
-    return a*pow(2.0,-10.0*t) * sin( (t*d-s)*(PI2)/p ) + c + b;
+    return p1 * pow(2.0, -10.0 * p) * sin((p - p3) * PI2 / p2) + 1.0;
+}
+
+float easeElasticOut(float t, float b, float c, float d, float amplitude, float period) {
+    return b + easeElasticOut(t / d, amplitude, period) * c;
 }
 
 float easeElasticOut(float t, float b, float c, float d) {
-    float s=1.0;
-    float p=0.3;
+    return easeElasticOut(t, b, c, d, 1.0, 0.3);
+}
 
-    return easeElasticOut(t, b, c, d, s, p);
+float easeElasticOut(float p) {
+    return easeElasticOut(p, 1.0, 0.3);
 }
