@@ -1,7 +1,16 @@
-THREE.BAS.BaseAnimationMaterial = function (parameters) {
+THREE.BAS.BaseAnimationMaterial = function (parameters, uniformValues) {
   THREE.ShaderMaterial.call(this);
 
   this.setValues(parameters);
+
+  // todo add missing default defines
+
+  if (uniformValues) {
+    uniformValues.map && (this.defines['USE_MAP'] = '');
+    uniformValues.normalMap && (this.defines['USE_NORMALMAP'] = '');
+
+    this.setUniformValues(uniformValues);
+  }
 };
 THREE.BAS.BaseAnimationMaterial.prototype = Object.create(THREE.ShaderMaterial.prototype);
 THREE.BAS.BaseAnimationMaterial.prototype.constructor = THREE.BAS.BaseAnimationMaterial;

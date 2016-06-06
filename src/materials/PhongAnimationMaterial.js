@@ -15,7 +15,7 @@ THREE.BAS.PhongAnimationMaterial = function (parameters, uniformValues) {
   this.fragmentEmissive = [];
   this.fragmentSpecular = [];
 
-  THREE.BAS.BaseAnimationMaterial.call(this, parameters);
+  THREE.BAS.BaseAnimationMaterial.call(this, parameters, uniformValues);
 
   var phongShader = THREE.ShaderLib['phong'];
 
@@ -23,14 +23,6 @@ THREE.BAS.PhongAnimationMaterial = function (parameters, uniformValues) {
   this.lights = true;
   this.vertexShader = this._concatVertexShader();
   this.fragmentShader = this._concatFragmentShader();
-
-  // todo add missing default defines and move to BaseAnimationMaterial
-  if (uniformValues) {
-    uniformValues.map && (this.defines['USE_MAP'] = '');
-    uniformValues.normalMap && (this.defines['USE_NORMALMAP'] = '');
-
-    this.setUniformValues(uniformValues);
-  }
 };
 THREE.BAS.PhongAnimationMaterial.prototype = Object.create(THREE.BAS.BaseAnimationMaterial.prototype);
 THREE.BAS.PhongAnimationMaterial.prototype.constructor = THREE.BAS.PhongAnimationMaterial;

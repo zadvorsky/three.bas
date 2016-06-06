@@ -955,10 +955,19 @@ THREE.BAS.PrefabBufferGeometry.prototype.setAttribute2 = function (name, data) {
   this.geometry.attributes[name].needsUpdate = true;
 };
 
-THREE.BAS.BaseAnimationMaterial = function (parameters) {
+THREE.BAS.BaseAnimationMaterial = function (parameters, uniformValues) {
   THREE.ShaderMaterial.call(this);
 
   this.setValues(parameters);
+
+  // todo add missing default defines
+
+  if (uniformValues) {
+    uniformValues.map && (this.defines['USE_MAP'] = '');
+    uniformValues.normalMap && (this.defines['USE_NORMALMAP'] = '');
+
+    this.setUniformValues(uniformValues);
+  }
 };
 THREE.BAS.BaseAnimationMaterial.prototype = Object.create(THREE.ShaderMaterial.prototype);
 THREE.BAS.BaseAnimationMaterial.prototype.constructor = THREE.BAS.BaseAnimationMaterial;
@@ -1008,7 +1017,7 @@ THREE.BAS.BasicAnimationMaterial = function(parameters, uniformValues) {
   this.fragmentMap = [];
   this.fragmentAlpha = [];
 
-  THREE.BAS.BaseAnimationMaterial.call(this, parameters);
+  THREE.BAS.BaseAnimationMaterial.call(this, parameters, uniformValues);
 
   var basicShader = THREE.ShaderLib['basic'];
 
@@ -1016,14 +1025,6 @@ THREE.BAS.BasicAnimationMaterial = function(parameters, uniformValues) {
   this.lights = false;
   this.vertexShader = this._concatVertexShader();
   this.fragmentShader = this._concatFragmentShader();
-
-  // todo add missing default defines and move to BaseAnimationMaterial
-  if (uniformValues) {
-    uniformValues.map && (this.defines['USE_MAP'] = '');
-    uniformValues.normalMap && (this.defines['USE_NORMALMAP'] = '');
-
-    this.setUniformValues(uniformValues);
-  }
 };
 THREE.BAS.BasicAnimationMaterial.prototype = Object.create(THREE.BAS.BaseAnimationMaterial.prototype);
 THREE.BAS.BasicAnimationMaterial.prototype.constructor = THREE.BAS.BasicAnimationMaterial;
@@ -1276,7 +1277,7 @@ THREE.BAS.PhongAnimationMaterial = function (parameters, uniformValues) {
   this.fragmentEmissive = [];
   this.fragmentSpecular = [];
 
-  THREE.BAS.BaseAnimationMaterial.call(this, parameters);
+  THREE.BAS.BaseAnimationMaterial.call(this, parameters, uniformValues);
 
   var phongShader = THREE.ShaderLib['phong'];
 
@@ -1284,14 +1285,6 @@ THREE.BAS.PhongAnimationMaterial = function (parameters, uniformValues) {
   this.lights = true;
   this.vertexShader = this._concatVertexShader();
   this.fragmentShader = this._concatFragmentShader();
-
-  // todo add missing default defines and move to BaseAnimationMaterial
-  if (uniformValues) {
-    uniformValues.map && (this.defines['USE_MAP'] = '');
-    uniformValues.normalMap && (this.defines['USE_NORMALMAP'] = '');
-
-    this.setUniformValues(uniformValues);
-  }
 };
 THREE.BAS.PhongAnimationMaterial.prototype = Object.create(THREE.BAS.BaseAnimationMaterial.prototype);
 THREE.BAS.PhongAnimationMaterial.prototype.constructor = THREE.BAS.PhongAnimationMaterial;
