@@ -146,7 +146,7 @@ function ParticleSystem() {
       shading: THREE.FlatShading,
       transparent: true,
       uniforms: {
-        uTime: {type: 'f', value: 0}
+        uTime: {value: 0}
       },
       vertexFunctions: [
         THREE.BAS.ShaderChunk['quaternion_rotation']

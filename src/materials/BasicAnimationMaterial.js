@@ -22,6 +22,8 @@ THREE.BAS.BasicAnimationMaterial = function(parameters, uniformValues) {
   this.lights = false;
   this.vertexShader = this._concatVertexShader();
   this.fragmentShader = this._concatFragmentShader();
+
+  this.setUniformValues(uniformValues);
 };
 THREE.BAS.BasicAnimationMaterial.prototype = Object.create(THREE.BAS.BaseAnimationMaterial.prototype);
 THREE.BAS.BasicAnimationMaterial.prototype.constructor = THREE.BAS.BasicAnimationMaterial;

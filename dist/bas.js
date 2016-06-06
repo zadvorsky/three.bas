@@ -965,8 +965,6 @@ THREE.BAS.BaseAnimationMaterial = function (parameters, uniformValues) {
   if (uniformValues) {
     uniformValues.map && (this.defines['USE_MAP'] = '');
     uniformValues.normalMap && (this.defines['USE_NORMALMAP'] = '');
-
-    this.setUniformValues(uniformValues);
   }
 };
 THREE.BAS.BaseAnimationMaterial.prototype = Object.create(THREE.ShaderMaterial.prototype);
@@ -1025,6 +1023,8 @@ THREE.BAS.BasicAnimationMaterial = function(parameters, uniformValues) {
   this.lights = false;
   this.vertexShader = this._concatVertexShader();
   this.fragmentShader = this._concatFragmentShader();
+
+  this.setUniformValues(uniformValues);
 };
 THREE.BAS.BasicAnimationMaterial.prototype = Object.create(THREE.BAS.BaseAnimationMaterial.prototype);
 THREE.BAS.BasicAnimationMaterial.prototype.constructor = THREE.BAS.BasicAnimationMaterial;
@@ -1285,6 +1285,8 @@ THREE.BAS.PhongAnimationMaterial = function (parameters, uniformValues) {
   this.lights = true;
   this.vertexShader = this._concatVertexShader();
   this.fragmentShader = this._concatFragmentShader();
+
+  this.setUniformValues(uniformValues);
 };
 THREE.BAS.PhongAnimationMaterial.prototype = Object.create(THREE.BAS.BaseAnimationMaterial.prototype);
 THREE.BAS.PhongAnimationMaterial.prototype.constructor = THREE.BAS.PhongAnimationMaterial;

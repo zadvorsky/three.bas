@@ -8,8 +8,6 @@ THREE.BAS.BaseAnimationMaterial = function (parameters, uniformValues) {
   if (uniformValues) {
     uniformValues.map && (this.defines['USE_MAP'] = '');
     uniformValues.normalMap && (this.defines['USE_NORMALMAP'] = '');
-
-    this.setUniformValues(uniformValues);
   }
 };
 THREE.BAS.BaseAnimationMaterial.prototype = Object.create(THREE.ShaderMaterial.prototype);

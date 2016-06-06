@@ -23,6 +23,8 @@ THREE.BAS.PhongAnimationMaterial = function (parameters, uniformValues) {
   this.lights = true;
   this.vertexShader = this._concatVertexShader();
   this.fragmentShader = this._concatFragmentShader();
+
+  this.setUniformValues(uniformValues);
 };
 THREE.BAS.PhongAnimationMaterial.prototype = Object.create(THREE.BAS.BaseAnimationMaterial.prototype);
 THREE.BAS.PhongAnimationMaterial.prototype.constructor = THREE.BAS.PhongAnimationMaterial;
