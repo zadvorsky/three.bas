@@ -48,6 +48,8 @@ function init() {
   // passing the env map to the material will set the correct defines
   var system = new Animation({
     envMap: envCubeCamera.renderTarget.texture,
+    roughness: 0.0,
+    metalness: 1.0,
     //combine: THREE.MultiplyOperation,
     //reflectivity: 1.0,
     //refractionRatio: 0.98
@@ -66,7 +68,8 @@ function Animation(params) {
   var prefabCount = 6;
   var size = rangeY / prefabCount;
 
-  var prefabGeometry = new THREE.TorusKnotGeometry(size * 0.25, 2.0);
+  //var prefabGeometry = new THREE.TorusKnotGeometry(size * 0.25, 2.0);
+  var prefabGeometry = new THREE.TorusGeometry(size * 0.25, 4.0, 32, 16);
   var geometry = new THREE.BAS.PrefabBufferGeometry(prefabGeometry, prefabCount);
 
   var i, j, offset;
@@ -137,7 +140,7 @@ function Animation(params) {
     }
   }
 
-  var material = new THREE.BAS.PhongAnimationMaterial({
+  var material = new THREE.BAS.StandardAnimationMaterial({
     //shading: THREE.FlatShading,
     uniforms: {
       uTime: {value: 0},
