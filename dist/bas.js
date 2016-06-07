@@ -818,70 +818,6 @@ THREE.BAS.PrefabBufferGeometry.prototype.bufferUvs = function() {
   }
 };
 
-/**
- * based on BufferGeometry.computeVertexNormals
- * calculate vertex normals for a prefab, and repeat the data in the normal buffer
- */
-THREE.BAS.PrefabBufferGeometry.prototype.computeVertexNormals = function () {
-  var index = this.index;
-  var attributes = this.attributes;
-  var positions = attributes.position.array;
-
-  if (attributes.normal === undefined) {
-    this.addAttribute('normal', new THREE.BufferAttribute(new Float32Array(positions.length), 3));
-  }
-
-  var normals = attributes.normal.array;
-
-  var vA, vB, vC,
-
-  pA = new THREE.Vector3(),
-  pB = new THREE.Vector3(),
-  pC = new THREE.Vector3(),
-
-  cb = new THREE.Vector3(),
-  ab = new THREE.Vector3();
-
-  var indices = index.array;
-  var prefabIndexCount = this.prefabGeometry.faces.length * 3;
-
-  for (var i = 0; i < prefabIndexCount; i += 3) {
-    vA = indices[i + 0] * 3;
-    vB = indices[i + 1] * 3;
-    vC = indices[i + 2] * 3;
-
-    pA.fromArray(positions, vA);
-    pB.fromArray(positions, vB);
-    pC.fromArray(positions, vC);
-
-    cb.subVectors(pC, pB);
-    ab.subVectors(pA, pB);
-    cb.cross(ab);
-
-    normals[vA] += cb.x;
-    normals[vA + 1] += cb.y;
-    normals[vA + 2] += cb.z;
-
-    normals[vB] += cb.x;
-    normals[vB + 1] += cb.y;
-    normals[vB + 2] += cb.z;
-
-    normals[vC] += cb.x;
-    normals[vC + 1] += cb.y;
-    normals[vC + 2] += cb.z;
-  }
-
-  for (var j = 1; j < this.prefabCount; j++) {
-    for (var k = 0; k < prefabIndexCount; k++) {
-      normals[j * prefabIndexCount + k] = normals[k];
-    }
-  }
-
-  this.normalizeNormals();
-
-  attributes.normal.needsUpdate = true;
-};
-
 THREE.BAS.PrefabBufferGeometry.prototype.createAttribute = function (name, itemSize, factory) {
   var buffer = new Float32Array(this.prefabCount * this.prefabVertexCount * itemSize);
   var attribute = new THREE.BufferAttribute(buffer, itemSize);
@@ -965,6 +901,57 @@ THREE.BAS.BaseAnimationMaterial = function (parameters, uniformValues) {
   if (uniformValues) {
     uniformValues.map && (this.defines['USE_MAP'] = '');
     uniformValues.normalMap && (this.defines['USE_NORMALMAP'] = '');
+    uniformValues.envMap && (this.defines['USE_ENVMAP'] = '');
+
+    if (uniformValues.envMap) {
+      this.defines['USE_ENVMAP'] = '';
+
+      var envMapTypeDefine = 'ENVMAP_TYPE_CUBE';
+      var envMapModeDefine = 'ENVMAP_MODE_REFLECTION';
+      var envMapBlendingDefine = 'ENVMAP_BLENDING_MULTIPLY';
+
+      switch (uniformValues.envMap.mapping) {
+        case THREE.CubeReflectionMapping:
+        case THREE.CubeRefractionMapping:
+          envMapTypeDefine = 'ENVMAP_TYPE_CUBE';
+          break;
+        case THREE.CubeUVReflectionMapping:
+        case THREE.CubeUVRefractionMapping:
+          envMapTypeDefine = 'ENVMAP_TYPE_CUBE_UV';
+          break;
+        case THREE.EquirectangularReflectionMapping:
+        case THREE.EquirectangularRefractionMapping:
+          envMapTypeDefine = 'ENVMAP_TYPE_EQUIREC';
+          break;
+        case THREE.SphericalReflectionMapping:
+          envMapTypeDefine = 'ENVMAP_TYPE_SPHERE';
+          break;
+      }
+
+      switch (uniformValues.envMap.mapping) {
+        case THREE.CubeRefractionMapping:
+        case THREE.EquirectangularRefractionMapping:
+          envMapModeDefine = 'ENVMAP_MODE_REFRACTION';
+          break;
+      }
+
+      switch (uniformValues.combine) {
+        case THREE.MixOperation:
+          envMapBlendingDefine = 'ENVMAP_BLENDING_MIX';
+          break;
+        case THREE.AddOperation:
+          envMapBlendingDefine = 'ENVMAP_BLENDING_ADD';
+          break;
+        case THREE.MultiplyOperation:
+        default:
+          envMapBlendingDefine = 'ENVMAP_BLENDING_MULTIPLY';
+          break;
+      }
+
+      this.defines[envMapTypeDefine] = '';
+      this.defines[envMapBlendingDefine] = '';
+      this.defines[envMapModeDefine] = '';
+    }
   }
 };
 THREE.BAS.BaseAnimationMaterial.prototype = Object.create(THREE.ShaderMaterial.prototype);

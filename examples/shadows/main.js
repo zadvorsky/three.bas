@@ -164,15 +164,10 @@ function ParticleSystem() {
         'varying float vAlpha;'
       ],
       vertexInit: [
-        'float tDelay = aAnimation.x;',
-        'float tDuration = aAnimation.y;',
-        'float tTime = clamp(uTime - tDelay, 0.0, tDuration);',
-        //'float tProgress = ease(tTime, 0.0, 1.0, tDuration);',
-        'float tProgress = tTime / tDuration;'
+        'float tProgress = clamp(uTime - aAnimation.x, 0.0, aAnimation.y) / aAnimation.y;'
       ],
       vertexPosition: [
-        'float angle = aAxisAngle.w * tProgress;',
-        'vec4 tQuat = quatFromAxisAngle(aAxisAngle.xyz, angle);',
+        'vec4 tQuat = quatFromAxisAngle(aAxisAngle.xyz, aAxisAngle.w * tProgress);',
         'transformed = rotateVector(tQuat, transformed);',
 
         'transformed += aPosition;'
