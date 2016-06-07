@@ -839,58 +839,6 @@ THREE.BAS.PrefabBufferGeometry.prototype.createAttribute = function (name, itemS
   return attribute;
 };
 
-THREE.BAS.PrefabBufferGeometry.prototype.setAttribute4 = function (name, data) {
-  var offset = 0;
-  var array = this.geometry.attributes[name].array;
-  var i, j;
-
-  for (i = 0; i < data.length; i++) {
-    var v = data[i];
-
-    for (j = 0; j < this.prefabVertexCount; j++) {
-      array[offset++] = v.x;
-      array[offset++] = v.y;
-      array[offset++] = v.z;
-      array[offset++] = v.w;
-    }
-  }
-
-  this.geometry.attributes[name].needsUpdate = true;
-};
-THREE.BAS.PrefabBufferGeometry.prototype.setAttribute3 = function (name, data) {
-  var offset = 0;
-  var array = this.geometry.attributes[name].array;
-  var i, j;
-
-  for (i = 0; i < data.length; i++) {
-    var v = data[i];
-
-    for (j = 0; j < this.prefabVertexCount; j++) {
-      array[offset++] = v.x;
-      array[offset++] = v.y;
-      array[offset++] = v.z;
-    }
-  }
-
-  this.geometry.attributes[name].needsUpdate = true;
-};
-THREE.BAS.PrefabBufferGeometry.prototype.setAttribute2 = function (name, data) {
-  var offset = 0;
-  var array = this.geometry.attributes[name].array;
-  var i, j;
-
-  for (i = 0; i < this.prefabCount; i++) {
-    var v = data[i];
-
-    for (j = 0; j < this.prefabVertexCount; j++) {
-      array[offset++] = v.x;
-      array[offset++] = v.y;
-    }
-  }
-
-  this.geometry.attributes[name].needsUpdate = true;
-};
-
 THREE.BAS.BaseAnimationMaterial = function (parameters, uniformValues) {
   THREE.ShaderMaterial.call(this);
 
