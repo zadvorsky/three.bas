@@ -9,8 +9,7 @@ function init() {
   root.renderer.setClearColor(0x222222);
   root.camera.position.set(0, 0, 150);
 
-  window.scene = root.scene;
-
+  // add lights
   var light = new THREE.DirectionalLight();
   root.add(light);
 
@@ -18,6 +17,7 @@ function init() {
   light.position.y = -1;
   root.add(light);
 
+  // add the pink wireframe box for reflection
   var backgroundBox = new THREE.Mesh(
     new THREE.BoxGeometry(400, 400, 400, 10, 10, 10),
     new THREE.MeshBasicMaterial({
@@ -27,6 +27,7 @@ function init() {
   );
   root.add(backgroundBox);
 
+  // add the teal box so we know what's actually reflecting
   var orientationBox = new THREE.Mesh(
     new THREE.BoxGeometry(50, 50, 10),
     new THREE.MeshBasicMaterial({
@@ -36,6 +37,7 @@ function init() {
   orientationBox.position.z = -100;
   root.scene.add(orientationBox);
 
+  // this camera is used for the environment map
   var envCubeCamera = new THREE.CubeCamera(1, 1000, 1024);
   envCubeCamera.renderTarget.texture.mapping = THREE.CubeRefractionMapping;
   //envCubeCamera.renderTarget.texture.mapping = THREE.CubeReflectionMapping;
@@ -43,11 +45,12 @@ function init() {
     envCubeCamera.updateCubeMap(root.renderer, root.scene);
   });
 
+  // passing the env map to the material will set the correct defines
   var system = new Animation({
     envMap: envCubeCamera.renderTarget.texture,
     //combine: THREE.MultiplyOperation,
     //reflectivity: 1.0,
-    //refractionRatio: 0.99
+    //refractionRatio: 0.98
   });
   system.animate(8.0, {ease: Power0.easeIn, repeat:-1, repeatDelay:0.25, yoyo: true});
   root.add(system);
@@ -159,6 +162,7 @@ function Animation(params) {
       'vec4 tQuat = quatFromAxisAngle(aAxisAngle.xyz, aAxisAngle.w * tProgress);'
     ],
     vertexNormal: [
+      // need to transform the objectNormal for correct env map calculations
       'objectNormal = rotateVector(tQuat, objectNormal);'
     ],
     vertexPosition: [
@@ -169,8 +173,6 @@ function Animation(params) {
   }, params);
 
   geometry.computeVertexNormals();
-
-  console.log(geometry.attributes['normal']);
 
   THREE.Mesh.call(this, geometry, material);
 
