@@ -77,15 +77,14 @@ function Animation(params) {
   var aDelayDuration = geometry.createAttribute('aDelayDuration', 3);
   var duration = 1.0;
   var maxPrefabDelay = 0.5;
-  var maxVertexDelay = 0.0;
 
-  this.totalDuration = duration + maxPrefabDelay + maxVertexDelay * 2;
+  this.totalDuration = duration + maxPrefabDelay;
 
   for (i = 0, offset = 0; i < prefabCount; i++) {
     var delay = THREE.Math.mapLinear(i, 0, prefabCount, 0.0, maxPrefabDelay);
 
     for (j = 0; j < prefabGeometry.vertices.length; j++) {
-      aDelayDuration.array[offset] = delay + (2 - j % 2) * maxVertexDelay;
+      aDelayDuration.array[offset] = delay;
       aDelayDuration.array[offset + 1] = duration;
 
       offset += 3;

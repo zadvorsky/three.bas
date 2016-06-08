@@ -1398,7 +1398,6 @@ THREE.BAS.StandardAnimationMaterial = function (parameters, uniformValues) {
   this.fragmentInit = [];
   this.fragmentAlpha = [];
   this.fragmentEmissive = [];
-  this.fragmentSpecular = [];
 
   THREE.BAS.BaseAnimationMaterial.call(this, parameters, uniformValues);
 
