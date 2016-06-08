@@ -743,7 +743,13 @@ THREE.BAS.ModelBufferGeometry.prototype.createAttribute = function (name, itemSi
   return attribute;
 };
 
-THREE.BAS.PrefabBufferGeometry = function (prefab, count) {
+/**
+ * A THREE.BufferGeometry where a 'prefab' geometry is repeated a number of times
+ * @param prefab the THREE.Geometry instance to repeat
+ * @param count the number of times to repeat it
+ * @constructor
+ */
+THREE.BAS.PrefabBufferGeometry = function(prefab, count) {
   THREE.BufferGeometry.call(this);
 
   this.prefabGeometry = prefab;
@@ -756,7 +762,7 @@ THREE.BAS.PrefabBufferGeometry = function (prefab, count) {
 THREE.BAS.PrefabBufferGeometry.prototype = Object.create(THREE.BufferGeometry.prototype);
 THREE.BAS.PrefabBufferGeometry.prototype.constructor = THREE.BAS.PrefabBufferGeometry;
 
-THREE.BAS.PrefabBufferGeometry.prototype.bufferIndices = function () {
+THREE.BAS.PrefabBufferGeometry.prototype.bufferIndices = function() {
   var prefabFaceCount = this.prefabGeometry.faces.length;
   var prefabIndexCount = this.prefabGeometry.faces.length * 3;
   var prefabIndices = [];
@@ -818,7 +824,7 @@ THREE.BAS.PrefabBufferGeometry.prototype.bufferUvs = function() {
   }
 };
 
-THREE.BAS.PrefabBufferGeometry.prototype.createAttribute = function (name, itemSize, factory) {
+THREE.BAS.PrefabBufferGeometry.prototype.createAttribute = function(name, itemSize, factory) {
   var buffer = new Float32Array(this.prefabCount * this.prefabVertexCount * itemSize);
   var attribute = new THREE.BufferAttribute(buffer, itemSize);
 
@@ -837,6 +843,25 @@ THREE.BAS.PrefabBufferGeometry.prototype.createAttribute = function (name, itemS
   }
 
   return attribute;
+};
+
+/**
+ * Copy data for all vertices of the prefab
+ * usually called in a loop
+ * @param attribute The attribute or attribute name where data is to be stored.
+ * @param prefabIndex Index of the prefab in the buffer geometry.
+ * @param data Array of data. Length should be equal to item size of the attribute.
+ */
+THREE.BAS.PrefabBufferGeometry.prototype.setPrefabData = function(attribute, prefabIndex, data) {
+  attribute = (typeof attribute === 'string') ? this.attributes[attribute] : attribute;
+
+  var offset = prefabIndex * this.prefabVertexCount * attribute.itemSize;
+
+  for (var i = 0; i < this.prefabVertexCount; i++) {
+    for (var j = 0; j < attribute.itemSize; j++) {
+      attribute.array[offset++] = data[j];
+    }
+  }
 };
 
 THREE.BAS.BaseAnimationMaterial = function (parameters, uniformValues) {
