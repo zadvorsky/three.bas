@@ -1,26 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>THREE.js BufferAnimationSystem</title>
-    <style>
-      body {
-        margin: 0;
-        overflow: hidden;
-        font-family: monospace;
-      }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>THREE.js BufferAnimationSystem</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: monospace;
+    }
+    #three-container {
+      width: 100vw;
+      height: 100vh;
+      min-height: 1000px;
+    }
+  </style>
 </head>
 <body>
 <div id="three-container"></div>
 
 <script src="../../bower_components/gsap/src/minified/TweenMax.min.js"></script>
+
 <script src="../../bower_components/three.js/build/three.js"></script>
 <script src="../../bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
+
 <script src="../../dist/bas.js"></script>
 <script src="../js/utils.js"></script>
 <script src="../js/root.js"></script>
+
 <script src="delaunay.js"></script>
+
+<script src="../../bower_components/three.js/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="../../bower_components/three.js/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="../../bower_components/three.js/examples/js/postprocessing/RenderPass.js"></script>
+<script src="../../bower_components/three.js/examples/js/postprocessing/MaskPass.js"></script>
+<script src="../../bower_components/three.js/examples/js/shaders/CopyShader.js"></script>
+<script src="../js/shaders/FilmNoiseShader.js"></script>
 
 <script src="main.js"></script>
 </body>

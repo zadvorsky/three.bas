@@ -86,14 +86,10 @@ THREE.BAS.PrefabBufferGeometry.prototype.createAttribute = function(name, itemSi
   this.addAttribute(name, attribute);
 
   if (factory) {
-    for (var i = 0, offset = 0; i < this.prefabCount; i++) {
-      var r = factory(i, this.prefabCount);
+    var data = [];
 
-      for (var j = 0; j < this.prefabVertexCount; j++) {
-        for (var k = 0; k < itemSize; k++) {
-          buffer[offset++] = typeof r === 'number' ? r : r[k];
-        }
-      }
+    for (var i = 0; i < this.prefabCount; i++) {
+      this.setPrefabData(attribute, i, factory(data, i, this.prefabCount));
     }
   }
 

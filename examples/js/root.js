@@ -99,13 +99,44 @@ THREERoot.prototype = {
   render: function() {
     this.renderer.render(this.scene, this.camera);
   },
-
   resize: function() {
-    this.camera.aspect = window.innerWidth / window.innerHeight;
+    this.camera.aspect = this.container.clientWidth / this.container.clientHeight;
     this.camera.updateProjectionMatrix();
 
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
 
     this.resizeCallbacks.forEach(function(callback) {callback()});
+  },
+  initPostProcessing:function(passes) {
+    var size = this.renderer.getSize();
+    var pixelRatio = this.renderer.getPixelRatio();
+    size.width *= pixelRatio;
+    size.height *= pixelRatio;
+
+    var composer = this.composer = new THREE.EffectComposer(this.renderer, new THREE.WebGLRenderTarget(size.width, size.height, {
+      minFilter: THREE.LinearFilter,
+      magFilter: THREE.LinearFilter,
+      format: THREE.RGBAFormat,
+      stencilBuffer: false
+    }));
+
+    var renderPass = new THREE.RenderPass(this.scene, this.camera);
+    this.composer.addPass(renderPass);
+
+    for (var i = 0; i < passes.length; i++) {
+      var pass = passes[i];
+      pass.renderToScreen = (i === passes.length - 1);
+      this.composer.addPass(pass);
+    }
+
+    this.renderer.autoClear = false;
+    this.render = function() {
+      this.renderer.clear();
+      this.composer.render();
+    }.bind(this);
+
+    this.addResizeCallback(function() {
+      composer.setSize(this.container.clientWidth * pixelRatio, this.container.clientHeight * pixelRatio);
+    }.bind(this));
   }
 };
