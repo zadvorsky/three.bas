@@ -6,11 +6,13 @@ function init() {
     antialias: (window.devicePixelRatio === 1),
     fov: 60
   });
-  root.renderer.setClearColor(0x222222);
-  root.camera.position.set(0, -36, 90);
+  root.renderer.setClearColor(0x444444);
+  //root.camera.position.set(0, -36, 90);
+  root.camera.position.set(0, 0, 90);
 
-  var light = new THREE.DirectionalLight(0xffffff);
-  light.position.set(0, 0, 1);
+  root.add(new THREE.AxisHelper(100));
+
+  var light = new THREE.PointLight(0xffffff, 0.25);
   root.add(light);
 
   var vertices = [], indices, i, j;
@@ -18,42 +20,53 @@ function init() {
   // 1. generate random points in grid formation with some noise
   var noise = 6;
   var rangeX = 200;
-  var rangeY = 120;
+  var rangeY = 200;
   var totalRangeX = rangeX + noise * 2;
   var totalRangeY = rangeY + noise * 2;
-  var stepsX = 20;
-  var stepsY = 12;
 
-  for (i = 0; i <= stepsX; i++) {
-    for (j = 0; j <= stepsY; j++) {
-      var x = THREE.Math.mapLinear(i, 0, stepsX, -rangeX * 0.5, rangeX * 0.5) + (THREE.Math.randFloatSpread(noise));
-      var y = THREE.Math.mapLinear(j, 0, stepsY, -rangeY * 0.5, rangeY * 0.5) + (THREE.Math.randFloatSpread(noise));
+  //for (i = 0; i <= stepsX; i++) {
+  //  for (j = 0; j <= stepsY; j++) {
+  //    var x = THREE.Math.mapLinear(i, 0, stepsX, -rangeX * 0.5, rangeX * 0.5) + (THREE.Math.randFloatSpread(noise));
+  //    var y = THREE.Math.mapLinear(j, 0, stepsY, -rangeY * 0.5, rangeY * 0.5) + (THREE.Math.randFloatSpread(noise));
+  //
+  //    vertices.push([x, y]);
+  //  }
+  //}
 
-      vertices.push([x, y]);
-    }
+  var PHI = Math.PI * (3 - Math.sqrt(5));
+  var n = 10;
+
+  for (i = 0; i <= n; i++) {
+    var t = i * PHI;
+    var r = Math.sqrt(i) / Math.sqrt(n);
+    var x = r * Math.cos(t) * 200;
+    var y = r * Math.sin(t) * 200;
+
+    console.log(x, y);
+
+    vertices.push([x, y]);
   }
 
-  // 2. generate indices
+
+    // 2. generate indices
   indices = Delaunay.triangulate(vertices);
 
   // 3. create displacement splines
   var pointsX = [];
   var pointsY = [];
-  var spreadZX = 16;
-  var spreadZY = 8;
-  var segments = 12;
+  var segments = 3;
 
   for (i = 0; i <= segments; i++) {
     pointsX.push(new THREE.Vector3(
       THREE.Math.mapLinear(i, 0, segments, -totalRangeX * 0.5, totalRangeX * 0.5),
       0,
-      THREE.Math.randFloatSpread(spreadZX)
+      (i === 0 || i === segments) ? 0 : -50
     ));
 
     pointsY.push(new THREE.Vector3(
       0,
       THREE.Math.mapLinear(i, 0, segments, -totalRangeY * 0.5, totalRangeY * 0.5),
-      THREE.Math.randFloatSpread(spreadZY)
+      (i === 0 || i === segments) ? 0 : -50
     ));
   }
 
@@ -61,19 +74,19 @@ function init() {
   var splineY = new THREE.CatmullRomCurve3(pointsY);
 
   // line geometries for testing
-  //var g, m;
-  //g = new THREE.Geometry();
-  //g.vertices = splineX.getPoints(50);
-  //m = new THREE.LineBasicMaterial({color: 0xff0000});
-  //root.add(new THREE.Line(g, m));
-  //g = new THREE.Geometry();
-  //g.vertices = splineY.getPoints(50);
-  //m = new THREE.LineBasicMaterial({color: 0x00ff00});
-  //root.add(new THREE.Line(g, m));
+  var g, m;
+  g = new THREE.Geometry();
+  g.vertices = splineX.getPoints(50);
+  m = new THREE.LineBasicMaterial({color: 0xff0000});
+  root.add(new THREE.Line(g, m));
+  g = new THREE.Geometry();
+  g.vertices = splineY.getPoints(50);
+  m = new THREE.LineBasicMaterial({color: 0x00ff00});
+  root.add(new THREE.Line(g, m));
 
   // 4. generate geometry (maybe find a cheaper way to do this)
   var geometry = new THREE.Geometry();
-  var shapeScale = 0.98;
+  var shapeScale = 0.95;
 
   for (i = 0; i < indices.length; i += 3) {
     // build the face
@@ -104,20 +117,22 @@ function init() {
 
     // offset z vector components based on the two splines
     for (j = 0; j < shapeGeometry.vertices.length; j++) {
-      var v = shapeGeometry.vertices[j];
-      v.z += splineX.getPointAt(THREE.Math.mapLinear(v.x, -totalRangeX * 0.5, totalRangeX * 0.5, 0.0, 1.0)).z;
-      v.z += splineY.getPointAt(THREE.Math.mapLinear(v.y, -totalRangeY * 0.5, totalRangeY * 0.5, 0.0, 1.0)).z;
+      //var v = shapeGeometry.vertices[j];
+      //v.z += splineX.getPointAt(THREE.Math.mapLinear(v.x, -totalRangeX * 0.5, totalRangeX * 0.5, 0.0, 1.0)).z;
+      //v.z += splineY.getPointAt(THREE.Math.mapLinear(v.y, -totalRangeY * 0.5, totalRangeY * 0.5, 0.0, 1.0)).z;
     }
 
     // merge into the whole
     geometry.merge(shapeGeometry);
   }
 
+  geometry.center();
+
   // 5. feed the geometry to the animation
   var animation = new Animation(geometry);
   root.add(animation);
   root.addUpdateCallback(function() {
-    animation.time += (1/240);
+    animation.time += (1/30);
   });
 
   // init post processing
@@ -140,24 +155,43 @@ function init() {
 function Animation(modelGeometry) {
   var geometry = new THREE.BAS.ModelBufferGeometry(modelGeometry);
 
+  var i;
+
   var aOffsetAmplitude = geometry.createAttribute('aOffsetAmplitude', 2);
   var positionBuffer = geometry.getAttribute('position').array;
   var x, y;
 
-  for (var i = 0; i < aOffsetAmplitude.array.length; i+=2) {
+  for (i = 0; i < aOffsetAmplitude.array.length; i+=2) {
     // x/y position of the corresponding vertex from the position buffer
     x = positionBuffer[i / 2 * 3];
     y = positionBuffer[i / 2 * 3 + 1];
 
-    var offsetX = x * 0.5;
-    var offsetY = y * 0.25;
+    var offsetX = Math.abs(x) / 25;
+    var offsetY = Math.abs(y) / 25;
+
+    console.log(offsetX, offsetY);
 
     aOffsetAmplitude.array[i]     = offsetX + offsetY;
-    aOffsetAmplitude.array[i + 1] = THREE.Math.randFloat(1.0, 2.0);
+    aOffsetAmplitude.array[i + 1] = THREE.Math.randFloat(4.0, 8.0);
+  }
+
+  var aColor = geometry.createAttribute('color', 3);
+  var color = new THREE.Color();
+
+  for (i = 0; i < aColor.array.length; i += 18) {
+    color.setHSL(THREE.Math.randFloat(0.1, 0.3), 1.0, 0.5);
+
+    for (var j = 0; j < 18; j += 3) {
+      aColor.array[i + j]     = color.r;
+      aColor.array[i + j + 1] = color.g;
+      aColor.array[i + j + 2] = color.b;
+    }
   }
 
   var material = new THREE.BAS.StandardAnimationMaterial({
     shading: THREE.FlatShading,
+    vertexColors: THREE.VertexColors,
+    wireframe: true,
     uniforms: {
       uTime: {type: 'f', value: 0},
     },
@@ -176,9 +210,9 @@ function Animation(modelGeometry) {
       'transformed.z += aOffsetAmplitude.y * tProgress;'
     ]
   }, {
-    diffuse: 0x101010,
-    roughness: 0.55,
-    metalness: 0.4
+    diffuse: 0x444444,
+    roughness: 0.25,
+    metalness: 0.5
   });
 
   geometry.computeVertexNormals();
