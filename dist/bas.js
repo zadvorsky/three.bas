@@ -834,7 +834,8 @@ THREE.BAS.PrefabBufferGeometry.prototype.createAttribute = function(name, itemSi
     var data = [];
 
     for (var i = 0; i < this.prefabCount; i++) {
-      this.setPrefabData(attribute, i, factory(data, i, this.prefabCount));
+      factory(data, i, this.prefabCount);
+      this.setPrefabData(attribute, i, data);
     }
   }
 

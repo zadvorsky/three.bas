@@ -29,21 +29,22 @@ function init() {
 // CLASSES
 ////////////////////
 
+// Animation is just a convenient wrapper to create a BufferGeometry and a ShaderMaterial, which are tightly coupled
+// the geometry contains animation data, and the material uses this data to calculate an animation state based on uniforms
 function Animation() {
+  // the geometry that will be used by the PrefabBufferGeometry
+  // any Geometry will do, but more complex ones can be repeated less often
+  var prefabGeometry = new THREE.TetrahedronGeometry(1.0);
+
+  // the number of times the prefabGeometry will be repeated
   var prefabCount = 100000;
 
-  // the animation consists of two parts: a BufferGeometry and a ShaderMaterial
-  // the geometry contains animation data, and the material uses this data to calculate an animation state
-
-  // the geometry that will be used by the PrefabBufferGeometry
-  var prefabGeometry = new THREE.TetrahedronGeometry(1.0);
   // THREE.BAS.PrefabBufferGeometry extends THREE.BufferGeometry
   // it stores data that is used for animation calculation in addition to the actual geometry
   var geometry = new THREE.BAS.PrefabBufferGeometry(prefabGeometry, prefabCount);
 
   // temp stuff
   var i, j, offset;
-  var prefabData = [];
 
   // create a BufferAttribute with an item size of 2
   // each prefab has an animation duration and a delay
@@ -70,14 +71,17 @@ function Animation() {
       offset += 2;
     }
   }
+
   // create two BufferAttributes with an item size of 3
   // these will store the start and end position for the translation
   var aStartPosition = geometry.createAttribute('aStartPosition', 3);
   var aEndPosition = geometry.createAttribute('aEndPosition', 3);
+
   // make two temp vectors so we don't create excessive objects inside the loop
   var startPosition = new THREE.Vector3();
   var endPosition = new THREE.Vector3();
   var range = 400;
+  var prefabData = [];
 
   // calculate the stand and end positions for each prefab
   for (i = 0; i < prefabCount; i++) {
@@ -96,15 +100,20 @@ function Animation() {
     geometry.setPrefabData(aEndPosition, i, endPosition.toArray(prefabData));
   }
 
-  // create a BufferAttribute with an item size of 4
   // the axis and angle will be used to calculate the rotation of the prefab using a Quaternion
-  // we use quaternions instead of (rotation) matrices because the Quaternion is more compact
+  // we use quaternions instead of (rotation) matrices because the quaternion is more compact (4 floats instead of 16)
   // it also requires less trig functions (sin, cos), which are fairly expensive on the GPU
-  var aAxisAngle = geometry.createAttribute('aAxisAngle', 4);
   var axis = new THREE.Vector3();
   var angle;
 
-  for (i = 0, offset = 0; i < prefabCount; i++) {
+  // create a BufferAttribute with an item size of 4
+  // the 3rd argument is a function that will be called for each prefab
+  // it essentially replaces the loop we used for the other attributes
+  // the first argument, 'data', should be populated with the data for the attribute
+  // 'i' is the index of the prefab
+  // 'total' is the total number of prefabs (same as prefabCount)
+  // this is the most compact way of filling the buffer, but it's a little slower and less flexible than the others
+  geometry.createAttribute('aAxisAngle', 4, function(data, i, total) {
     // get a random axis
     axis.x = THREE.Math.randFloatSpread(2);
     axis.y = THREE.Math.randFloatSpread(2);
@@ -115,22 +124,19 @@ function Animation() {
     angle = Math.PI * THREE.Math.randFloat(4.0, 8.0);
 
     // copy the data to the array
-    axis.toArray(prefabData);
-    prefabData[3] = angle;
-
-    // same as the position data
-    geometry.setPrefabData(aAxisAngle, i, prefabData);
-  }
+    axis.toArray(data);
+    data[3] = angle;
+  });
 
   // THREE.BAS.StandardAnimationMaterial uses the data in the buffer geometry to calculate the animation state
   // this calculation is performed in the vertex shader
   // THREE.BAS.StandardAnimationMaterial uses THREE.js shader chunks to duplicate the THREE.MeshStandardMaterial
   // the shader is then 'extended' by injecting our own chunks at specific points
-  // this extension also extends THREE.MeshPhongMaterial and THREE.MeshBasicMaterial in the same way
+  // THREE.BAS also extends THREE.MeshPhongMaterial and THREE.MeshBasicMaterial in the same way
   var material = new THREE.BAS.StandardAnimationMaterial({
-    // material parameters go here
+    // material parameters/flags go here
     shading: THREE.FlatShading,
-    // uniform definitions
+    // custom uniform definitions
     uniforms: {
       // uTime is updated every frame, and is used to calculate the current animation state
       // this is the only value that changes, which is the reason we can animate so many objects at the same time
@@ -138,13 +144,13 @@ function Animation() {
     },
     // THREE.BAS has a number of functions that can be reused. They can be injected here
     vertexFunctions: [
-      // penner easing functions easeCubicInOut and easeQuadOut (see the easing example for all available functions)
+      // Penner easing functions easeCubicInOut and easeQuadOut (see the easing example for all available functions)
       THREE.BAS.ShaderChunk['ease_cubic_in_out'],
       THREE.BAS.ShaderChunk['ease_quad_out'],
       // quatFromAxisAngle and rotateVector functions
       THREE.BAS.ShaderChunk['quaternion_rotation']
     ],
-    // parameters must be the same as the names of uniforms and attributes, defined above
+    // parameter  must match uniforms and attributes defined above in both name and type
     // as a convention, I prefix uniforms with 'u' and attributes with 'a' (and constants with 'c', varyings with 'v', and temps with 't')
     vertexParameters: [
       'uniform float uTime;',

@@ -111,6 +111,7 @@ function Animation(envMap) {
     angle = Math.PI * 2;
 
     axis.toArray(prefabDataArray);
+    prefabDataArray[3] = angle;
 
     geometry.setPrefabData(aAxisAngle, i, axis.toArray(prefabDataArray));
   }
