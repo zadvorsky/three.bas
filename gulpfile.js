@@ -44,6 +44,19 @@ gulp.task('watch-js', function() {
   });
 });
 
+gulp.task('build-three-post', function() {
+  return gulp.src([
+    'bower_components/three.js/examples/js/postprocessing/EffectComposer.js',
+    'bower_components/three.js/examples/js/postprocessing/ShaderPass.js',
+    'bower_components/three.js/examples/js/postprocessing/RenderPass.js',
+    'bower_components/three.js/examples/js/postprocessing/MaskPass.js',
+    'bower_components/three.js/examples/js/postprocessing/BloomPass.js',
+    'bower_components/three.js/examples/js/shaders/CopyShader.js',
+    'bower_components/three.js/examples/js/shaders/ConvolutionShader.js',
+  ]).pipe(concat('three_post.js'))
+    .pipe(gulp.dest('./examples/js'));
+});
+
 gulp.task('default', [
   'build-glsl',
   'build-js',

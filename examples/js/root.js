@@ -100,11 +100,13 @@ THREERoot.prototype = {
     this.renderer.render(this.scene, this.camera);
   },
   resize: function() {
-    this.camera.aspect = this.container.clientWidth / this.container.clientHeight;
+    var width = window.innerWidth;
+    var height = window.innerHeight;
+
+    this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
 
-    this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
-
+    this.renderer.setSize(width, height);
     this.resizeCallbacks.forEach(function(callback) {callback()});
   },
   initPostProcessing:function(passes) {
@@ -136,7 +138,10 @@ THREERoot.prototype = {
     }.bind(this);
 
     this.addResizeCallback(function() {
-      composer.setSize(this.container.clientWidth * pixelRatio, this.container.clientHeight * pixelRatio);
+      var width = window.innerWidth;
+      var height = window.innerHeight;
+
+      composer.setSize(width * pixelRatio, height * pixelRatio);
     }.bind(this));
   }
 };
