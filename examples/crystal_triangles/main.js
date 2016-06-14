@@ -1,5 +1,12 @@
 window.onload = init;
 
+var CONFIG = {
+  pointCount: 10000,
+  extrudeAmount: 2.0,
+  splineStepsX: 3,
+  splineStepsY: 3,
+};
+
 function init() {
   var root = new THREERoot({
     createCameraControls: true,
@@ -17,7 +24,7 @@ function init() {
 
   // 1. generate random points in grid formation with some noise
   var PHI = Math.PI * (3 - Math.sqrt(5));
-  var n = 10000;
+  var n = CONFIG.pointCount;
   var radius = 100;
   var noise = 4.0;
 
@@ -36,8 +43,8 @@ function init() {
   // 3. create displacement splines
   var pointsX = [];
   var pointsY = [];
-  var segmentsX = 3;
-  var segmentsY = 3;
+  var segmentsX = CONFIG.splineStepsX;
+  var segmentsY = CONFIG.splineStepsY;
 
   for (i = 0; i <= segmentsX; i++) {
     pointsX.push(new THREE.Vector3(
@@ -96,7 +103,7 @@ function init() {
 
     // use the shape to create a geometry
     var shapeGeometry = new THREE.ExtrudeGeometry(shape, {
-      amount: 1,
+      amount: CONFIG.extrudeAmount,
       bevelEnabled: false
     });
 
@@ -129,7 +136,7 @@ function init() {
     animation.time += (1/30);
   });
 
-  window.addEventListener('mousemove', function(e) {
+  root.container.addEventListener('mousemove', function(e) {
     if (paused) return;
 
     var px = e.clientX / window.innerWidth;
@@ -142,11 +149,11 @@ function init() {
     animation.material.uniforms['metalness'].value = py;
   });
 
-  window.addEventListener('keyup', function() {
-    paused = !paused;
+  window.addEventListener('keyup', function(e) {
+    e.keyCode === 80 && (paused = !paused);
   });
 
-  // init post processing
+  // post processing
   var bloomPass = new THREE.BloomPass(2.0, 25, 4, 512);
   var copyPass = new THREE.ShaderPass(THREE.CopyShader);
 
@@ -154,6 +161,22 @@ function init() {
     bloomPass,
     copyPass
   ]);
+
+  // dat.gui
+  var g = new dat.GUI();
+  var colorProxy = {};
+
+  Object.defineProperty(colorProxy, 'diffuse', {
+    get: function() {
+      return '#' + animation.material.uniforms['diffuse'].value.getHexString();
+    },
+    set: function(v) {
+      animation.material.uniforms['diffuse'].value.set(v);
+    }
+  });
+
+  g.addColor(colorProxy, 'diffuse').name('color');
+  g.add(bloomPass.copyUniforms.opacity, 'value').name('bloom str');
 }
 
 ////////////////////
@@ -213,8 +236,8 @@ function Animation(modelGeometry) {
     side: THREE.DoubleSide,
     uniforms: {
       uTime: {value: 0},
-      uD: {value: 0.5},
-      uA: {value: 0.5}
+      uD: {value: 4.4},
+      uA: {value: 3.2}
     },
     vertexFunctions: [
       THREE.BAS.ShaderChunk['ease_cubic_in_out']
@@ -231,9 +254,9 @@ function Animation(modelGeometry) {
       'transformed.z += aOffsetAmplitude.y * uA * tProgress;'
     ]
   }, {
-    diffuse: 0x6600ff,//0x9B111E,
-    roughness: 0.5,
-    metalness: 0.5,
+    diffuse: 0x9B111E,
+    roughness: 0.2,
+    metalness: 0.8,
     opacity: 0.8
   });
 
