@@ -1,9 +1,15 @@
-THREE.BAS.BaseAnimationMaterial = function (parameters, uniformValues) {
+THREE.BAS.BaseAnimationMaterial = function (parameters, uniforms) {
   THREE.ShaderMaterial.call(this);
+
+  var uniformValues = parameters.uniformValues;
+
+  delete parameters.uniformValues;
 
   this.setValues(parameters);
 
-  // todo add missing default defines
+  this.uniforms = THREE.UniformsUtils.merge([uniforms, this.uniforms]);
+
+  this.setUniformValues(uniformValues);
 
   if (uniformValues) {
     uniformValues.map && (this.defines['USE_MAP'] = '');
@@ -70,21 +76,7 @@ THREE.BAS.BaseAnimationMaterial.prototype.setUniformValues = function (values) {
       var uniform = this.uniforms[key];
       var value = values[key];
 
-      // todo add matrix uniform types?
-      switch (uniform.type) {
-        case 'c': // color
-          uniform.value.set(value);
-          break;
-        case 'v2': // vectors
-        case 'v3':
-        case 'v4':
-          uniform.value.copy(value);
-          break;
-        case 'f': // float
-        case 't': // texture
-        default:
-          uniform.value = value;
-      }
+      uniform.value = value;
     }
   }
 };

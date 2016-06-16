@@ -1,4 +1,4 @@
-THREE.BAS.BasicAnimationMaterial = function(parameters, uniformValues) {
+THREE.BAS.BasicAnimationMaterial = function(parameters) {
   this.varyingParameters = [];
 
   this.vertexFunctions = [];
@@ -14,16 +14,13 @@ THREE.BAS.BasicAnimationMaterial = function(parameters, uniformValues) {
   this.fragmentMap = [];
   this.fragmentAlpha = [];
 
-  THREE.BAS.BaseAnimationMaterial.call(this, parameters, uniformValues);
-
   var basicShader = THREE.ShaderLib['basic'];
 
-  this.uniforms = THREE.UniformsUtils.merge([basicShader.uniforms, this.uniforms]);
+  THREE.BAS.BaseAnimationMaterial.call(this, parameters, basicShader.uniforms);
+
   this.lights = false;
   this.vertexShader = this._concatVertexShader();
   this.fragmentShader = this._concatFragmentShader();
-
-  this.setUniformValues(uniformValues);
 };
 THREE.BAS.BasicAnimationMaterial.prototype = Object.create(THREE.BAS.BaseAnimationMaterial.prototype);
 THREE.BAS.BasicAnimationMaterial.prototype.constructor = THREE.BAS.BasicAnimationMaterial;

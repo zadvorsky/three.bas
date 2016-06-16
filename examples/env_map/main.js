@@ -121,6 +121,14 @@ function Animation(envMap) {
       uTime: {value: 0},
       uBezierCurve: {value: new THREE.Vector4(.42,0,.58,1)}
     },
+    uniformValues: {
+      envMap: envMap,
+      roughness: 0.0,
+      metalness: 1.0
+      //combine: THREE.MultiplyOperation,
+      //reflectivity: 1.0,
+      //refractionRatio: 0.98
+    },
     vertexFunctions: [
       THREE.BAS.ShaderChunk['ease_bezier'],
       THREE.BAS.ShaderChunk['quaternion_rotation']
@@ -148,13 +156,6 @@ function Animation(envMap) {
 
       'transformed += mix(aStartPosition, aEndPosition, tProgress);'
     ]
-  }, {
-    envMap: envMap,
-    roughness: 0.0,
-    metalness: 1.0
-    //combine: THREE.MultiplyOperation,
-    //reflectivity: 1.0,
-    //refractionRatio: 0.98
   });
 
   geometry.computeVertexNormals();

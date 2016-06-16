@@ -148,6 +148,10 @@ function ParticleSystem() {
       uniforms: {
         uTime: {value: 0}
       },
+      uniformValues: {
+        specular: new THREE.Color(0xff00ff),
+        shininess: 100
+      },
       vertexFunctions: [
         THREE.BAS.ShaderChunk['quaternion_rotation']
       ],
@@ -189,9 +193,6 @@ function ParticleSystem() {
         'material.specularShininess = vShininess;',
         'material.specularColor = vSpecular;'
       ]
-    }, {
-      specular: 0xff00ff,
-      shininess: 100
     }
   );
 

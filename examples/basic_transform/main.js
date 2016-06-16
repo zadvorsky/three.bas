@@ -142,6 +142,11 @@ function Animation() {
       // this is the only value that changes, which is the reason we can animate so many objects at the same time
       uTime: {value: 0}
     },
+    // uniform *values* of the material we are extending go here
+    uniformValues: {
+      metalness: 0.0,
+      roughness: 1.0
+    },
     // THREE.BAS has a number of functions that can be reused. They can be injected here
     vertexFunctions: [
       // Penner easing functions easeCubicInOut and easeQuadOut (see the easing example for all available functions)
@@ -192,11 +197,6 @@ function Animation() {
       // and add the value as a delta
       'transformed += mix(aStartPosition, aEndPosition, tProgress);'
     ]
-  },
-  // material uniform values go here
-  {
-    metalness: 0.0,
-    roughness: 1.0
   });
 
   // this isn't required when using flat shading

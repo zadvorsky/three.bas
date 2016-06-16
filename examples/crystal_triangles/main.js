@@ -127,6 +127,8 @@ function init() {
   var animation = new Animation(geometry);
   root.add(animation);
 
+  console.log(animation.material.uniforms);
+
   // interactive
   var paused = false;
 
@@ -163,20 +165,21 @@ function init() {
   ]);
 
   // dat.gui
-  var g = new dat.GUI();
-  var colorProxy = {};
-
-  Object.defineProperty(colorProxy, 'diffuse', {
-    get: function() {
-      return '#' + animation.material.uniforms['diffuse'].value.getHexString();
-    },
-    set: function(v) {
-      animation.material.uniforms['diffuse'].value.set(v);
-    }
-  });
-
-  g.addColor(colorProxy, 'diffuse').name('color');
-  g.add(bloomPass.copyUniforms.opacity, 'value').name('bloom str');
+  //var g = new dat.GUI();
+  //var colorProxy = {};
+  //
+  //Object.defineProperty(colorProxy, 'diffuse', {
+  //  get: function() {
+  //    console.log(animation.material.uniforms['diffuse']);
+  //    return '#' + animation.material.uniforms['diffuse'].value.getHexString();
+  //  },
+  //  set: function(v) {
+  //    animation.material.uniforms['diffuse'].value.set(v);
+  //  }
+  //});
+  //
+  //g.addColor(colorProxy, 'diffuse').name('color');
+  //g.add(bloomPass.copyUniforms.opacity, 'value').name('bloom str');
 }
 
 ////////////////////
@@ -239,6 +242,12 @@ function Animation(modelGeometry) {
       uD: {value: 4.4},
       uA: {value: 3.2}
     },
+    uniformValues: {
+      diffuse: new THREE.Color(0x9B111E),
+      roughness: 0.2,
+      metalness: 0.8,
+      opacity: 0.8
+    },
     vertexFunctions: [
       THREE.BAS.ShaderChunk['ease_cubic_in_out']
     ],
@@ -253,11 +262,6 @@ function Animation(modelGeometry) {
       'tProgress = easeCubicInOut(tProgress);',
       'transformed.z += aOffsetAmplitude.y * uA * tProgress;'
     ]
-  }, {
-    diffuse: 0x9B111E,
-    roughness: 0.2,
-    metalness: 0.8,
-    opacity: 0.8
   });
 
   geometry.computeVertexNormals();

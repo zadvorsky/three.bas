@@ -1,4 +1,4 @@
-THREE.BAS.PhongAnimationMaterial = function (parameters, uniformValues) {
+THREE.BAS.PhongAnimationMaterial = function (parameters) {
   this.varyingParameters = [];
 
   this.vertexFunctions = [];
@@ -15,16 +15,13 @@ THREE.BAS.PhongAnimationMaterial = function (parameters, uniformValues) {
   this.fragmentEmissive = [];
   this.fragmentSpecular = [];
 
-  THREE.BAS.BaseAnimationMaterial.call(this, parameters, uniformValues);
-
   var phongShader = THREE.ShaderLib['phong'];
 
-  this.uniforms = THREE.UniformsUtils.merge([phongShader.uniforms, this.uniforms]);
+  THREE.BAS.BaseAnimationMaterial.call(this, parameters, phongShader.uniforms);
+
   this.lights = true;
   this.vertexShader = this._concatVertexShader();
   this.fragmentShader = this._concatFragmentShader();
-
-  this.setUniformValues(uniformValues);
 };
 THREE.BAS.PhongAnimationMaterial.prototype = Object.create(THREE.BAS.BaseAnimationMaterial.prototype);
 THREE.BAS.PhongAnimationMaterial.prototype.constructor = THREE.BAS.PhongAnimationMaterial;
