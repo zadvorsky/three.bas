@@ -9,6 +9,13 @@ function init() {
   root.renderer.setClearColor(0x222222);
   root.camera.position.set(0, 0, 175);
 
+  var light = new THREE.DirectionalLight();
+  root.add(light);
+
+  light = new THREE.DirectionalLight();
+  light.position.y = -1;
+  root.add(light);
+
   var backgroundBox = new THREE.Mesh(
     new THREE.BoxGeometry(400, 400, 400, 10, 10, 10),
     new THREE.MeshBasicMaterial({
@@ -104,7 +111,7 @@ function Animation(envMap) {
     geometry.setPrefabData(aAxisAngle, i, axis.toArray(prefabDataArray));
   }
 
-  var material = new THREE.BAS.BasicAnimationMaterial({
+  var material = new THREE.BAS.PhongAnimationMaterial({
     transparent: true,
     uniforms: {
       uTime: {value: 0},
@@ -135,6 +142,9 @@ function Animation(envMap) {
     // varying parameters get injected into both the vertex and the fragment shader
     varyingParameters: [
       'varying float vAlpha;',
+      'varying vec3 vEmissive;',
+      'varying vec3 vSpecular;',
+      'varying float vShininess;',
       'varying float vProgress;'
     ],
     // this chunk gets injected at the top of main() of the vertex shader
@@ -150,7 +160,7 @@ function Animation(envMap) {
     vertexNormal: [
       'objectNormal = rotateVector(tQuat, objectNormal);'
     ],
-    // this gets injected after <begin_vertex> (before any other normal calculations)
+    // this chunk gets injected after <begin_vertex> (before any other normal calculations)
     // transformed (transformed position) is used throughout the vertex shader
     vertexPosition: [
       'transformed = rotateVector(tQuat, transformed);',
@@ -158,7 +168,11 @@ function Animation(envMap) {
     ],
     // this chunk gets injected after vertexPosition
     vertexColor: [
-      'vAlpha = abs(transformed.x) / 150.0 * 0.9 + 0.1;' // based on rangeX = 300
+      // these don't make any sense - it's just to test if it works
+      'vAlpha = abs(transformed.x) / 150.0 * 0.9 + 0.1;', // based on rangeX = 300
+      'vEmissive = abs(normalize(transformed));',
+      'vSpecular = abs(normalize(transformed));',
+      'vShininess = abs(transformed.z * 100.0);'
     ],
     // functions for the fragment shader (cannot be used in vertex shader)
     fragmentFunctions: [
@@ -176,11 +190,22 @@ function Animation(envMap) {
       'vec4 texelColor = mapTexelToLinear(mix(texelColor1, texelColor2, vProgress));',
       'diffuseColor *= texelColor;'
     ],
-    // this chunk gets injected after <color_fragment>
+    // this gets injected after <color_fragment>
     // diffuseColor is used throughout the fragment shader
     fragmentAlpha: [
       'diffuseColor.a *= vAlpha;'
     ],
+    // this chunk gets injected before <emissivemap_fragment>
+    // totalEmissiveRadiance is modulated by the emissive map color
+    fragmentEmissive: [
+      'totalEmissiveRadiance = vEmissive;' // default emissive = (0, 0, 0)
+    ],
+    // this chunk gets injected after <fragmentSpecular>
+    fragmentSpecular: [
+      'material.specularStrength = 0.25;',
+      'material.specularShininess = vShininess;',
+      'material.specularColor = vSpecular;'
+    ]
   });
 
   // for some reason setting the value inside the constructor does not work :'(

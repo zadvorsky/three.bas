@@ -161,12 +161,6 @@ function ParticleSystem() {
         'attribute vec3 aPosition;',
         'attribute vec4 aAxisAngle;'
       ],
-      varyingParameters: [
-        'varying float vShininess;',
-        //'varying vec3 vEmissive;',
-        'varying vec3 vSpecular;',
-        'varying float vAlpha;'
-      ],
       vertexInit: [
         'float tProgress = clamp(uTime - aAnimation.x, 0.0, aAnimation.y) / aAnimation.y;'
       ],
@@ -176,23 +170,6 @@ function ParticleSystem() {
 
         'transformed += aPosition;'
       ],
-      vertexColor: [
-        'vShininess = abs(aPosition.x) * 20.0;',
-        'vSpecular = normalize(abs(aPosition));',
-        'vAlpha = 1.0;'
-      ],
-      fragmentParameters: [],
-      fragmentAlpha: [
-        'diffuseColor.a *= vAlpha;'
-      ],
-      fragmentEmissive: [
-        //'totalEmissiveLight = vEmissive;' // default emissive = (0, 0, 0)
-      ],
-      fragmentSpecular: [
-        //'material.specularStrength = 0.25;'
-        'material.specularShininess = vShininess;',
-        'material.specularColor = vSpecular;'
-      ]
     }
   );
 

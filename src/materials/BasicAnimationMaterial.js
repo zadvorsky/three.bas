@@ -121,7 +121,6 @@ THREE.BAS.BasicAnimationMaterial.prototype._concatFragmentShader = function() {
 
     '#include <logdepthbuf_fragment>',
 
-
     (this._stringifyChunk('fragmentMap') || '#include <map_fragment>'),
 
     '#include <color_fragment>',

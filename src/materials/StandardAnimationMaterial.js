@@ -11,6 +11,7 @@ THREE.BAS.StandardAnimationMaterial = function (parameters) {
   this.fragmentFunctions = [];
   this.fragmentParameters = [];
   this.fragmentInit = [];
+  this.fragmentMap = [];
   this.fragmentAlpha = [];
   this.fragmentEmissive = [];
 
@@ -160,7 +161,7 @@ THREE.BAS.StandardAnimationMaterial.prototype._concatFragmentShader = function (
     "	vec3 totalEmissiveRadiance = emissive;",
 
     '#include <logdepthbuf_fragment>',
-    '#include <map_fragment>',
+    (this._stringifyChunk('fragmentMap') || '#include <map_fragment>'),
     '#include <color_fragment>',
 
     this._stringifyChunk('fragmentAlpha'),
@@ -179,15 +180,10 @@ THREE.BAS.StandardAnimationMaterial.prototype._concatFragmentShader = function (
 
     // accumulation
     '#include <lights_physical_fragment>',
-
-    this._stringifyChunk('fragmentSpecular'),
-
     '#include <lights_template>',
 
     // modulation
     '#include <aomap_fragment>',
-
-    this._stringifyChunk('fragmentSpecular'),
 
     "vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + reflectedLight.directSpecular + reflectedLight.indirectSpecular + totalEmissiveRadiance;",
 
