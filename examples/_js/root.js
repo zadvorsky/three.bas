@@ -7,7 +7,8 @@ function THREERoot(params) {
     zFar:10000,
     createCameraControls: true,
     autoStart: true,
-    pixelRatio: window.devicePixelRatio
+    pixelRatio: window.devicePixelRatio,
+    antialias: (window.devicePixelRatio === 1)
   }, params);
 
   // maps and arrays
