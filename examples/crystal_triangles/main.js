@@ -127,8 +127,6 @@ function init() {
   var animation = new Animation(geometry);
   root.add(animation);
 
-  console.log(animation.material.uniforms);
-
   // interactive
   var paused = false;
 
@@ -165,21 +163,20 @@ function init() {
   ]);
 
   // dat.gui
-  //var g = new dat.GUI();
-  //var colorProxy = {};
-  //
-  //Object.defineProperty(colorProxy, 'diffuse', {
-  //  get: function() {
-  //    console.log(animation.material.uniforms['diffuse']);
-  //    return '#' + animation.material.uniforms['diffuse'].value.getHexString();
-  //  },
-  //  set: function(v) {
-  //    animation.material.uniforms['diffuse'].value.set(v);
-  //  }
-  //});
-  //
-  //g.addColor(colorProxy, 'diffuse').name('color');
-  //g.add(bloomPass.copyUniforms.opacity, 'value').name('bloom str');
+  var g = new dat.GUI();
+  var colorProxy = {};
+
+  Object.defineProperty(colorProxy, 'diffuse', {
+    get: function() {
+      return '#' + animation.material.uniforms['diffuse'].value.getHexString();
+    },
+    set: function(v) {
+      animation.material.uniforms['diffuse'].value.set(v);
+    }
+  });
+
+  g.addColor(colorProxy, 'diffuse').name('color');
+  g.add(bloomPass.copyUniforms.opacity, 'value').name('bloom str');
 }
 
 ////////////////////

@@ -6,6 +6,7 @@ var concat = require('gulp-concat');
 var template = require('gulp-template');
 var data = require('gulp-data');
 var fs = require('fs');
+var shell = require('gulp-shell');
 
 var glslSourceDir = './src/glsl';
 var glslTemplate = './src/ShaderChunk.template';
@@ -56,6 +57,10 @@ gulp.task('build-three-post', function() {
   ]).pipe(concat('three_post.js'))
     .pipe(gulp.dest('./examples/js'));
 });
+
+gulp.task('deploy', ['build-glsl', 'build-js'], shell.task([
+  'surge ./ --domain three-bas-examples.surge.sh'
+]));
 
 gulp.task('default', [
   'build-glsl',

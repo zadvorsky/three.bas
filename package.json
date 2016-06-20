@@ -17,6 +17,7 @@
     "gulp-concat": "^2.6.0",
     "gulp-data": "^1.2.0",
     "gulp-rename": "^1.2.2",
+    "gulp-shell": "^0.5.2",
     "gulp-template": "^3.0.0",
     "gulp-watch": "^4.3.6"
   }
