@@ -119,7 +119,7 @@ function Animation(envMap) {
       uMap2: {value: null}
     },
     uniformValues: {
-      map: new THREE.TextureLoader().load('../tex/UV_Grid.jpg'),
+      map: new THREE.TextureLoader().load('../_tex/UV_Grid.jpg'),
       envMap: envMap,
       reflectivity: 0.75,
       refractionRatio: 0.98
@@ -212,7 +212,7 @@ function Animation(envMap) {
   });
 
   // for some reason setting the value inside the constructor does not work :'(
-  material.uniforms.uMap2.value = new THREE.TextureLoader().load('../tex/brick_diffuse.jpg');
+  material.uniforms.uMap2.value = new THREE.TextureLoader().load('../_tex/brick_diffuse.jpg');
 
   geometry.computeVertexNormals();
   geometry.bufferUvs();

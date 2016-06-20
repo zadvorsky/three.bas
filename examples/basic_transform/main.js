@@ -144,8 +144,8 @@ function Animation() {
     },
     // uniform *values* of the material we are extending go here
     uniformValues: {
-      metalness: 0.0,
-      roughness: 1.0
+      metalness: 0.5,
+      roughness: 0.5
     },
     // THREE.BAS has a number of functions that can be reused. They can be injected here
     vertexFunctions: [
