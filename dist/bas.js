@@ -891,6 +891,8 @@ THREE.BAS.StandardAnimationMaterial = function (parameters) {
   this.fragmentInit = [];
   this.fragmentMap = [];
   this.fragmentAlpha = [];
+  this.fragmentRoughness = [];
+  this.fragmentMetalness = [];
   this.fragmentEmissive = [];
 
   var standardShader = THREE.ShaderLib['standard'];
@@ -1047,8 +1049,21 @@ THREE.BAS.StandardAnimationMaterial.prototype._concatFragmentShader = function (
     '#include <alphamap_fragment>',
     '#include <alphatest_fragment>',
     '#include <specularmap_fragment>',
-    '#include <roughnessmap_fragment>',
-    '#include <metalnessmap_fragment>',
+
+    //'#include <roughnessmap_fragment>',
+    'float roughnessFactor = roughness;',
+    this._stringifyChunk('fragmentRoughness'),
+    '#ifdef USE_ROUGHNESSMAP',
+    ' roughnessFactor *= texture2D( roughnessMap, vUv ).r;',
+    '#endif',
+
+    //'#include <metalnessmap_fragment>',
+    'float metalnessFactor = roughness;',
+    this._stringifyChunk('fragmentMetalness'),
+    '#ifdef USE_METALNESSMAP',
+    ' metalnessFactor *= texture2D( metalnessMap, vUv ).r;',
+    '#endif',
+
     '#include <normal_flip>',
     '#include <normal_fragment>',
 

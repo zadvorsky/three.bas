@@ -121,9 +121,8 @@ function Animation(envMap) {
     uniformValues: {
       map: new THREE.TextureLoader().load('../tex/UV_Grid.jpg'),
       envMap: envMap,
-      //combine: THREE.MultiplyOperation,
       reflectivity: 0.75,
-      //refractionRatio: 0.98
+      refractionRatio: 0.98
     },
     // functions for the vertex shader (cannot be used in the fragment shader)
     vertexFunctions: [
@@ -143,6 +142,8 @@ function Animation(envMap) {
     varyingParameters: [
       'varying float vAlpha;',
       'varying vec3 vEmissive;',
+      'varying float vRoughness;',
+      'varying float vMetalness;',
       'varying float vProgress;'
     ],
     // this chunk gets injected at the top of main() of the vertex shader
@@ -168,7 +169,9 @@ function Animation(envMap) {
     vertexColor: [
       // these don't make any sense - it's just to test if it works
       'vAlpha = abs(transformed.x) / 150.0 * 0.9 + 0.1;', // based on rangeX = 300
-      'vEmissive = abs(normalize(transformed));'
+      'vEmissive = abs(normalize(transformed)) * 0.25;',
+      'vRoughness = (transformed.x + 150.0) * 0.5 / 150.0;',
+      'vMetalness = (transformed.y + 100.0) * 0.5 / 100.0;'
     ],
     // functions for the fragment shader (cannot be used in vertex shader)
     fragmentFunctions: [
@@ -190,6 +193,16 @@ function Animation(envMap) {
     // diffuseColor is used throughout the fragment shader
     fragmentAlpha: [
       'diffuseColor.a *= vAlpha;'
+    ],
+    // this chunk is injected after roughnessFactor is initialized (before roughnessMap sampling)
+    // roughnessFactor is used in subsequent calculations
+    fragmentRoughness: [
+      'roughnessFactor = vRoughness;'
+    ],
+    // this chunk is injected after metalnessFactor is initialized (before metalnessMap sampling)
+    // metalnessFactor is used in subsequent calculations
+    fragmentMetalness: [
+      'metalnessFactor = vMetalness;'
     ],
     // this chunk gets injected before <emissivemap_fragment>
     // totalEmissiveRadiance is modulated by the emissive map color
