@@ -52,7 +52,6 @@ THREE.BAS.PrefabBufferGeometry.prototype.bufferPositions = function() {
   }
 };
 
-// todo test
 THREE.BAS.PrefabBufferGeometry.prototype.bufferUvs = function() {
   var prefabFaceCount = this.prefabGeometry.faces.length;
   var prefabVertexCount = this.prefabVertexCount = this.prefabGeometry.vertices.length;
@@ -79,6 +78,13 @@ THREE.BAS.PrefabBufferGeometry.prototype.bufferUvs = function() {
   }
 };
 
+/**
+ * Creates a THREE.BufferAttribute on this geometry instance.
+ * @param name Name of the attribute.
+ * @param itemSize Size of each item.
+ * @param factory function that will be called for each prefab. Accepts 3 arguments: data[], index and prefabCount.
+ * @returns {THREE.BufferAttribute}
+ */
 THREE.BAS.PrefabBufferGeometry.prototype.createAttribute = function(name, itemSize, factory) {
   var buffer = new Float32Array(this.prefabCount * this.prefabVertexCount * itemSize);
   var attribute = new THREE.BufferAttribute(buffer, itemSize);
@@ -98,8 +104,8 @@ THREE.BAS.PrefabBufferGeometry.prototype.createAttribute = function(name, itemSi
 };
 
 /**
- * Copy data for all vertices of the prefab
- * usually called in a loop
+ * Sets data for all vertices of a prefab at a given index.
+ * Usually called in a loop.
  * @param attribute The attribute or attribute name where data is to be stored.
  * @param prefabIndex Index of the prefab in the buffer geometry.
  * @param data Array of data. Length should be equal to item size of the attribute.

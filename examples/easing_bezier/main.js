@@ -9,9 +9,8 @@ function init() {
   root.renderer.setClearColor(0x222222);
   root.camera.position.set(0, 0, 150);
 
-  var grid = new THREE.GridHelper(50, 10);
+  var grid = new THREE.GridHelper(50, 10,0x333333, 0x333333);
   grid.material.depthWrite = false;
-  grid.setColors(0x333333, 0x333333);
   grid.rotation.x = Math.PI * 0.5;
   root.scene.add(grid);
 

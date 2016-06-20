@@ -29,14 +29,15 @@ THREE.BAS.BasicAnimationMaterial.prototype._concatVertexShader = function() {
   // based on THREE.ShaderLib.basic
   return [
 
-    THREE.ShaderChunk[ "common" ],
-    THREE.ShaderChunk[ "uv_pars_vertex" ],
-    THREE.ShaderChunk[ "uv2_pars_vertex" ],
-    THREE.ShaderChunk[ "envmap_pars_vertex" ],
-    THREE.ShaderChunk[ "color_pars_vertex" ],
-    THREE.ShaderChunk[ "morphtarget_pars_vertex" ],
-    THREE.ShaderChunk[ "skinning_pars_vertex" ],
-    THREE.ShaderChunk[ "logdepthbuf_pars_vertex" ],
+    '#include <common>',
+    '#include <uv_pars_vertex>',
+    '#include <uv2_pars_vertex>',
+    '#include <envmap_pars_vertex>',
+    '#include <color_pars_vertex>',
+    '#include <morphtarget_pars_vertex>',
+    '#include <skinning_pars_vertex>',
+    '#include <logdepthbuf_pars_vertex>',
+    '#include <clipping_planes_pars_vertex>',
 
     this._stringifyChunk('vertexFunctions'),
     this._stringifyChunk('vertexParameters'),
@@ -46,35 +47,36 @@ THREE.BAS.BasicAnimationMaterial.prototype._concatVertexShader = function() {
 
     this._stringifyChunk('vertexInit'),
 
-    THREE.ShaderChunk[ "uv_vertex" ],
-    THREE.ShaderChunk[ "uv2_vertex" ],
-    THREE.ShaderChunk[ "color_vertex" ],
-    THREE.ShaderChunk[ "skinbase_vertex" ],
+    '#include <uv_vertex>',
+    '#include <uv2_vertex>',
+    '#include <color_vertex>',
+    '#include <skinbase_vertex>',
 
     "	#ifdef USE_ENVMAP",
 
-    THREE.ShaderChunk[ "beginnormal_vertex" ],
+    '#include <beginnormal_vertex>',
 
     this._stringifyChunk('vertexNormal'),
 
-    THREE.ShaderChunk[ "morphnormal_vertex" ],
-    THREE.ShaderChunk[ "skinnormal_vertex" ],
-    THREE.ShaderChunk[ "defaultnormal_vertex" ],
+    '#include <morphnormal_vertex>',
+    '#include <skinnormal_vertex>',
+    '#include <defaultnormal_vertex>',
 
     "	#endif",
 
-    THREE.ShaderChunk[ "begin_vertex" ],
+    '#include <begin_vertex>',
 
     this._stringifyChunk('vertexPosition'),
     this._stringifyChunk('vertexColor'),
 
-    THREE.ShaderChunk[ "morphtarget_vertex" ],
-    THREE.ShaderChunk[ "skinning_vertex" ],
-    THREE.ShaderChunk[ "project_vertex" ],
-    THREE.ShaderChunk[ "logdepthbuf_vertex" ],
+    '#include <morphtarget_vertex>',
+    '#include <skinning_vertex>',
+    '#include <project_vertex>',
+    '#include <logdepthbuf_vertex>',
 
-    THREE.ShaderChunk[ "worldpos_vertex" ],
-    THREE.ShaderChunk[ "envmap_vertex" ],
+    '#include <worldpos_vertex>',
+    '#include <clipping_planes_vertex>',
+    '#include <envmap_vertex>',
 
     "}"
 
@@ -96,34 +98,39 @@ THREE.BAS.BasicAnimationMaterial.prototype._concatFragmentShader = function() {
 
     "#endif",
 
-    THREE.ShaderChunk[ "common" ],
-    THREE.ShaderChunk[ "color_pars_fragment" ],
-    THREE.ShaderChunk[ "uv_pars_fragment" ],
-    THREE.ShaderChunk[ "uv2_pars_fragment" ],
-    THREE.ShaderChunk[ "map_pars_fragment" ],
-    THREE.ShaderChunk[ "alphamap_pars_fragment" ],
-    THREE.ShaderChunk[ "aomap_pars_fragment" ],
-    THREE.ShaderChunk[ "envmap_pars_fragment" ],
-    THREE.ShaderChunk[ "fog_pars_fragment" ],
-    THREE.ShaderChunk[ "specularmap_pars_fragment" ],
-    THREE.ShaderChunk[ "logdepthbuf_pars_fragment" ],
+    '#include <common>',
+    '#include <color_pars_fragment>',
+    '#include <uv_pars_fragment>',
+    '#include <uv2_pars_fragment>',
+    '#include <map_pars_fragment>',
+    '#include <alphamap_pars_fragment>',
+    '#include <aomap_pars_fragment>',
+    '#include <envmap_pars_fragment>',
+    '#include <fog_pars_fragment>',
+    '#include <specularmap_pars_fragment>',
+    '#include <logdepthbuf_pars_fragment>',
+    '#include <clipping_planes_pars_fragment>',
 
     "void main() {",
 
     this._stringifyChunk('fragmentInit'),
 
+    '#include <clipping_planes_fragment>',
+
     "	vec4 diffuseColor = vec4( diffuse, opacity );",
 
-    THREE.ShaderChunk[ "logdepthbuf_fragment" ],
-    (this._stringifyChunk('fragmentMap') || THREE.ShaderChunk[ "map_fragment" ]),
+    '#include <logdepthbuf_fragment>',
 
-    THREE.ShaderChunk[ "color_fragment" ],
+
+    (this._stringifyChunk('fragmentMap') || '#include <map_fragment>'),
+
+    '#include <color_fragment>',
 
     this._stringifyChunk('fragmentAlpha'),
 
-    THREE.ShaderChunk[ "alphamap_fragment" ],
-    THREE.ShaderChunk[ "alphatest_fragment" ],
-    THREE.ShaderChunk[ "specularmap_fragment" ],
+    '#include <alphamap_fragment>',
+    '#include <alphatest_fragment>',
+    '#include <specularmap_fragment>',
 
     "	ReflectedLight reflectedLight;",
     "	reflectedLight.directDiffuse = vec3( 0.0 );",
@@ -131,15 +138,19 @@ THREE.BAS.BasicAnimationMaterial.prototype._concatFragmentShader = function() {
     "	reflectedLight.indirectDiffuse = diffuseColor.rgb;",
     "	reflectedLight.indirectSpecular = vec3( 0.0 );",
 
-    THREE.ShaderChunk[ "aomap_fragment" ],
+    '#include <aomap_fragment>',
 
     "	vec3 outgoingLight = reflectedLight.indirectDiffuse;",
 
-    THREE.ShaderChunk[ "envmap_fragment" ],
-    THREE.ShaderChunk[ "linear_to_gamma_fragment" ],
-    THREE.ShaderChunk[ "fog_fragment" ],
+    '#include <normal_flip>',
+    '#include <envmap_fragment>',
 
     "	gl_FragColor = vec4( outgoingLight, diffuseColor.a );",
+
+    '#include <premultiplied_alpha_fragment>',
+    '#include <tonemapping_fragment>',
+    '#include <encodings_fragment>',
+    '#include <fog_fragment>',
 
     "}"
   ].join('\n');
