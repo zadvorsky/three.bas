@@ -147,7 +147,7 @@ function Animation() {
       metalness: 0.5,
       roughness: 0.5
     },
-    // THREE.BAS has a number of functions that can be reused. They can be injected here
+    // THREE.BAS has a number of functions that can be reused. They can be injected here.
     vertexFunctions: [
       // Penner easing functions easeCubicInOut and easeQuadOut (see the easing example for all available functions)
       THREE.BAS.ShaderChunk['ease_cubic_in_out'],
