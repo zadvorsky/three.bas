@@ -190,12 +190,12 @@ function Animation(startPosition, control0Range, control1Range, endPosition) {
       shininess: 20
     },
     vertexFunctions: [
-      // this chunk contains the cubicBezier function used in the vertexPosition chunk
+      // cubic_bezier defines the cubicBezier function used in the vertexPosition chunk
       THREE.BAS.ShaderChunk['cubic_bezier'],
       THREE.BAS.ShaderChunk['quaternion_rotation']
     ],
     // note we do not have to define 'color' as a uniform because THREE.js will do this for us
-    // trying to define it here will through a duplicate declaration error
+    // trying to define it here will throw a duplicate declaration error
     vertexParameters: [
       'uniform float uTime;',
       'attribute vec2 aDelayDuration;',
@@ -215,7 +215,7 @@ function Animation(startPosition, control0Range, control1Range, endPosition) {
     ],
     vertexPosition: [
       'transformed = rotateVector(tQuat, transformed);',
-      // the cubicBezier function will return a vec3 on a cubic bezier curve defined by four points
+      // cubicBezier will return a vec3 on a cubic bezier curve defined by four points
       'transformed += cubicBezier(aStartPosition, aControl0, aControl1, aEndPosition, tProgress);'
     ]
   });
