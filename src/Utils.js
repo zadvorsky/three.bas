@@ -40,6 +40,16 @@ THREE.BAS.Utils = {
     return v;
   },
 
+  randomInBox: function(box, v) {
+    v = v || new THREE.Vector3();
+
+    v.x = THREE.Math.randFloat(box.min.x, box.max.x);
+    v.y = THREE.Math.randFloat(box.min.y, box.max.y);
+    v.z = THREE.Math.randFloat(box.min.z, box.max.z);
+
+    return v;
+  },
+
   createDepthAnimationMaterial: function(sourceMaterial) {
     // todo morph & skinning support
     return new THREE.BAS.DepthAnimationMaterial({

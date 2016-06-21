@@ -5,8 +5,23 @@ function init() {
   root.renderer.setClearColor(0x222222);
   root.camera.position.set(0, 600, 600);
 
-  var animation = new Animation();
-  animation.animate(2.0, {ease: Power0.easeIn, repeat:-1, repeatDelay:0.25, yoyo: true});
+  var startPosition = new THREE.Vector3(-1000, 0, 0);
+  var control0Range = new THREE.Box3(
+    new THREE.Vector3(-400, 400, -1200),
+    new THREE.Vector3(400, 600, -800)
+  );
+  var control1Range = new THREE.Box3(
+    new THREE.Vector3(-400, -600, 800),
+    new THREE.Vector3(400, -400, 1200)
+  );
+  var endPosition = new THREE.Vector3(1000, 0, 0);
+
+  // root.add(new THREE.Point)
+  root.add(new THREE.BoxHelper(control0Range, 0xff0000));
+  root.add(new THREE.BoxHelper(control1Range, 0x00ff00));
+
+  var animation = new Animation(startPosition, control0Range, control1Range, endPosition);
+  animation.animate(4.0, {ease: Power0.easeIn, repeat:-1});
   root.add(animation);
 }
 
@@ -14,7 +29,7 @@ function init() {
 // CLASSES
 ////////////////////
 
-function Animation() {
+function Animation(startPosition, control0Range, control1Range, endPosition) {
   var prefabGeometry = new THREE.SphereGeometry(1.0);
   var prefabCount = 1000;
 
@@ -30,28 +45,33 @@ function Animation() {
   });
 
   geometry.createAttribute('aStartPosition', 3, function(data) {
-    data[0] = -1000;
-    data[1] = 0;
-    data[2] = 0;
+    data[0] = startPosition.x;
+    data[1] = startPosition.y;
+    data[2] = startPosition.z;
   });
 
   geometry.createAttribute('aEndPosition', 3, function(data) {
-    data[0] = 1000;
-    data[1] = 0;
-    data[2] = 0;
-
+    data[0] = endPosition.x;
+    data[1] = endPosition.y;
+    data[2] = endPosition.z;
   });
 
+  var point = new THREE.Vector3();
+
   geometry.createAttribute('aControl0', 3, function(data) {
-    data[0] = THREE.Math.randFloat(-400, 400);
-    data[1] = THREE.Math.randFloat(400, 600);
-    data[2] = THREE.Math.randFloat(-1200, -800);
+    THREE.BAS.Utils.randomInBox(control0Range, point);
+
+    data[0] = point.x;
+    data[1] = point.y;
+    data[2] = point.z;
   });
 
   geometry.createAttribute('aControl1', 3, function(data) {
-    data[0] = THREE.Math.randFloat(-400, 400);
-    data[1] = THREE.Math.randFloat(-600, -400);
-    data[2] = THREE.Math.randFloat(800, 1200);
+    THREE.BAS.Utils.randomInBox(control1Range, point);
+
+    data[0] = point.x;
+    data[1] = point.y;
+    data[2] = point.z;
   });
 
   var material = new THREE.BAS.BasicAnimationMaterial({
