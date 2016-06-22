@@ -15,6 +15,16 @@ THREE.BAS.BaseAnimationMaterial = function (parameters, uniforms) {
     uniformValues.map && (this.defines['USE_MAP'] = '');
     uniformValues.normalMap && (this.defines['USE_NORMALMAP'] = '');
     uniformValues.envMap && (this.defines['USE_ENVMAP'] = '');
+    uniformValues.aoMap && (this.defines['USE_AOMAP'] = '');
+    uniformValues.specularMap && (this.defines['USE_SPECULARMAP'] = '');
+    uniformValues.alphaMap && (this.defines['USE_ALPHAMAP'] = '');
+    uniformValues.lightMap && (this.defines['USE_LIGHTMAP'] = '');
+    uniformValues.emissiveMap && (this.defines['USE_EMISSIVEMAP'] = '');
+    uniformValues.bumpMap && (this.defines['USE_BUMPMAP'] = '');
+    uniformValues.displacementMap && (this.defines['USE_DISPLACEMENTMAP'] = '');
+    uniformValues.roughnessMap && (this.defines['USE_DISPLACEMENTMAP'] = '');
+    uniformValues.roughnessMap && (this.defines['USE_ROUGHNESSMAP'] = '');
+    uniformValues.metalnessMap && (this.defines['USE_METALNESSMAP'] = '');
 
     if (uniformValues.envMap) {
       this.defines['USE_ENVMAP'] = '';
