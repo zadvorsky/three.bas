@@ -2,11 +2,11 @@ window.onload = init;
 
 function init() {
   var root = new THREERoot();
-  root.renderer.setClearColor(0x222222);
-  root.camera.position.set(0, 0, 1500);
+  root.renderer.setClearColor(0x000000);
+  root.camera.position.set(0, 0, 1000);
 
   var light = new THREE.PointLight(0xffffff, 4, 1000, 2);
-  light.position.set(0, 0, 0);
+  light.position.set(0, 400, 0);
   root.add(light);
 
   // A Catmull-Rom Spline defines a smooth line that goes through at least 4 points
@@ -57,6 +57,7 @@ function init() {
   });
 
   root.add(debug);
+  debug.visible = false;
 
   window.addEventListener('keyup', function(e) {
     if (e.keyCode === 68) {

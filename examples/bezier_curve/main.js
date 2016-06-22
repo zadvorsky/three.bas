@@ -2,7 +2,7 @@ window.onload = init;
 
 function init() {
   var root = new THREERoot();
-  root.renderer.setClearColor(0x222222);
+  root.renderer.setClearColor(0x000000);
   root.camera.position.set(0, 600, 600);
 
   var light = new THREE.PointLight(0xffffff, 4, 1000, 2);
@@ -68,6 +68,7 @@ function init() {
   }));
 
   root.add(debug);
+  debug.visible = false;
 
   window.addEventListener('keyup', function(e) {
     if (e.keyCode === 68) {
