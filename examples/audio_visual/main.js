@@ -1,6 +1,6 @@
 // soundcloud api
 var SC_ID = 'ba47209edc0a4c129a460a936fb4e9f2';
-var TRACK_URL = 'https://soundcloud.com/longarms/starpower?in=longarms/sets/starpower';
+var TRACK_URL = 'https://soundcloud.com/longarms/starpower';
 
 SC.initialize({
   client_id: SC_ID
@@ -18,7 +18,7 @@ function init() {
 
   //root.controls.autoRotate = true;
 
-  var centerLight = new THREE.PointLight(0xffffff, 0, 600, 2);//0xECD078
+  var centerLight = new THREE.PointLight(0xffffff, 0);//0xECD078
   centerLight.position.set(0, 0, 0);
   root.add(centerLight);
 
@@ -40,7 +40,7 @@ function init() {
     var r = radius * THREE.Math.randFloat(0.5, 1.0);
 
     x = Math.cos(angle) * r;
-    y = THREE.Math.randFloat(-64, 64);// * (i % 2 ? 1 : -1)
+    y = 0;// THREE.Math.randFloat(-64, 64);// * (i % 2 ? 1 : -1)
     z = Math.sin(angle) * r;
 
     pivotDistance = 1;
@@ -51,9 +51,15 @@ function init() {
   var animation = new Animation(points);
   root.add(animation);
 
-  var tween = animation.animate(12.0, {ease: Power0.easeInOut, repeat:-1});
+  var tween = animation.animate(24.0, {ease: Power0.easeInOut, repeat:-1});
 
   // audio
+
+  var audioInput = document.getElementById('audioInput');
+  audioInput.value = TRACK_URL;
+  audioInput.addEventListener('input', function() {
+    audioInput.value && getTrack(audioInput.value);
+  });
 
   var audioElement = document.getElementById('player');
   audioElement.crossOrigin = 'Anonymous';
@@ -62,21 +68,29 @@ function init() {
   var analyzer = new SpectrumAnalyzer(pointCount, 0.75);
   analyzer.setSource(audioElement);
 
-  SC.get('/resolve', {url: TRACK_URL}).then(function(data) {
-    console.log('success?', data);
+  var scLink = document.getElementById('sc_link');
+  var scImage = document.getElementById('sc_img');
 
-    if (typeof data.errors === 'undefined') {
-      if (data.streamable) {
-        audioElement.src = data.stream_url + '?client_id=' + SC_ID;
+  function getTrack(url) {
+    SC.get('/resolve', {url: url}).then(function(data) {
+      console.log('success?', data);
+
+      if (typeof data.errors === 'undefined') {
+        if (data.streamable) {
+          audioElement.src = data.stream_url + '?client_id=' + SC_ID;
+          scLink.href = data.permalink_url;
+          scImage.src = data.artwork_url;
+        }
+        else {
+          alert('This SoundCloud URL is not allowed to be streamed.');
+        }
       }
       else {
-        alert('This SoundCloud URL is not allowed to be streamed.');
+        alert('SoundCloud error :(');
       }
-    }
-    else {
-      alert('SoundCloud error :(');
-    }
-  });
+    });
+  }
+  getTrack(TRACK_URL);
 
   root.addUpdateCallback(function() {
     analyzer.updateSample();
@@ -84,7 +98,7 @@ function init() {
     var spline = animation.material.uniforms['uPath'].value;
     var data = analyzer.frequencyByteData;
 
-    //var avg = analyzer.getAverageFloat();
+    var avg = analyzer.getAverageFloat();
     var avgLL = analyzer.getAverageFloat(0, 8);
     var avgML = analyzer.getAverageFloat(8, 16);
     var avgMH = analyzer.getAverageFloat(16, 24);
@@ -92,18 +106,22 @@ function init() {
 
     console.log(avgLL, avgML, avgMH, avgHH);
 
-    var maxY = 512 * avgLL * avgLL * avgLL;
-    var maxW = 128 * avgML * avgML;
+    animation.material.uniforms.roughness.value =     mapEase(Power2.easeInOut, avgLL, 0.0, 1.0, 0.0, 1.0);
+    animation.material.uniforms.metalness.value =     mapEase(Power2.easeInOut, avgML, 0.0, 1.0, 0.0, 1.0);
+    animation.material.uniforms.uGlobalPivot.value =  mapEase(Power4.easeOut, avgHH, 0.0, 1.0, 2.0, 0.5);
 
-    centerLight.intensity = avgLL * avgLL * 2;
+    centerLight.intensity = mapEase(Power2.easeIn, avg, 0.0, 1.0, 0.0, 2.0);
 
-    tween.timeScale(avgLL);
+    tween.timeScale(avg);
+
+    var maxY = mapEase(Power2.easeOut, avgLL, 0.0, 1.0, 0, 100);
+    var maxW = mapEase(Power4.easeOut, avgHH, 0.0, 1.0, 100, 300);
 
     for (var i = 0; i < spline.length; i++) {
       var p = spline[i];
 
       p.y = data[i] / 255 * maxY * (i % 2 ? 1 : -1);
-      p.w = data[i] / 255 * maxW + 100;
+      p.w = data[i] / 255 * maxW + 20;
     }
   });
 }
@@ -127,10 +145,10 @@ function Animation(path) {
   for (var i = 0; i < prefabCount; i++) {
     //var pDelay = i / prefabCount;
     //var pDelay = ease(Circ.easeInOut, i, 0, totalDuration, prefabCount);
-    var pDelay = mapEase(Circ.easeOut, i, 0, prefabCount, 0, totalDuration * 0.9);
+    var pDelay = mapEase(Power2.easeOut, i, 0, prefabCount, 0, totalDuration);
 
     for (var j = 0; j < geometry.prefabVertexCount; j++) {
-      var vDelay = j * 0.00025;
+      var vDelay = j * Math.random() * 0.00025;
 
       aDelayDuration.array[offset++] =  (pDelay + vDelay);
       aDelayDuration.array[offset++] =  totalDuration;
@@ -140,8 +158,8 @@ function Animation(path) {
   // PIVOT
 
   geometry.createAttribute('aPivotRotation', 2, function(data) {
-    data[0] = Math.random() * 0.4 + 0.6;
-    data[1] = Math.PI * 2 * THREE.Math.randInt(8, 16);
+    data[0] = Math.random();// * 0.5 + 0.5;
+    data[1] = Math.PI * 2 * THREE.Math.randInt(16, 32);
   });
 
   // COLOR
@@ -179,10 +197,13 @@ function Animation(path) {
     uniforms: {
       uTime: {value: 0},
       uPath: {value: path},
-      uSmoothness: {value: new THREE.Vector2().setScalar(0.5)}
+      uSmoothness: {value: new THREE.Vector2().setScalar(1)},
+      uGlobalPivot: {value: 0},
     },
     uniformValues: {
-      emissive: new THREE.Color(0x0e0609)//0x542437
+      emissive: new THREE.Color(0x0e0609),//0x542437
+      roughness: 0,
+      metalness: 0
     },
     vertexFunctions: [
       THREE.BAS.ShaderChunk['catmull_rom_spline'],
@@ -192,6 +213,7 @@ function Animation(path) {
       'uniform float uTime;',
       'uniform vec4 uPath[PATH_LENGTH];',
       'uniform vec2 uSmoothness;',
+      'uniform float uGlobalPivot;',
 
       'attribute vec2 aDelayDuration;',
       'attribute vec2 aPivotRotation;',
@@ -218,15 +240,15 @@ function Animation(path) {
       'vec3 tDelta = catmullRomSpline(p0.xyz, p1.xyz, p2.xyz, p3.xyz, pathProgressFract, uSmoothness);',
       'vec4 tQuat = quatFromAxisAngle(normalize(tDelta), aPivotRotation.y * tProgress);',
 
-      'transformed += catmullRomSpline(p0.w, p1.w, p2.w, p3.w, pathProgressFract) * aPivotRotation.x;',
+      'transformed += catmullRomSpline(p0.w, p1.w, p2.w, p3.w, pathProgressFract) * aPivotRotation.x * uGlobalPivot;',
       'transformed = rotateVector(tQuat, transformed);',
       'transformed += tDelta;'
     ],
     fragmentRoughness: [
-      'roughnessFactor = vRM.x;'
+      'roughnessFactor = roughness * vRM.x;'
     ],
     fragmentMetalness: [
-      'metalnessFactor = vRM.y;'
+      'metalnessFactor = metalness * vRM.y;'
     ]
   });
 

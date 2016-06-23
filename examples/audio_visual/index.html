@@ -8,26 +8,45 @@
         margin: 0;
         overflow: hidden;
         font-family: monospace;
-        background-image: radial-gradient(#542437, #0e0609);
+        background-image: radial-gradient(#2e141e, #0e0609);
       }
       #soundcloud {
         position: absolute;
         z-index: 0;
         left: 0;
         bottom: 0;
-        display: flex;
+        display: block;
         width: 100%;
+      }
+
+      .img_container {
+        display: inline-block;
+        float: left;
+        line-height: 0;
+        margin: 0 10px 10px;
+      }
+      .player_container {
+        display: inline-block;
+        float: left;
       }
 
       #player {
-        flex: 1;
+        width: 240px;
+        margin: 10px 0;
+        display: block;
       }
 
       #audioInput {
-        width: 100%;
+        width: 220px;
         margin: 0;
-        flex: 2;
-        padding-left: .5em;
+        padding: 4px 10px;
+        display: block;
+        outline: none;
+        border: none;
+      }
+
+      #sc_img {
+        width: 90px;
       }
     </style>
 </head>
@@ -36,8 +55,15 @@
 
 
 <div id="soundcloud">
-  <audio id="player" controls="" autoplay="false" preload="preload" autobuffer="autobuffer" src=""> </audio>
-  <input id="audioInput" type="url"/>
+  <div class="img_container">
+    <a href="" id="sc_link">
+      <img src="" alt="" id="sc_img">
+    </a>
+  </div>
+  <div class="player_container">
+    <audio id="player" controls="" autoplay="false" preload="preload" autobuffer="autobuffer" src=""></audio>
+    <input id="audioInput" type="url"/>
+  </div>
 </div>
 
 <script src="https://connect.soundcloud.com/sdk/sdk-3.1.2.js"></script>
