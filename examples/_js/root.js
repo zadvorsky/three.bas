@@ -8,7 +8,8 @@ function THREERoot(params) {
     createCameraControls: true,
     autoStart: true,
     pixelRatio: window.devicePixelRatio,
-    antialias: (window.devicePixelRatio === 1)
+    antialias: (window.devicePixelRatio === 1),
+    alpha: false
   }, params);
 
   // maps and arrays
@@ -18,7 +19,8 @@ function THREERoot(params) {
 
   // renderer
   this.renderer = new THREE.WebGLRenderer({
-    antialias: params.antialias
+    antialias: params.antialias,
+    alpha: params.alpha
   });
   this.renderer.setPixelRatio(params.pixelRatio);
 

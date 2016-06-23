@@ -8,23 +8,39 @@
         margin: 0;
         overflow: hidden;
         font-family: monospace;
+        background-image: radial-gradient(#542437, #0e0609);
       }
-      .info {
+      #soundcloud {
         position: absolute;
-        text-align: center;
+        z-index: 0;
+        left: 0;
+        bottom: 0;
+        display: flex;
         width: 100%;
-        bottom: 20px;
-        color: white;
+      }
+
+      #player {
+        flex: 1;
+      }
+
+      #audioInput {
+        width: 100%;
+        margin: 0;
+        flex: 2;
+        padding-left: .5em;
       }
     </style>
 </head>
 <body>
 <div id="three-container"></div>
-<audio id="song" src=""></audio>
 
-<!--<div class="info">-->
-  <!--Press 'D' to toggle debug helpers.-->
-<!--</div>-->
+
+<div id="soundcloud">
+  <audio id="player" controls="" autoplay="false" preload="preload" autobuffer="autobuffer" src=""> </audio>
+  <input id="audioInput" type="url"/>
+</div>
+
+<script src="https://connect.soundcloud.com/sdk/sdk-3.1.2.js"></script>
 
 <script src="../_lib/TweenMax.min.js"></script>
 <script src="../../bower_components/three.js/build/three.js"></script>
