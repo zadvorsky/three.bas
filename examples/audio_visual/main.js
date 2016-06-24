@@ -23,19 +23,21 @@ function init() {
     bloomPass,
     copyPass
   ]);
-  
-  
-  // root.controls.autoRotate = true;
 
-  var centerLight = new THREE.PointLight(0xffffff, 0, 800, 2);//0xECD078
-  centerLight.position.set(0, 0, 0);
+  // root.controls.autoRotate = true;
+  var lightColor = new THREE.Color();
+
+  lightColor.setHSL(0.00, 0.5, 0.75);
+  var centerLight = new THREE.PointLight(lightColor, 0, 600, 2);//0xECD078
   root.add(centerLight);
 
-  var topLight = new THREE.DirectionalLight(0xD95B43, 0.5);
+  lightColor.setHSL(0.33, 0.25, 0.5);
+  var topLight = new THREE.DirectionalLight(lightColor, 0.5); // 0xD95B43
   topLight.position.set(0, 1, 0);
   root.add(topLight);
 
-  var bottomLight = new THREE.DirectionalLight(0xC02942, 0.5);
+  lightColor.setHSL(0.66, 0.25, 0.5);
+  var bottomLight = new THREE.DirectionalLight(lightColor, 0.5); //0xC02942
   bottomLight.position.set(0, -1, 0);
   root.add(bottomLight);
 
@@ -82,6 +84,15 @@ function init() {
 
   var scLink = document.getElementById('sc_link');
   var scImage = document.getElementById('sc_img');
+
+  var scVisible = true;
+  var sc = document.getElementById('soundcloud');
+
+  window.addEventListener('keyup', function(e) {
+    if (e.keyCode === 88) {
+      sc.style.display = (scVisible = !scVisible) ? 'block' : 'none';
+    }
+  });
 
   function getTrack(url) {
     SC.get('/resolve', {url: url}).then(function(data) {
@@ -138,17 +149,13 @@ function init() {
       p.w = data[i] / 255 * maxW + 20;
     }
 
-    animation.rotation.x += Math.random() * 0.0125;
-    animation.rotation.y += Math.random() * 0.0125;
-    animation.rotation.z += Math.random() * 0.0125;
+    animation.rotation.x += 0.005;
+    animation.rotation.y += 0.005;
+    animation.rotation.z += 0.005;
 
-    topLight.position.x += Math.random() * 0.0125;
-    topLight.position.y += Math.random() * 0.0125;
-    topLight.position.z += Math.random() * 0.0125;
-
-    bottomLight.position.x += Math.random() * 0.0125;
-    bottomLight.position.y += Math.random() * 0.0125;
-    bottomLight.position.z += Math.random() * 0.0125;
+    centerLight.color.offsetHSL(0.001, 0, 0);
+    topLight.color.offsetHSL(0.001, 0, 0);
+    bottomLight.color.offsetHSL(0.001, 0, 0);
   });
 }
 
@@ -189,16 +196,18 @@ function Animation(path) {
   // COLOR
 
   var color = new THREE.Color();
-  var colors = [
-    '#ECD078',
-    '#D95B43',
-    '#C02942',
-    '#27111a',
-    '#53777A'
-  ];
+  // var colors = [
+  //   '#ECD078',
+  //   '#D95B43',
+  //   '#C02942',
+  //   '#27111a',
+  //   '#53777A'
+  // ];
 
   geometry.createAttribute('color', 3, function(data, i, count) {
-    color.set(colors[i % colors.length]);
+    // color.set(colors[i % colors.length]);
+    var l = Math.random();
+    color.setRGB(l, l, l);
     color.toArray(data);
   });
 
