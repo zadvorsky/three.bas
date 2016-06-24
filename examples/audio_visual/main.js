@@ -11,24 +11,33 @@ window.onload = init;
 function init() {
   var root = new THREERoot({
     fov: 120,
-    alpha: true
+    alpha: false
   });
-  root.renderer.setClearColor(0x542437, 0);
+  root.renderer.setClearColor(0x000000);//0x0e0609
   root.camera.position.set(0, 600, 0);
+  
+  var bloomPass = new THREE.BloomPass(4.0, 25, 4, 512);
+  var copyPass = new THREE.ShaderPass(THREE.CopyShader);
+  
+  root.initPostProcessing([
+    bloomPass,
+    copyPass
+  ]);
+  
+  
+  // root.controls.autoRotate = true;
 
-  //root.controls.autoRotate = true;
-
-  var centerLight = new THREE.PointLight(0xffffff, 0);//0xECD078
+  var centerLight = new THREE.PointLight(0xffffff, 0, 800, 2);//0xECD078
   centerLight.position.set(0, 0, 0);
   root.add(centerLight);
 
-  var light = new THREE.DirectionalLight(0xD95B43, 0.5);
-  light.position.set(0, 1, 0);
-  root.add(light);
+  var topLight = new THREE.DirectionalLight(0xD95B43, 0.5);
+  topLight.position.set(0, 1, 0);
+  root.add(topLight);
 
-  light = new THREE.DirectionalLight(0xC02942, 0.5);
-  light.position.set(0, -1, 0);
-  root.add(light);
+  var bottomLight = new THREE.DirectionalLight(0xC02942, 0.5);
+  bottomLight.position.set(0, -1, 0);
+  root.add(bottomLight);
 
   var pointCount = 32;
   var points = [];
@@ -45,7 +54,10 @@ function init() {
 
     pivotDistance = 1;
 
-    points.push(new THREE.Vector4(x, y, z, pivotDistance));
+    var v = new THREE.Vector4(x, y, z, pivotDistance);
+    v._y = THREE.Math.randFloatSpread(256);
+
+    points.push(v);
   }
 
   var animation = new Animation(points);
@@ -106,23 +118,37 @@ function init() {
 
     console.log(avgLL, avgML, avgMH, avgHH);
 
-    animation.material.uniforms.roughness.value =     mapEase(Power2.easeInOut, avgLL, 0.0, 1.0, 0.0, 1.0);
-    animation.material.uniforms.metalness.value =     mapEase(Power2.easeInOut, avgML, 0.0, 1.0, 0.0, 1.0);
-    animation.material.uniforms.uGlobalPivot.value =  mapEase(Power4.easeOut, avgHH, 0.0, 1.0, 2.0, 0.5);
+    animation.material.uniforms.roughness.value =     mapEase(Power2.easeInOut, avgLL, 0.0, 1.0, 0/5, 1.0);
+    animation.material.uniforms.metalness.value =     mapEase(Power2.easeInOut, avgML, 0.0, 1.0, 0.0, 0.5);
+    animation.material.uniforms.uGlobalPivot.value =  mapEase(Power4.easeOut, avgHH, 0.0, 1.0, 2.0, 0.125);
 
-    centerLight.intensity = mapEase(Power2.easeIn, avg, 0.0, 1.0, 0.0, 2.0);
+    centerLight.intensity = mapEase(Power2.easeIn, avg, 0.0, 1.0, 0.5, 1.0);
+    topLight.intensity = mapEase(Power2.easeIn, avg, 0.0, 1.0, 0.0, 4.0);
+    bottomLight.intensity = mapEase(Power2.easeIn, avg, 0.0, 1.0, 0.0, 4.0);
 
     tween.timeScale(avg);
 
     var maxY = mapEase(Power2.easeOut, avgLL, 0.0, 1.0, 0, 100);
-    var maxW = mapEase(Power4.easeOut, avgHH, 0.0, 1.0, 100, 300);
+    var maxW = mapEase(Power4.easeIn, avgHH, 0.0, 1.0, 100, 600);
 
     for (var i = 0; i < spline.length; i++) {
       var p = spline[i];
 
-      p.y = data[i] / 255 * maxY * (i % 2 ? 1 : -1);
+      p.y = p._y + data[i] / 255 * maxY * (i % 2 ? 1 : -1);
       p.w = data[i] / 255 * maxW + 20;
     }
+
+    animation.rotation.x += Math.random() * 0.0125;
+    animation.rotation.y += Math.random() * 0.0125;
+    animation.rotation.z += Math.random() * 0.0125;
+
+    topLight.position.x += Math.random() * 0.0125;
+    topLight.position.y += Math.random() * 0.0125;
+    topLight.position.z += Math.random() * 0.0125;
+
+    bottomLight.position.x += Math.random() * 0.0125;
+    bottomLight.position.y += Math.random() * 0.0125;
+    bottomLight.position.z += Math.random() * 0.0125;
   });
 }
 
@@ -143,12 +169,10 @@ function Animation(path) {
   var offset = 0;
 
   for (var i = 0; i < prefabCount; i++) {
-    //var pDelay = i / prefabCount;
-    //var pDelay = ease(Circ.easeInOut, i, 0, totalDuration, prefabCount);
-    var pDelay = mapEase(Power2.easeOut, i, 0, prefabCount, 0, totalDuration);
+    var pDelay = mapEase(Circ.easeOut, i, 0, prefabCount, 0, totalDuration);
 
     for (var j = 0; j < geometry.prefabVertexCount; j++) {
-      var vDelay = j * Math.random() * 0.00025;
+      var vDelay = j * 0.00025 * THREE.Math.randFloat(0.75, 1.25);
 
       aDelayDuration.array[offset++] =  (pDelay + vDelay);
       aDelayDuration.array[offset++] =  totalDuration;
@@ -197,11 +221,11 @@ function Animation(path) {
     uniforms: {
       uTime: {value: 0},
       uPath: {value: path},
-      uSmoothness: {value: new THREE.Vector2().setScalar(1)},
+      uSmoothness: {value: new THREE.Vector2().setScalar(1.5)},
       uGlobalPivot: {value: 0},
     },
     uniformValues: {
-      emissive: new THREE.Color(0x0e0609),//0x542437
+      emissive: new THREE.Color(0x000000),//0x542437,0x0e0609
       roughness: 0,
       metalness: 0
     },
