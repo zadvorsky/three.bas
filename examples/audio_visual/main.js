@@ -1,6 +1,7 @@
 // soundcloud api
 var SC_ID = 'ba47209edc0a4c129a460a936fb4e9f2';
-var TRACK_URL = 'https://soundcloud.com/longarms/starpower';
+// var TRACK_URL = 'https://soundcloud.com/longarms/starpower';
+var TRACK_URL = 'https://soundcloud.com/nicolas-jaar/flashy-flashy';
 
 SC.initialize({
   client_id: SC_ID
@@ -14,7 +15,7 @@ function init() {
     alpha: false
   });
   root.renderer.setClearColor(0x000000);//0x0e0609
-  root.camera.position.set(0, 600, 0);
+  root.camera.position.set(0, 560, 0);
   
   var bloomPass = new THREE.BloomPass(4.0, 25, 4, 512);
   var copyPass = new THREE.ShaderPass(THREE.CopyShader);
@@ -27,7 +28,7 @@ function init() {
   // root.controls.autoRotate = true;
   var lightColor = new THREE.Color();
 
-  lightColor.setHSL(0.00, 0.5, 0.75);
+  lightColor.setHSL(0.00, 1.0, 0.5);
   var centerLight = new THREE.PointLight(lightColor, 0, 600, 2);//0xECD078
   root.add(centerLight);
 
@@ -41,6 +42,7 @@ function init() {
   bottomLight.position.set(0, -1, 0);
   root.add(bottomLight);
 
+  // generate spline
   var pointCount = 32;
   var points = [];
   var radius = 300;
@@ -63,16 +65,16 @@ function init() {
   }
 
   var animation = new Animation(points);
-  root.add(animation);
-
   var tween = animation.animate(24.0, {ease: Power0.easeInOut, repeat:-1});
+
+  root.add(animation);
 
   // audio
 
   var audioInput = document.getElementById('audioInput');
   audioInput.value = TRACK_URL;
   audioInput.addEventListener('input', function() {
-    audioInput.value && getTrack(audioInput.value);
+    audioInput.value && (audioInput.value.indexOf('http') == 0) && getTrack(audioInput.value);
   });
 
   var audioElement = document.getElementById('player');
@@ -115,6 +117,8 @@ function init() {
   }
   getTrack(TRACK_URL);
 
+  // VISUALISER UPDATE LOOP
+
   root.addUpdateCallback(function() {
     analyzer.updateSample();
 
@@ -149,9 +153,9 @@ function init() {
       p.w = data[i] / 255 * maxW + 20;
     }
 
-    animation.rotation.x += 0.005;
-    animation.rotation.y += 0.005;
-    animation.rotation.z += 0.005;
+    animation.rotation.x += 0.01 * avgLL;
+    animation.rotation.y += 0.01 * avgML;
+    animation.rotation.z += 0.01 * avgMH;
 
     centerLight.color.offsetHSL(0.001, 0, 0);
     topLight.color.offsetHSL(0.001, 0, 0);
@@ -164,8 +168,8 @@ function init() {
 ////////////////////
 
 function Animation(path) {
-  var prefabGeometry = new THREE.PlaneGeometry(4, 1.0, 1, 8);
-  var prefabCount = 10000;
+  var prefabGeometry = new THREE.PlaneGeometry(2, 1.0, 1, 8);
+  var prefabCount = 20000;
   var geometry = new THREE.BAS.PrefabBufferGeometry(prefabGeometry, prefabCount);
 
   // ANIMATION
@@ -196,16 +200,8 @@ function Animation(path) {
   // COLOR
 
   var color = new THREE.Color();
-  // var colors = [
-  //   '#ECD078',
-  //   '#D95B43',
-  //   '#C02942',
-  //   '#27111a',
-  //   '#53777A'
-  // ];
 
   geometry.createAttribute('color', 3, function(data, i, count) {
-    // color.set(colors[i % colors.length]);
     var l = Math.random();
     color.setRGB(l, l, l);
     color.toArray(data);
