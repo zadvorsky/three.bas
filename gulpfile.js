@@ -8,6 +8,7 @@ var data = require('gulp-data');
 var fs = require('fs');
 var shell = require('gulp-shell');
 var jsdoc = require("gulp-jsdoc3");
+var uglify = require('gulp-uglify');
 
 var glslSourceDir = './src/glsl';
 var glslTemplate = './src/ShaderChunk.template';
@@ -25,13 +26,20 @@ gulp.task('build-js', function (callback) {
     .pipe(gulp.dest('./dist'));
 });
 
-
 gulp.task('build-glsl', function () {
   return gulp.src(glslTemplate)
     .pipe(data(getFileContents(glslSourceDir)))
     .pipe(template())
     .pipe(rename('ShaderChunk.js'))
     .pipe(gulp.dest(glslDestDir));
+});
+
+gulp.task('build-minify', ['build-glsl'], function() {
+  return gulp.src(jsSources)
+    .pipe(concat('bas.js'))
+    .pipe(uglify())
+    .pipe(rename('bas.min.js'))
+    .pipe(gulp.dest('./dist'));
 });
 
 gulp.task('watch-glsl', function() {
