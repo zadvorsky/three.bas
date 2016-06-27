@@ -1,26 +1,27 @@
-THREE.BAS.PrefabBufferGeometry = function (prefab, count) {
+/**
+ * A THREE.BufferGeometry where a 'prefab' geometry is repeated a number of times.
+ *
+ * @param {THREE.Geometry} prefab The THREE.Geometry instance to repeat.
+ * @param {int} count The number of times to repeat the geometry.
+ * @constructor
+ */
+THREE.BAS.PrefabBufferGeometry = function(prefab, count) {
   THREE.BufferGeometry.call(this);
 
   this.prefabGeometry = prefab;
   this.prefabCount = count;
   this.prefabVertexCount = prefab.vertices.length;
 
-  this.bufferDefaults();
+  this.bufferIndices();
+  this.bufferPositions();
 };
 THREE.BAS.PrefabBufferGeometry.prototype = Object.create(THREE.BufferGeometry.prototype);
 THREE.BAS.PrefabBufferGeometry.prototype.constructor = THREE.BAS.PrefabBufferGeometry;
 
-THREE.BAS.PrefabBufferGeometry.prototype.bufferDefaults = function () {
+THREE.BAS.PrefabBufferGeometry.prototype.bufferIndices = function() {
   var prefabFaceCount = this.prefabGeometry.faces.length;
   var prefabIndexCount = this.prefabGeometry.faces.length * 3;
-  var prefabVertexCount = this.prefabVertexCount = this.prefabGeometry.vertices.length;
   var prefabIndices = [];
-
-  //console.log('prefabCount', this.prefabCount);
-  //console.log('prefabFaceCount', prefabFaceCount);
-  //console.log('prefabIndexCount', prefabIndexCount);
-  //console.log('prefabVertexCount', prefabVertexCount);
-  //console.log('triangles', prefabFaceCount * this.prefabCount);
 
   for (var h = 0; h < prefabFaceCount; h++) {
     var face = this.prefabGeometry.faces[h];
@@ -28,27 +29,33 @@ THREE.BAS.PrefabBufferGeometry.prototype.bufferDefaults = function () {
   }
 
   var indexBuffer = new Uint32Array(this.prefabCount * prefabIndexCount);
-  var positionBuffer = new Float32Array(this.prefabCount * prefabVertexCount * 3);
 
   this.setIndex(new THREE.BufferAttribute(indexBuffer, 1));
-  this.addAttribute('position', new THREE.BufferAttribute(positionBuffer, 3));
+
+  for (var i = 0; i < this.prefabCount; i++) {
+    for (var k = 0; k < prefabIndexCount; k++) {
+      indexBuffer[i * prefabIndexCount + k] = prefabIndices[k] + i * this.prefabVertexCount;
+    }
+  }
+};
+
+THREE.BAS.PrefabBufferGeometry.prototype.bufferPositions = function() {
+  var positionBuffer = this.createAttribute('position', 3).array;
 
   for (var i = 0, offset = 0; i < this.prefabCount; i++) {
-    for (var j = 0; j < prefabVertexCount; j++, offset += 3) {
+    for (var j = 0; j < this.prefabVertexCount; j++, offset += 3) {
       var prefabVertex = this.prefabGeometry.vertices[j];
 
       positionBuffer[offset    ] = prefabVertex.x;
       positionBuffer[offset + 1] = prefabVertex.y;
       positionBuffer[offset + 2] = prefabVertex.z;
     }
-
-    for (var k = 0; k < prefabIndexCount; k++) {
-      indexBuffer[i * prefabIndexCount + k] = prefabIndices[k] + i * prefabVertexCount;
-    }
   }
 };
 
-// todo test
+/**
+ * Creates a THREE.BufferAttribute for UV coordinates.
+ */
 THREE.BAS.PrefabBufferGeometry.prototype.bufferUvs = function() {
   var prefabFaceCount = this.prefabGeometry.faces.length;
   var prefabVertexCount = this.prefabVertexCount = this.prefabGeometry.vertices.length;
@@ -76,126 +83,48 @@ THREE.BAS.PrefabBufferGeometry.prototype.bufferUvs = function() {
 };
 
 /**
- * based on BufferGeometry.computeVertexNormals
- * calculate vertex normals for a prefab, and repeat the data in the normal buffer
+ * Creates a THREE.BufferAttribute on this geometry instance.
+ *
+ * @param {String} name Name of the attribute.
+ * @param {int} itemSize Number of floats per vertex (typically 1, 2, 3 or 4).
+ * @param {function} factory Function that will be called for each prefab upon creation. Accepts 3 arguments: data[], index and prefabCount. Calls setPrefabData.
+ *
+ * @returns {THREE.BufferAttribute}
  */
-THREE.BAS.PrefabBufferGeometry.prototype.computeVertexNormals = function () {
-  var index = this.index;
-  var attributes = this.attributes;
-  var positions = attributes.position.array;
-
-  if (attributes.normal === undefined) {
-    this.addAttribute('normal', new THREE.BufferAttribute(new Float32Array(positions.length), 3));
-  }
-
-  var normals = attributes.normal.array;
-
-  var vA, vB, vC,
-
-  pA = new THREE.Vector3(),
-  pB = new THREE.Vector3(),
-  pC = new THREE.Vector3(),
-
-  cb = new THREE.Vector3(),
-  ab = new THREE.Vector3();
-
-  var indices = index.array;
-  var prefabIndexCount = this.prefabGeometry.faces.length * 3;
-
-  for (var i = 0; i < prefabIndexCount; i += 3) {
-    vA = indices[i + 0] * 3;
-    vB = indices[i + 1] * 3;
-    vC = indices[i + 2] * 3;
-
-    pA.fromArray(positions, vA);
-    pB.fromArray(positions, vB);
-    pC.fromArray(positions, vC);
-
-    cb.subVectors(pC, pB);
-    ab.subVectors(pA, pB);
-    cb.cross(ab);
-
-    normals[vA] += cb.x;
-    normals[vA + 1] += cb.y;
-    normals[vA + 2] += cb.z;
-
-    normals[vB] += cb.x;
-    normals[vB + 1] += cb.y;
-    normals[vB + 2] += cb.z;
-
-    normals[vC] += cb.x;
-    normals[vC + 1] += cb.y;
-    normals[vC + 2] += cb.z;
-  }
-
-  for (var j = 1; j < this.prefabCount; j++) {
-    for (var k = 0; k < prefabIndexCount; k++) {
-      normals[j * prefabIndexCount + k] = normals[k];
-    }
-  }
-
-  this.normalizeNormals();
-
-  attributes.normal.needsUpdate = true;
-};
-
-THREE.BAS.PrefabBufferGeometry.prototype.createAttribute = function (name, itemSize) {
+THREE.BAS.PrefabBufferGeometry.prototype.createAttribute = function(name, itemSize, factory) {
   var buffer = new Float32Array(this.prefabCount * this.prefabVertexCount * itemSize);
   var attribute = new THREE.BufferAttribute(buffer, itemSize);
 
   this.addAttribute(name, attribute);
 
+  if (factory) {
+    var data = [];
+
+    for (var i = 0; i < this.prefabCount; i++) {
+      factory(data, i, this.prefabCount);
+      this.setPrefabData(attribute, i, data);
+    }
+  }
+
   return attribute;
 };
 
-THREE.BAS.PrefabBufferGeometry.prototype.setAttribute4 = function (name, data) {
-  var offset = 0;
-  var array = this.geometry.attributes[name].array;
-  var i, j;
+/**
+ * Sets data for all vertices of a prefab at a given index.
+ * Usually called in a loop.
+ *
+ * @param {String|THREE.BufferAttribute} attribute The attribute or attribute name where the data is to be stored.
+ * @param {int} prefabIndex Index of the prefab in the buffer geometry.
+ * @param {Array} data Array of data. Length should be equal to item size of the attribute.
+ */
+THREE.BAS.PrefabBufferGeometry.prototype.setPrefabData = function(attribute, prefabIndex, data) {
+  attribute = (typeof attribute === 'string') ? this.attributes[attribute] : attribute;
 
-  for (i = 0; i < data.length; i++) {
-    var v = data[i];
+  var offset = prefabIndex * this.prefabVertexCount * attribute.itemSize;
 
-    for (j = 0; j < this.prefabVertexCount; j++) {
-      array[offset++] = v.x;
-      array[offset++] = v.y;
-      array[offset++] = v.z;
-      array[offset++] = v.w;
+  for (var i = 0; i < this.prefabVertexCount; i++) {
+    for (var j = 0; j < attribute.itemSize; j++) {
+      attribute.array[offset++] = data[j];
     }
   }
-
-  this.geometry.attributes[name].needsUpdate = true;
-};
-THREE.BAS.PrefabBufferGeometry.prototype.setAttribute3 = function (name, data) {
-  var offset = 0;
-  var array = this.geometry.attributes[name].array;
-  var i, j;
-
-  for (i = 0; i < data.length; i++) {
-    var v = data[i];
-
-    for (j = 0; j < this.prefabVertexCount; j++) {
-      array[offset++] = v.x;
-      array[offset++] = v.y;
-      array[offset++] = v.z;
-    }
-  }
-
-  this.geometry.attributes[name].needsUpdate = true;
-};
-THREE.BAS.PrefabBufferGeometry.prototype.setAttribute2 = function (name, data) {
-  var offset = 0;
-  var array = this.geometry.attributes[name].array;
-  var i, j;
-
-  for (i = 0; i < this.prefabCount; i++) {
-    var v = data[i];
-
-    for (j = 0; j < this.prefabVertexCount; j++) {
-      array[offset++] = v.x;
-      array[offset++] = v.y;
-    }
-  }
-
-  this.geometry.attributes[name].needsUpdate = true;
 };
