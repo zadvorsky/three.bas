@@ -1,4 +1,13 @@
+/**
+ * Collection of utility functions.
+ */
 THREE.BAS.Utils = {
+  /**
+   * Duplicates vertices so each face becomes separate.
+   * Same as THREE.ExplodeModifier.
+   *
+   * @param {THREE.Geometry} geometry Geometry instance to modify.
+   */
   separateFaces: function (geometry) {
     var vertices = [];
 
@@ -26,6 +35,14 @@ THREE.BAS.Utils = {
     geometry.vertices = vertices;
   },
 
+  /**
+   * Compute the centroid (center) of a THREE.Face3.
+   *
+   * @param {THREE.Geometry} geometry Geometry instance the face is in.
+   * @param {THREE.Face3} face Face object from the THREE.Geometry.faces array
+   * @param {THREE.Vector3} v Optional vector to store result in.
+   * @returns {THREE.Vector3}
+   */
   computeCentroid: function(geometry, face, v) {
     var a = geometry.vertices[face.a];
     var b = geometry.vertices[face.b];
@@ -40,6 +57,13 @@ THREE.BAS.Utils = {
     return v;
   },
 
+  /**
+   * Get a random vector between box.min and box.max.
+   *
+   * @param {THREE.Box3} box THREE.Box3 instance.
+   * @param {THREE.Vector3} v Optional vector to store result in.
+   * @returns {*|THREE.Vector3}
+   */
   randomInBox: function(box, v) {
     v = v || new THREE.Vector3();
 
@@ -50,6 +74,15 @@ THREE.BAS.Utils = {
     return v;
   },
 
+  /**
+   * Create a THREE.BAS.DepthAnimationMaterial for shadows from a THREE.SpotLight or THREE.DirectionalLight by copying relevant shader chunks.
+   * Uniform values must be manually synced between the source material and the depth material.
+   *
+   * @see {@link http://three-bas-examples.surge.sh/examples/shadows/}
+   *
+   * @param {THREE.BAS.BaseAnimationMaterial} sourceMaterial. Instance to get the shader chunks from.
+   * @returns {THREE.BAS.DepthAnimationMaterial}
+   */
   createDepthAnimationMaterial: function(sourceMaterial) {
     // todo morph & skinning support
     return new THREE.BAS.DepthAnimationMaterial({
@@ -61,6 +94,15 @@ THREE.BAS.Utils = {
     });
   },
 
+  /**
+   * Create a THREE.BAS.DistanceAnimationMaterial for shadows from a THREE.PointLight by copying relevant shader chunks.
+   * Uniform values must be manually synced between the source material and the distance material.
+   *
+   * @see {@link http://three-bas-examples.surge.sh/examples/shadows/}
+   *
+   * @param {THREE.BAS.BaseAnimationMaterial} sourceMaterial. Instance to get the shader chunks from.
+   * @returns {THREE.BAS.DepthAnimationMaterial}
+   */
   createDistanceAnimationMaterial: function(sourceMaterial) {
     // todo morph & skinning support
     return new THREE.BAS.DistanceAnimationMaterial({

@@ -1,3 +1,11 @@
+/**
+ * Extends THREE.MeshPhongMaterial with custom shader chunks.
+ *
+ * @see http://three-bas-examples.surge.sh/examples/materials_phong/
+ *
+ * @param {Object} parameters Object containing material properties and custom shader chunks.
+ * @constructor
+ */
 THREE.BAS.PhongAnimationMaterial = function (parameters) {
   this.varyingParameters = [];
 

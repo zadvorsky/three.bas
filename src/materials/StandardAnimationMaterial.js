@@ -1,3 +1,11 @@
+/**
+ * Extends THREE.MeshStandardMaterial with custom shader chunks.
+ *
+ * @see http://three-bas-examples.surge.sh/examples/materials_standard/
+ *
+ * @param {Object} parameters Object containing material properties and custom shader chunks.
+ * @constructor
+ */
 THREE.BAS.StandardAnimationMaterial = function (parameters) {
   this.varyingParameters = [];
 

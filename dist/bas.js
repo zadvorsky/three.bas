@@ -71,7 +71,16 @@ THREE.BAS.ShaderChunk["ease_sine_out"] = "float easeSineOut(float p) {\n  return
 THREE.BAS.ShaderChunk["quaternion_rotation"] = "vec3 rotateVector(vec4 q, vec3 v)\n{\n    return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);\n}\n\nvec4 quatFromAxisAngle(vec3 axis, float angle)\n{\n    float halfAngle = angle * 0.5;\n    return vec4(axis.xyz * sin(halfAngle), cos(halfAngle));\n}\n";
 
 
+/**
+ * Collection of utility functions.
+ */
 THREE.BAS.Utils = {
+  /**
+   * Duplicates vertices so each face becomes separate.
+   * Same as THREE.ExplodeModifier.
+   *
+   * @param {THREE.Geometry} geometry Geometry instance to modify.
+   */
   separateFaces: function (geometry) {
     var vertices = [];
 
@@ -99,6 +108,14 @@ THREE.BAS.Utils = {
     geometry.vertices = vertices;
   },
 
+  /**
+   * Compute the centroid (center) of a THREE.Face3.
+   *
+   * @param {THREE.Geometry} geometry Geometry instance the face is in.
+   * @param {THREE.Face3} face Face object from the THREE.Geometry.faces array
+   * @param {THREE.Vector3} v Optional vector to store result in.
+   * @returns {THREE.Vector3}
+   */
   computeCentroid: function(geometry, face, v) {
     var a = geometry.vertices[face.a];
     var b = geometry.vertices[face.b];
@@ -113,6 +130,13 @@ THREE.BAS.Utils = {
     return v;
   },
 
+  /**
+   * Get a random vector between box.min and box.max.
+   *
+   * @param {THREE.Box3} box THREE.Box3 instance.
+   * @param {THREE.Vector3} v Optional vector to store result in.
+   * @returns {*|THREE.Vector3}
+   */
   randomInBox: function(box, v) {
     v = v || new THREE.Vector3();
 
@@ -123,6 +147,15 @@ THREE.BAS.Utils = {
     return v;
   },
 
+  /**
+   * Create a THREE.BAS.DepthAnimationMaterial for shadows from a THREE.SpotLight or THREE.DirectionalLight by copying relevant shader chunks.
+   * Uniform values must be manually synced between the source material and the depth material.
+   *
+   * @see {@link http://three-bas-examples.surge.sh/examples/shadows/}
+   *
+   * @param {THREE.BAS.BaseAnimationMaterial} sourceMaterial. Instance to get the shader chunks from.
+   * @returns {THREE.BAS.DepthAnimationMaterial}
+   */
   createDepthAnimationMaterial: function(sourceMaterial) {
     // todo morph & skinning support
     return new THREE.BAS.DepthAnimationMaterial({
@@ -134,6 +167,15 @@ THREE.BAS.Utils = {
     });
   },
 
+  /**
+   * Create a THREE.BAS.DistanceAnimationMaterial for shadows from a THREE.PointLight by copying relevant shader chunks.
+   * Uniform values must be manually synced between the source material and the distance material.
+   *
+   * @see {@link http://three-bas-examples.surge.sh/examples/shadows/}
+   *
+   * @param {THREE.BAS.BaseAnimationMaterial} sourceMaterial. Instance to get the shader chunks from.
+   * @returns {THREE.BAS.DepthAnimationMaterial}
+   */
   createDistanceAnimationMaterial: function(sourceMaterial) {
     // todo morph & skinning support
     return new THREE.BAS.DistanceAnimationMaterial({
@@ -217,9 +259,10 @@ THREE.BAS.ModelBufferGeometry.prototype.createAttribute = function (name, itemSi
 };
 
 /**
- * A THREE.BufferGeometry where a 'prefab' geometry is repeated a number of times
- * @param prefab the THREE.Geometry instance to repeat
- * @param count the number of times to repeat it
+ * A THREE.BufferGeometry where a 'prefab' geometry is repeated a number of times.
+ *
+ * @param {THREE.Geometry} prefab The THREE.Geometry instance to repeat.
+ * @param {int} count The number of times to repeat the geometry.
  * @constructor
  */
 THREE.BAS.PrefabBufferGeometry = function(prefab, count) {
@@ -270,6 +313,9 @@ THREE.BAS.PrefabBufferGeometry.prototype.bufferPositions = function() {
   }
 };
 
+/**
+ * Creates a THREE.BufferAttribute for UV coordinates.
+ */
 THREE.BAS.PrefabBufferGeometry.prototype.bufferUvs = function() {
   var prefabFaceCount = this.prefabGeometry.faces.length;
   var prefabVertexCount = this.prefabVertexCount = this.prefabGeometry.vertices.length;
@@ -298,9 +344,11 @@ THREE.BAS.PrefabBufferGeometry.prototype.bufferUvs = function() {
 
 /**
  * Creates a THREE.BufferAttribute on this geometry instance.
- * @param name Name of the attribute.
- * @param itemSize Size of each item.
- * @param factory function that will be called for each prefab. Accepts 3 arguments: data[], index and prefabCount.
+ *
+ * @param {String} name Name of the attribute.
+ * @param {int} itemSize Number of floats per vertex (typically 1, 2, 3 or 4).
+ * @param {function} factory Function that will be called for each prefab upon creation. Accepts 3 arguments: data[], index and prefabCount. Calls setPrefabData.
+ *
  * @returns {THREE.BufferAttribute}
  */
 THREE.BAS.PrefabBufferGeometry.prototype.createAttribute = function(name, itemSize, factory) {
@@ -324,9 +372,10 @@ THREE.BAS.PrefabBufferGeometry.prototype.createAttribute = function(name, itemSi
 /**
  * Sets data for all vertices of a prefab at a given index.
  * Usually called in a loop.
- * @param attribute The attribute or attribute name where data is to be stored.
- * @param prefabIndex Index of the prefab in the buffer geometry.
- * @param data Array of data. Length should be equal to item size of the attribute.
+ *
+ * @param {String|THREE.BufferAttribute} attribute The attribute or attribute name where the data is to be stored.
+ * @param {int} prefabIndex Index of the prefab in the buffer geometry.
+ * @param {Array} data Array of data. Length should be equal to item size of the attribute.
  */
 THREE.BAS.PrefabBufferGeometry.prototype.setPrefabData = function(attribute, prefabIndex, data) {
   attribute = (typeof attribute === 'string') ? this.attributes[attribute] : attribute;
@@ -437,6 +486,14 @@ THREE.BAS.BaseAnimationMaterial.prototype._stringifyChunk = function(name) {
   return this[name] ? (this[name].join('\n')) : '';
 };
 
+/**
+ * Extends THREE.MeshBasicMaterial with custom shader chunks.
+ *
+ * @see http://three-bas-examples.surge.sh/examples/materials_basic/
+ *
+ * @param {Object} parameters Object containing material properties and custom shader chunks.
+ * @constructor
+ */
 THREE.BAS.BasicAnimationMaterial = function(parameters) {
   this.varyingParameters = [];
 
@@ -705,6 +762,14 @@ THREE.BAS.DistanceAnimationMaterial.prototype._concatVertexShader = function () 
   ].join('\n');
 };
 
+/**
+ * Extends THREE.MeshPhongMaterial with custom shader chunks.
+ *
+ * @see http://three-bas-examples.surge.sh/examples/materials_phong/
+ *
+ * @param {Object} parameters Object containing material properties and custom shader chunks.
+ * @constructor
+ */
 THREE.BAS.PhongAnimationMaterial = function (parameters) {
   this.varyingParameters = [];
 
@@ -896,6 +961,14 @@ THREE.BAS.PhongAnimationMaterial.prototype._concatFragmentShader = function () {
   ].join("\n")
 };
 
+/**
+ * Extends THREE.MeshStandardMaterial with custom shader chunks.
+ *
+ * @see http://three-bas-examples.surge.sh/examples/materials_standard/
+ *
+ * @param {Object} parameters Object containing material properties and custom shader chunks.
+ * @constructor
+ */
 THREE.BAS.StandardAnimationMaterial = function (parameters) {
   this.varyingParameters = [];
 

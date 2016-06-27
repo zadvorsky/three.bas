@@ -7,6 +7,7 @@ var template = require('gulp-template');
 var data = require('gulp-data');
 var fs = require('fs');
 var shell = require('gulp-shell');
+var jsdoc = require("gulp-jsdoc3");
 
 var glslSourceDir = './src/glsl';
 var glslTemplate = './src/ShaderChunk.template';
@@ -62,11 +63,21 @@ gulp.task('deploy', ['build-glsl', 'build-js'], shell.task([
   'surge ./ --domain three-bas-examples.surge.sh'
 ]));
 
+gulp.task('local', shell.task([
+  'live-server'
+]));
+
+gulp.task('doc', function(){
+  gulp.src(['./src/**/*.js'], {})
+    .pipe(jsdoc())
+});
+
 gulp.task('default', [
   'build-glsl',
   'build-js',
   'watch-glsl',
-  'watch-js'
+  'watch-js',
+  'local'
 ]);
 
 function getFileContents(basePath) {
