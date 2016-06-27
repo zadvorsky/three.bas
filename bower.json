@@ -1,16 +1,23 @@
 {
-  "name": "three_bas",
-  "version": "0.0.0",
+  "name": "three-bas",
   "authors": [
     "szenia <s.zadvornykh@gmail.com>"
   ],
-  "description": "THREE.js Buffer Animation System",
+  "description": "THREE.js extension for shader animation.",
+  "moduleType": [
+    "globals"
+  ],
+  "homepage": "https://github.com/zadvorsky/three.bas",
+  "repository": "https://github.com/zadvorsky/three.bas",
   "license": "MIT",
   "ignore": [
     "**/.*",
     "node_modules",
     "bower_components",
     "test",
+    "docs",
+    "examples",
+    "src",
     "tests"
   ],
   "dependencies": {
