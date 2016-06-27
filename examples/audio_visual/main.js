@@ -1,7 +1,7 @@
 // soundcloud api
 var SC_ID = 'ba47209edc0a4c129a460a936fb4e9f2';
-// var TRACK_URL = 'https://soundcloud.com/longarms/starpower';
-var TRACK_URL = 'https://soundcloud.com/nicolas-jaar/flashy-flashy';
+var TRACK_URL = 'https://soundcloud.com/longarms/starpower';
+//var TRACK_URL = 'https://soundcloud.com/nicolas-jaar/flashy-flashy';
 
 SC.initialize({
   client_id: SC_ID
@@ -131,8 +131,6 @@ function init() {
     var avgMH = analyzer.getAverageFloat(16, 24);
     var avgHH = analyzer.getAverageFloat(24, 32);
 
-    console.log(avgLL, avgML, avgMH, avgHH);
-
     animation.material.uniforms.roughness.value =     mapEase(Power2.easeInOut, avgLL, 0.0, 1.0, 0/5, 1.0);
     animation.material.uniforms.metalness.value =     mapEase(Power2.easeInOut, avgML, 0.0, 1.0, 0.0, 0.5);
     animation.material.uniforms.uGlobalPivot.value =  mapEase(Power4.easeOut, avgHH, 0.0, 1.0, 2.0, 0.125);
@@ -168,8 +166,8 @@ function init() {
 ////////////////////
 
 function Animation(path) {
-  var prefabGeometry = new THREE.PlaneGeometry(2, 1.0, 1, 8);
-  var prefabCount = 20000;
+  var prefabGeometry = new THREE.PlaneGeometry(4, 1.0, 1, 8);
+  var prefabCount = 10000;
   var geometry = new THREE.BAS.PrefabBufferGeometry(prefabGeometry, prefabCount);
 
   // ANIMATION
