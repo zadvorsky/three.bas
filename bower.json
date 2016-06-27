@@ -18,7 +18,9 @@
     "docs",
     "examples",
     "src",
-    "tests"
+    "tests",
+    "index.html",
+    "gulpfile.js"
   ],
   "dependencies": {
     "three.js": "threejs#*"
