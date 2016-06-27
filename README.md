@@ -8,3 +8,9 @@ The two building blocks of this approach are THREE.BufferGeometry and THREE.Shad
 While this approach is more cumbersome to work with, it provides a significant performance boost both on desktop and mobile. It has been used in award winning projects such as [Cavalier Challenge](https://cavalierchallenge.com/) and [DS Signature Art](https://ds-signatureart.com/).
 
 See [examples](http://three-bas-examples.surge.sh/), [documentation](http://three-bas-examples.surge.sh/docs/gen/) and the wiki for more information.
+
+## Usage
+
+Include `dist/bas.js` or `dist/bas.min.js` in your project. A bower package is also available:
+
+    $ bower install three-bas
