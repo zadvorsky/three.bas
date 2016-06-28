@@ -58,32 +58,11 @@ function Slide(width, height, animationPhase) {
 
   geometry.bufferUVs();
 
-  var tempPoint = new THREE.Vector3();
-
-  function getControlPoint0(centroid) {
-    var signY = Math.sign(centroid.y);
-
-    tempPoint.x = THREE.Math.randFloat(0.1, 0.3) * 50;
-    tempPoint.y = signY * THREE.Math.randFloat(0.1, 0.3) * 70;
-    tempPoint.z = THREE.Math.randFloatSpread(20);
-
-    return tempPoint;
-  }
-
-  function getControlPoint1(centroid) {
-    var signY = Math.sign(centroid.y);
-
-    tempPoint.x = THREE.Math.randFloat(0.3, 0.6) * 50;
-    tempPoint.y = -signY * THREE.Math.randFloat(0.3, 0.6) * 70;
-    tempPoint.z = THREE.Math.randFloatSpread(20);
-
-    return tempPoint;
-  }
+  var i, j, offset, centroid;
 
   // ANIMATION
 
   var aAnimation = geometry.createAttribute('aAnimation', 2);
-
   var minDuration = 0.8;
   var maxDuration = 1.2;
   var maxDelayX = 0.9;
@@ -91,8 +70,6 @@ function Slide(width, height, animationPhase) {
   var stretch = 0.11;
 
   this.totalDuration = maxDuration + maxDelayX + maxDelayY + stretch;
-
-  var i, j, offset, centroid;
 
   for (i = 0, offset = 0; i < geometry.faceCount; i++) {
     centroid = geometry.centroids[i];
@@ -138,13 +115,23 @@ function Slide(width, height, animationPhase) {
   for (i = 0, offset = 0; i < geometry.faceCount; i++) {
     centroid = geometry.centroids[i];
 
+    var signY = Math.sign(centroid.y);
+
+    control0.x = THREE.Math.randFloat(0.1, 0.3) * 50;
+    control0.y = signY * THREE.Math.randFloat(0.1, 0.3) * 50;
+    control0.z = THREE.Math.randFloatSpread(20);
+
+    control1.x = THREE.Math.randFloat(0.3, 0.6) * 50;
+    control1.y = -signY * THREE.Math.randFloat(0.3, 0.6) * 70;
+    control1.z = THREE.Math.randFloatSpread(20);
+
     if (animationPhase === 'in') {
-      control0.copy(centroid).add(getControlPoint0(centroid));
-      control1.copy(centroid).add(getControlPoint1(centroid));
+      control0.subVectors(centroid, control0);
+      control1.subVectors(centroid, control1);
     }
     else { // out
-      control0.copy(centroid).add(getControlPoint0(centroid));
-      control1.copy(centroid).add(getControlPoint1(centroid));
+      control0.addVectors(centroid, control0);
+      control1.addVectors(centroid, control1);
     }
 
     geometry.setFaceData(aControl0, i, control0.toArray(data));
@@ -165,7 +152,6 @@ function Slide(width, height, animationPhase) {
     },
     vertexFunctions: [
       THREE.BAS.ShaderChunk['cubic_bezier'],
-      //THREE.BAS.ShaderChunk[(animationPhase === 'in' ? 'ease_out_cubic' : 'ease_in_cubic')],
       THREE.BAS.ShaderChunk['ease_cubic_in_out'],
       THREE.BAS.ShaderChunk['quaternion_rotation']
     ],
@@ -175,14 +161,13 @@ function Slide(width, height, animationPhase) {
       'attribute vec3 aStartPosition;',
       'attribute vec3 aControl0;',
       'attribute vec3 aControl1;',
-      'attribute vec3 aEndPosition;',
+      'attribute vec3 aEndPosition;'
     ],
     vertexInit: [
       'float tDelay = aAnimation.x;',
       'float tDuration = aAnimation.y;',
       'float tTime = clamp(uTime - tDelay, 0.0, tDuration);',
       'float tProgress = easeCubicInOut(tTime, 0.0, 1.0, tDuration);'
-      //'float tProgress = tTime / tDuration;'
     ],
     vertexPosition: [
       (animationPhase === 'in' ? 'transformed *= tProgress;' : 'transformed *= 1.0 - tProgress;'),
