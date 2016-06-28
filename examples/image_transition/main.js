@@ -2,9 +2,10 @@ window.onload = init;
 
 function init() {
   var root = new THREERoot({
-    fov: 80
+    fov: 80,
+    createCameraControls: false
   });
-  root.renderer.setClearColor(0xffffff, 1);
+  root.renderer.setClearColor(0x000000);
   root.camera.position.set(0, 0, 60);
 
   var light = new THREE.DirectionalLight();
@@ -34,6 +35,7 @@ function init() {
   tl.add(slide2.transition(), 0);
 
   //createTweenScrubber(tl);
+  new TweenScrubber(tl);
 
   window.addEventListener('keyup', function(e) {
     if (e.keyCode === 80) {
@@ -122,7 +124,7 @@ function Slide(width, height, animationPhase) {
     control0.z = THREE.Math.randFloatSpread(20);
 
     control1.x = THREE.Math.randFloat(0.3, 0.6) * 50;
-    control1.y = -signY * THREE.Math.randFloat(0.3, 0.6) * 70;
+    control1.y = -signY * THREE.Math.randFloat(0.3, 0.6) * 50;
     control1.z = THREE.Math.randFloatSpread(20);
 
     if (animationPhase === 'in') {
