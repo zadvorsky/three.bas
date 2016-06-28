@@ -1,8 +1,31 @@
-THREE.BAS.ModelBufferGeometry = function (model, options) {
+/**
+ * A THREE.BufferGeometry for animating individual faces of a THREE.Geometry.
+ *
+ * @param {THREE.Geometry} model The THREE.Geometry to base this geometry on.
+ * @param {Object} options
+ * @param {Boolean} options.computeCentroids If true, a centroids will be computed for each face and stored in THREE.BAS.ModelBufferGeometry.centroids.
+ * @param {Boolean} options.localizeFaces If true, the positions for each face will be stored relative to the centroid. This is useful if you want to rotate or scale faces around their center.
+ * @constructor
+ */
+THREE.BAS.ModelBufferGeometry = function(model, options) {
   THREE.BufferGeometry.call(this);
 
+  /**
+   * A reference to the geometry used to create this instance.
+   * @type {THREE.Geometry}
+   */
   this.modelGeometry = model;
+
+  /**
+   * Number of faces of the model.
+   * @type {Number}
+   */
   this.faceCount = this.modelGeometry.faces.length;
+
+  /**
+   * Number of vertices of the model.
+   * @type {Number}
+   */
   this.vertexCount = this.modelGeometry.vertices.length;
 
   options = options || {};
@@ -14,7 +37,15 @@ THREE.BAS.ModelBufferGeometry = function (model, options) {
 THREE.BAS.ModelBufferGeometry.prototype = Object.create(THREE.BufferGeometry.prototype);
 THREE.BAS.ModelBufferGeometry.prototype.constructor = THREE.BAS.ModelBufferGeometry;
 
+/**
+ * Computes a centroid for each face and stores it in THREE.BAS.ModelBufferGeometry.centroids.
+ */
 THREE.BAS.ModelBufferGeometry.prototype.computeCentroids = function() {
+  /**
+   * An array of centroids corresponding to the faces of the model.
+   *
+   * @type {Array}
+   */
   this.centroids = [];
 
   for (var i = 0; i < this.faceCount; i++) {
@@ -73,6 +104,9 @@ THREE.BAS.ModelBufferGeometry.prototype.bufferPositions = function(localizeFaces
   }
 };
 
+/**
+ * Creates a THREE.BufferAttribute with UV coordinates.
+ */
 THREE.BAS.ModelBufferGeometry.prototype.bufferUVs = function() {
   var uvBuffer = this.createAttribute('uv', 2).array;
 
@@ -95,6 +129,15 @@ THREE.BAS.ModelBufferGeometry.prototype.bufferUVs = function() {
   }
 };
 
+/**
+ * Creates a THREE.BufferAttribute on this geometry instance.
+ *
+ * @param {String} name Name of the attribute.
+ * @param {int} itemSize Number of floats per vertex (typically 1, 2, 3 or 4).
+ * @param {function} factory Function that will be called for each face upon creation. Accepts 3 arguments: data[], index and faceCount. Calls setFaceData.
+ *
+ * @returns {THREE.BufferAttribute}
+ */
 THREE.BAS.ModelBufferGeometry.prototype.createAttribute = function(name, itemSize, factory) {
   var buffer = new Float32Array(this.vertexCount * itemSize);
   var attribute = new THREE.BufferAttribute(buffer, itemSize);
@@ -113,6 +156,14 @@ THREE.BAS.ModelBufferGeometry.prototype.createAttribute = function(name, itemSiz
   return attribute;
 };
 
+/**
+ * Sets data for all vertices of a face at a given index.
+ * Usually called in a loop.
+ *
+ * @param {String|THREE.BufferAttribute} attribute The attribute or attribute name where the data is to be stored.
+ * @param {int} faceIndex Index of the face in the buffer geometry.
+ * @param {Array} data Array of data. Length should be equal to item size of the attribute.
+ */
 THREE.BAS.ModelBufferGeometry.prototype.setFaceData = function(attribute, faceIndex, data) {
   attribute = (typeof attribute === 'string') ? this.attributes[attribute] : attribute;
 

@@ -2,14 +2,28 @@
  * A THREE.BufferGeometry where a 'prefab' geometry is repeated a number of times.
  *
  * @param {THREE.Geometry} prefab The THREE.Geometry instance to repeat.
- * @param {int} count The number of times to repeat the geometry.
+ * @param {Number} count The number of times to repeat the geometry.
  * @constructor
  */
 THREE.BAS.PrefabBufferGeometry = function(prefab, count) {
   THREE.BufferGeometry.call(this);
 
+  /**
+   * A reference to the prefab geometry used to create this instance.
+   * @type {THREE.Geometry}
+   */
   this.prefabGeometry = prefab;
+
+  /**
+   * Number of prefabs.
+   * @type {Number}
+   */
   this.prefabCount = count;
+
+  /**
+   * Number of vertices of the prefab.
+   * @type {Number}
+   */
   this.prefabVertexCount = prefab.vertices.length;
 
   this.bufferIndices();
@@ -54,7 +68,7 @@ THREE.BAS.PrefabBufferGeometry.prototype.bufferPositions = function() {
 };
 
 /**
- * Creates a THREE.BufferAttribute for UV coordinates.
+ * Creates a THREE.BufferAttribute with UV coordinates.
  */
 THREE.BAS.PrefabBufferGeometry.prototype.bufferUvs = function() {
   var prefabFaceCount = this.prefabGeometry.faces.length;
@@ -86,7 +100,7 @@ THREE.BAS.PrefabBufferGeometry.prototype.bufferUvs = function() {
  * Creates a THREE.BufferAttribute on this geometry instance.
  *
  * @param {String} name Name of the attribute.
- * @param {int} itemSize Number of floats per vertex (typically 1, 2, 3 or 4).
+ * @param {Number} itemSize Number of floats per vertex (typically 1, 2, 3 or 4).
  * @param {function} factory Function that will be called for each prefab upon creation. Accepts 3 arguments: data[], index and prefabCount. Calls setPrefabData.
  *
  * @returns {THREE.BufferAttribute}
@@ -114,7 +128,7 @@ THREE.BAS.PrefabBufferGeometry.prototype.createAttribute = function(name, itemSi
  * Usually called in a loop.
  *
  * @param {String|THREE.BufferAttribute} attribute The attribute or attribute name where the data is to be stored.
- * @param {int} prefabIndex Index of the prefab in the buffer geometry.
+ * @param {Number} prefabIndex Index of the prefab in the buffer geometry.
  * @param {Array} data Array of data. Length should be equal to item size of the attribute.
  */
 THREE.BAS.PrefabBufferGeometry.prototype.setPrefabData = function(attribute, prefabIndex, data) {

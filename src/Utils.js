@@ -1,5 +1,6 @@
 /**
  * Collection of utility functions.
+ * @namespace
  */
 THREE.BAS.Utils = {
   /**
@@ -80,11 +81,10 @@ THREE.BAS.Utils = {
    *
    * @see {@link http://three-bas-examples.surge.sh/examples/shadows/}
    *
-   * @param {THREE.BAS.BaseAnimationMaterial} sourceMaterial. Instance to get the shader chunks from.
+   * @param {THREE.BAS.BaseAnimationMaterial} sourceMaterial Instance to get the shader chunks from.
    * @returns {THREE.BAS.DepthAnimationMaterial}
    */
   createDepthAnimationMaterial: function(sourceMaterial) {
-    // todo morph & skinning support
     return new THREE.BAS.DepthAnimationMaterial({
       uniforms: sourceMaterial.uniforms,
       vertexFunctions: sourceMaterial.vertexFunctions,
@@ -100,11 +100,10 @@ THREE.BAS.Utils = {
    *
    * @see {@link http://three-bas-examples.surge.sh/examples/shadows/}
    *
-   * @param {THREE.BAS.BaseAnimationMaterial} sourceMaterial. Instance to get the shader chunks from.
-   * @returns {THREE.BAS.DepthAnimationMaterial}
+   * @param {THREE.BAS.BaseAnimationMaterial} sourceMaterial Instance to get the shader chunks from.
+   * @returns {THREE.BAS.DistanceAnimationMaterial}
    */
   createDistanceAnimationMaterial: function(sourceMaterial) {
-    // todo morph & skinning support
     return new THREE.BAS.DistanceAnimationMaterial({
       uniforms: sourceMaterial.uniforms,
       vertexFunctions: sourceMaterial.vertexFunctions,
