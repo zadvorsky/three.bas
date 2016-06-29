@@ -136,7 +136,7 @@ THREE.BAS.Utils = {
    *
    * @param {THREE.Box3} box THREE.Box3 instance.
    * @param {THREE.Vector3} v Optional vector to store result in.
-   * @returns {*|THREE.Vector3}
+   * @returns {THREE.Vector3}
    */
   randomInBox: function(box, v) {
     v = v || new THREE.Vector3();
@@ -144,6 +144,23 @@ THREE.BAS.Utils = {
     v.x = THREE.Math.randFloat(box.min.x, box.max.x);
     v.y = THREE.Math.randFloat(box.min.y, box.max.y);
     v.z = THREE.Math.randFloat(box.min.z, box.max.z);
+
+    return v;
+  },
+
+  /**
+   * Get a random axis for quaternion rotation.
+   *
+   * @param {THREE.Vector3} v Option vector to store result in.
+   * @returns {THREE.Vector3}
+   */
+  randomAxis: function(v) {
+    v = v || new THREE.Vector3();
+
+    v.x = THREE.Math.randFloatSpread(2.0);
+    v.y = THREE.Math.randFloatSpread(2.0);
+    v.z = THREE.Math.randFloatSpread(2.0);
+    v.normalize();
 
     return v;
   },
