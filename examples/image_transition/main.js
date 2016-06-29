@@ -5,7 +5,7 @@ function init() {
     fov: 80,
     createCameraControls: false
   });
-  root.renderer.setClearColor(0x000000);
+  root.renderer.setClearColor(0x666666);
   root.camera.position.set(0, 0, 60);
 
   var light = new THREE.DirectionalLight();
@@ -73,7 +73,7 @@ function Slide(width, height, animationPhase) {
 
   // ANIMATION
 
-  var aAnimation = geometry.createAttribute('aAnimation', 2);
+  var aDelayDuration = geometry.createAttribute('aDelayDuration', 2);
   // these will be used to calculate the animation delay and duration for each face
   var minDuration = 0.8;
   var maxDuration = 1.2;
@@ -103,8 +103,8 @@ function Slide(width, height, animationPhase) {
     // store the delay and duration FOR EACH VERTEX of the face
     for (j = 0; j < 3; j++) {
       // by giving each VERTEX a different delay value the face will be 'stretched' in time
-      aAnimation.array[offset]     = delayX + delayY + (Math.random() * stretch * duration);
-      aAnimation.array[offset + 1] = duration;
+      aDelayDuration.array[offset]     = delayX + delayY + (Math.random() * stretch * duration);
+      aDelayDuration.array[offset + 1] = duration;
 
       offset += 2;
     }
@@ -138,11 +138,11 @@ function Slide(width, height, animationPhase) {
     var signY = Math.sign(centroid.y);
 
     control0.x = THREE.Math.randFloat(0.1, 0.3) * 50;
-    control0.y = signY * THREE.Math.randFloat(0.1, 0.3) * 50;
+    control0.y = signY * THREE.Math.randFloat(0.1, 0.3) * 70;
     control0.z = THREE.Math.randFloatSpread(20);
 
     control1.x = THREE.Math.randFloat(0.3, 0.6) * 50;
-    control1.y = -signY * THREE.Math.randFloat(0.3, 0.6) * 50;
+    control1.y = -signY * THREE.Math.randFloat(0.3, 0.6) * 70;
     control1.z = THREE.Math.randFloatSpread(20);
 
     if (animationPhase === 'in') {
@@ -179,7 +179,7 @@ function Slide(width, height, animationPhase) {
     ],
     vertexParameters: [
       'uniform float uTime;',
-      'attribute vec2 aAnimation;',
+      'attribute vec2 aDelayDuration;',
       'attribute vec3 aStartPosition;',
       'attribute vec3 aControl0;',
       'attribute vec3 aControl1;',
@@ -219,5 +219,5 @@ Slide.prototype.setImage = function(image) {
 };
 
 Slide.prototype.transition = function() {
-  return TweenMax.fromTo(this, 5.0, {time:0.0}, {time:this.totalDuration, ease:Power0.easeInOut});
+  return TweenMax.fromTo(this, 3.0, {time:0.0}, {time:this.totalDuration, ease:Power0.easeInOut});
 };
