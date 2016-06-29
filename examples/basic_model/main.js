@@ -115,7 +115,7 @@ function Animation() {
     fragmentParameters: [
       'uniform vec3 uBackColor;'
     ],
-    fragmentAlpha: [
+    fragmentDiffuse: [
       'if (!gl_FrontFacing) {',
       ' diffuseColor.rgb = uBackColor.xyz;',
       '}'

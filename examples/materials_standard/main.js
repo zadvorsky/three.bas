@@ -189,9 +189,10 @@ function Animation(envMap) {
       'vec4 texelColor = mapTexelToLinear(mix(texelColor1, texelColor2, vProgress));',
       'diffuseColor *= texelColor;'
     ],
-    // this gets injected after <color_fragment>
+    // this chunk gets injected after 'diffuseColor' is defined
+    // changes to diffuse color (outside of vertex colors) and alpha should go here
     // diffuseColor is used throughout the fragment shader
-    fragmentAlpha: [
+    fragmentDiffuse: [
       'diffuseColor.a *= vAlpha;'
     ],
     // this chunk is injected after roughnessFactor is initialized (before roughnessMap sampling)

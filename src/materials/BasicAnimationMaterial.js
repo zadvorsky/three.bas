@@ -20,7 +20,7 @@ THREE.BAS.BasicAnimationMaterial = function(parameters) {
   this.fragmentParameters = [];
   this.fragmentInit = [];
   this.fragmentMap = [];
-  this.fragmentAlpha = [];
+  this.fragmentDiffuse = [];
 
   var basicShader = THREE.ShaderLib['basic'];
 
@@ -121,19 +121,19 @@ THREE.BAS.BasicAnimationMaterial.prototype._concatFragmentShader = function() {
 
     "void main() {",
 
-    this._stringifyChunk('fragmentInit'),
-
     '#include <clipping_planes_fragment>',
 
+    this._stringifyChunk('fragmentInit'),
+
     "	vec4 diffuseColor = vec4( diffuse, opacity );",
+
+    this._stringifyChunk('fragmentDiffuse'),
 
     '#include <logdepthbuf_fragment>',
 
     (this._stringifyChunk('fragmentMap') || '#include <map_fragment>'),
 
     '#include <color_fragment>',
-
-    this._stringifyChunk('fragmentAlpha'),
 
     '#include <alphamap_fragment>',
     '#include <alphatest_fragment>',

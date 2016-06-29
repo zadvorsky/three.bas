@@ -646,7 +646,7 @@ THREE.BAS.BasicAnimationMaterial = function(parameters) {
   this.fragmentParameters = [];
   this.fragmentInit = [];
   this.fragmentMap = [];
-  this.fragmentAlpha = [];
+  this.fragmentDiffuse = [];
 
   var basicShader = THREE.ShaderLib['basic'];
 
@@ -747,19 +747,19 @@ THREE.BAS.BasicAnimationMaterial.prototype._concatFragmentShader = function() {
 
     "void main() {",
 
-    this._stringifyChunk('fragmentInit'),
-
     '#include <clipping_planes_fragment>',
 
+    this._stringifyChunk('fragmentInit'),
+
     "	vec4 diffuseColor = vec4( diffuse, opacity );",
+
+    this._stringifyChunk('fragmentDiffuse'),
 
     '#include <logdepthbuf_fragment>',
 
     (this._stringifyChunk('fragmentMap') || '#include <map_fragment>'),
 
     '#include <color_fragment>',
-
-    this._stringifyChunk('fragmentAlpha'),
 
     '#include <alphamap_fragment>',
     '#include <alphatest_fragment>',
@@ -922,7 +922,7 @@ THREE.BAS.PhongAnimationMaterial = function (parameters) {
   this.fragmentParameters = [];
   this.fragmentInit = [];
   this.fragmentMap = [];
-  this.fragmentAlpha = [];
+  this.fragmentDiffuse = [];
   this.fragmentEmissive = [];
   this.fragmentSpecular = [];
 
@@ -1049,19 +1049,19 @@ THREE.BAS.PhongAnimationMaterial.prototype._concatFragmentShader = function () {
 
     "void main() {",
 
-    this._stringifyChunk('fragmentInit'),
-
     '#include <clipping_planes_fragment>',
+
+    this._stringifyChunk('fragmentInit'),
 
     "	vec4 diffuseColor = vec4( diffuse, opacity );",
     "	ReflectedLight reflectedLight = ReflectedLight( vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ) );",
     "	vec3 totalEmissiveRadiance = emissive;",
 
+    this._stringifyChunk('fragmentDiffuse'),
+
     '#include <logdepthbuf_fragment>',
     (this._stringifyChunk('fragmentMap') || '#include <map_fragment>'),
     '#include <color_fragment>',
-
-    this._stringifyChunk('fragmentAlpha'),
 
     '#include <alphamap_fragment>',
     '#include <alphatest_fragment>',
@@ -1121,7 +1121,7 @@ THREE.BAS.StandardAnimationMaterial = function (parameters) {
   this.fragmentParameters = [];
   this.fragmentInit = [];
   this.fragmentMap = [];
-  this.fragmentAlpha = [];
+  this.fragmentDiffuse = [];
   this.fragmentRoughness = [];
   this.fragmentMetalness = [];
   this.fragmentEmissive = [];
@@ -1263,19 +1263,19 @@ THREE.BAS.StandardAnimationMaterial.prototype._concatFragmentShader = function (
 
     "void main() {",
 
-    this._stringifyChunk('fragmentInit'),
-
     '#include <clipping_planes_fragment>',
+
+    this._stringifyChunk('fragmentInit'),
 
     "	vec4 diffuseColor = vec4( diffuse, opacity );",
     "	ReflectedLight reflectedLight = ReflectedLight( vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ) );",
     "	vec3 totalEmissiveRadiance = emissive;",
 
+    this._stringifyChunk('fragmentDiffuse'),
+
     '#include <logdepthbuf_fragment>',
     (this._stringifyChunk('fragmentMap') || '#include <map_fragment>'),
     '#include <color_fragment>',
-
-    this._stringifyChunk('fragmentAlpha'),
 
     '#include <alphamap_fragment>',
     '#include <alphatest_fragment>',
