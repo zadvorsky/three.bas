@@ -1,26 +1,16 @@
 window.onload = init;
 
 function init() {
-  var root = new THREERoot();
+  var root = new THREERoot({
+    createCameraControls: true
+  });
   root.renderer.setClearColor(0xffffff);
   root.camera.position.set(0, 0, 120);
-  root.controls.autoRotate = false;
 
-  root.renderer.domElement.addEventListener( 'mousemove', onDocumentMouseMove, false );
-  root.renderer.domElement.addEventListener( 'mousedown', onDocumentMouseDown, false );
-  root.renderer.domElement.addEventListener( 'mouseup', onDocumentMouseUp, false );
+  root.add(new THREE.AxisHelper(100));
 
+  // todo
   window.controls = root.controls;
-  window.camera = root.camera;
-  window.container = root.container;
-
-  window.mouse = new THREE.Vector2();
-  window.raycaster = new THREE.Raycaster();
-  window.plane = new THREE.Plane();
-  window.offset = new THREE.Vector3();
-  window.intersection = new THREE.Vector3();
-  window.INTERSECTED = false;
-  window.SELECTED = false;
 
   var light = new THREE.DirectionalLight();
   light.position.set(0, 0, 1);
@@ -33,7 +23,9 @@ function init() {
   var animation = new Animation();
   root.add(animation);
 
-  window.objects = [animation];
+  var dragController = new DragController(root.camera, root.renderer.domElement);
+
+  dragController.register(animation);
 
   // var p = new THREE.Vector3();
   // var tl = new TimelineMax({repeat: -1, onUpdate:function() {
@@ -50,105 +42,204 @@ function init() {
   // tl.timeScale(2);
 }
 
+function DragController(camera, element) {
+  this.camera = camera;
+  this.element = element || window;
 
+  this.pointerUDC = new THREE.Vector2();
+  this.plane = new THREE.Plane();
+  this.intersection = new THREE.Vector3();
+  this.offset = new THREE.Vector3();
+  this.raycaster = new THREE.Raycaster();
+  this.objects = [];
 
+  this.SELECTED = null;
+  this.INTERSECTED = null;
 
-function onDocumentMouseMove( event ) {
+  // MOUSE
+  this.element.addEventListener('mousedown', function(e) {
+    e.preventDefault();
+    // this.updatePointerUDC(e.clientX, e.clientY);
+    this.handlePointerDown();
+  }.bind(this));
+  this.element.addEventListener('mousemove', function(e) {
+    e.preventDefault();
+    this.updatePointerUDC(e.clientX, e.clientY);
+    this.handlePointerMove();
+  }.bind(this));
+  this.element.addEventListener('mouseup', function(e) {
+    e.preventDefault();
+    // this.updatePointerUDC(e.clientX, e.clientY);
+    this.handlePointerUp();
+  }.bind(this));
 
-  event.preventDefault();
+  // FINGER todo
+}
+DragController.prototype = {
+  updatePointerUDC: function(x, y) {
+    this.pointerUDC.x = (x / window.innerWidth) * 2 - 1;
+    this.pointerUDC.y = -(y / window.innerHeight) * 2 + 1;
+  },
 
-  mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-  mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+  handlePointerDown: function() {
+    this.raycaster.setFromCamera(this.pointerUDC, this.camera);
 
-  raycaster.setFromCamera( mouse, camera );
+    var intersects = this.raycaster.intersectObjects(this.objects);
 
-  if ( SELECTED ) {
+    if (intersects.length > 0) {
+      // todo
+      controls.enabled = false;
 
-    if ( raycaster.ray.intersectPlane( plane, intersection ) ) {
+      this.SELECTED = intersects[0].object;
 
-      // TODO
-      // SELECTED.position.copy( intersection.sub( offset ) );
+      if (this.raycaster.ray.intersectPlane(this.plane, this.intersection)) {
+        this.offset.copy(this.intersection).sub(this.SELECTED.position);
+      }
+    }
+  },
+  handlePointerMove: function() {
+    this.raycaster.setFromCamera(this.pointerUDC, this.camera);
 
-      SELECTED.moveTo(intersection.sub( offset ));
+    if (this.SELECTED) {
+      if (this.raycaster.ray.intersectPlane(this.plane, this.intersection)) {
+        // TODO
+        // this.SELECTED.position.copy(this.intersection.sub(this.offset));
+        this.SELECTED.moveTo(this.intersection.sub(this.offset));
+      }
 
+      return;
     }
 
-    return;
+    var intersects = this.raycaster.intersectObjects(this.objects);
 
-  }
+    if (intersects.length > 0) {
 
-  var intersects = raycaster.intersectObjects( objects );
+      if (this.INTERSECTED != intersects[0].object) {
 
-  if ( intersects.length > 0 ) {
+        this.INTERSECTED = intersects[0].object;
 
-    if ( INTERSECTED != intersects[ 0 ].object ) {
-
-      // if ( INTERSECTED ) INTERSECTED.material.color.setHex( INTERSECTED.currentHex );
-
-      INTERSECTED = intersects[ 0 ].object;
-      // INTERSECTED.currentHex = INTERSECTED.material.color.getHex();
-
-      plane.setFromNormalAndCoplanarPoint(
-        camera.getWorldDirection( plane.normal ),
-        INTERSECTED.position );
-
+        this.plane.setFromNormalAndCoplanarPoint(
+          this.camera.getWorldDirection(this.plane.normal),
+          this.INTERSECTED.position
+        );
+      }
     }
-
-    container.style.cursor = 'pointer';
-
-  } else {
-
-    // if ( INTERSECTED ) INTERSECTED.material.color.setHex( INTERSECTED.currentHex );
-
-    INTERSECTED = null;
-
-    container.style.cursor = 'auto';
-
-  }
-
-}
-
-function onDocumentMouseDown( event ) {
-
-  event.preventDefault();
-
-  raycaster.setFromCamera( mouse, camera );
-
-  var intersects = raycaster.intersectObjects( objects );
-
-  if ( intersects.length > 0 ) {
-
-    controls.enabled = false;
-
-    SELECTED = intersects[ 0 ].object;
-
-    if ( raycaster.ray.intersectPlane( plane, intersection ) ) {
-
-      offset.copy( intersection ).sub( SELECTED.position );
-
+    else {
+      this.INTERSECTED = null;
     }
+  },
+  handlePointerUp: function() {
+    // todo
+    controls.enabled = true;
 
-    container.style.cursor = 'move';
-
+    if (this.INTERSECTED) {
+      this.SELECTED = null;
+    }
+  },
+  register: function(object) {
+    this.objects.push(object);
   }
+};
 
-}
 
-function onDocumentMouseUp( event ) {
 
-  event.preventDefault();
 
-  controls.enabled = true;
-
-  if ( INTERSECTED ) {
-
-    SELECTED = null;
-
-  }
-
-  container.style.cursor = 'auto';
-
-}
+// function onDocumentMouseMove( event ) {
+//
+//   event.preventDefault();
+//
+//   mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+//   mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+//
+//   raycaster.setFromCamera( mouse, camera );
+//
+//   if ( SELECTED ) {
+//
+//     if ( raycaster.ray.intersectPlane( plane, intersection ) ) {
+//
+//       // TODO
+//       // SELECTED.position.copy( intersection.sub( offset ) );
+//
+//       SELECTED.moveTo(intersection.sub( offset ));
+//
+//     }
+//
+//     return;
+//
+//   }
+//
+//   var intersects = raycaster.intersectObjects( objects );
+//
+//   if ( intersects.length > 0 ) {
+//
+//     if ( INTERSECTED != intersects[ 0 ].object ) {
+//
+//       // if ( INTERSECTED ) INTERSECTED.material.color.setHex( INTERSECTED.currentHex );
+//
+//       INTERSECTED = intersects[ 0 ].object;
+//       // INTERSECTED.currentHex = INTERSECTED.material.color.getHex();
+//
+//       plane.setFromNormalAndCoplanarPoint(
+//         camera.getWorldDirection( plane.normal ),
+//         INTERSECTED.position );
+//
+//     }
+//
+//     container.style.cursor = 'pointer';
+//
+//   } else {
+//
+//     // if ( INTERSECTED ) INTERSECTED.material.color.setHex( INTERSECTED.currentHex );
+//
+//     INTERSECTED = null;
+//
+//     container.style.cursor = 'auto';
+//
+//   }
+//
+// }
+//
+// function onDocumentMouseDown( event ) {
+//
+//   event.preventDefault();
+//
+//   raycaster.setFromCamera( mouse, camera );
+//
+//   var intersects = raycaster.intersectObjects( objects );
+//
+//   if ( intersects.length > 0 ) {
+//
+//     controls.enabled = false;
+//
+//     SELECTED = intersects[ 0 ].object;
+//
+//     if ( raycaster.ray.intersectPlane( plane, intersection ) ) {
+//
+//       offset.copy( intersection ).sub( SELECTED.position );
+//
+//     }
+//
+//     container.style.cursor = 'move';
+//
+//   }
+//
+// }
+//
+// function onDocumentMouseUp( event ) {
+//
+//   event.preventDefault();
+//
+//   controls.enabled = true;
+//
+//   if ( INTERSECTED ) {
+//
+//     SELECTED = null;
+//
+//   }
+//
+//   container.style.cursor = 'auto';
+//
+// }
 
 
 
