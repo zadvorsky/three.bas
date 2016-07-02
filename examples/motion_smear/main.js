@@ -20,27 +20,24 @@ function init() {
   light.position.set(0, 0, -1);
   root.scene.add(light);
 
-  var animation = new Animation();
-  root.add(animation);
+  var smearMesh = new SmearMesh();
+  root.add(smearMesh);
+
+  smearMesh.addEventListener('drag', function(e) {
+    this.moveTo(e.point);
+  });
+  smearMesh.addEventListener('dragEnd', function(e) {
+    this.reset();
+  });
 
   var dragController = new DragController(root.camera, root.renderer.domElement);
 
-  dragController.register(animation);
-
-  // var p = new THREE.Vector3();
-  // var tl = new TimelineMax({repeat: -1, onUpdate:function() {
-  //   animation.moveTo(p);
-  // }});
-  // var e = Power2.easeIn;
-  //
-  //
-  // tl.to(p, 1, {x: 50, y: 0, z: 0, ease: e});
-  // tl.to(p, 1, {x: 50, y: 50, z: 0, ease: e});
-  // tl.to(p,1, {x: 0, y: 50, z: 0, ease: e});
-  // tl.to(p,1, {x: 0, y: 0, z: 0, ease: e});
-  //
-  // tl.timeScale(2);
+  dragController.register(smearMesh);
 }
+
+////////////////////
+// CLASSES
+////////////////////
 
 function DragController(camera, element) {
   this.camera = camera;
@@ -102,9 +99,12 @@ DragController.prototype = {
 
     if (this.SELECTED) {
       if (this.raycaster.ray.intersectPlane(this.plane, this.intersection)) {
-        // TODO
-        // this.SELECTED.position.copy(this.intersection.sub(this.offset));
-        this.SELECTED.moveTo(this.intersection.sub(this.offset));
+        var point = this.intersection.sub(this.offset);
+
+        this.SELECTED.dispatchEvent({
+          type: 'drag',
+          point: point
+        });
       }
 
       return;
@@ -115,7 +115,6 @@ DragController.prototype = {
     if (intersects.length > 0) {
 
       if (this.INTERSECTED != intersects[0].object) {
-
         this.INTERSECTED = intersects[0].object;
 
         this.plane.setFromNormalAndCoplanarPoint(
@@ -132,7 +131,11 @@ DragController.prototype = {
     // todo
     controls.enabled = true;
 
-    if (this.INTERSECTED) {
+    if (this.INTERSECTED && this.SELECTED) {
+      this.SELECTED.dispatchEvent({
+        type: 'dragEnd'
+      });
+
       this.SELECTED = null;
     }
   },
@@ -141,122 +144,13 @@ DragController.prototype = {
   }
 };
 
-
-
-
-// function onDocumentMouseMove( event ) {
-//
-//   event.preventDefault();
-//
-//   mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-//   mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-//
-//   raycaster.setFromCamera( mouse, camera );
-//
-//   if ( SELECTED ) {
-//
-//     if ( raycaster.ray.intersectPlane( plane, intersection ) ) {
-//
-//       // TODO
-//       // SELECTED.position.copy( intersection.sub( offset ) );
-//
-//       SELECTED.moveTo(intersection.sub( offset ));
-//
-//     }
-//
-//     return;
-//
-//   }
-//
-//   var intersects = raycaster.intersectObjects( objects );
-//
-//   if ( intersects.length > 0 ) {
-//
-//     if ( INTERSECTED != intersects[ 0 ].object ) {
-//
-//       // if ( INTERSECTED ) INTERSECTED.material.color.setHex( INTERSECTED.currentHex );
-//
-//       INTERSECTED = intersects[ 0 ].object;
-//       // INTERSECTED.currentHex = INTERSECTED.material.color.getHex();
-//
-//       plane.setFromNormalAndCoplanarPoint(
-//         camera.getWorldDirection( plane.normal ),
-//         INTERSECTED.position );
-//
-//     }
-//
-//     container.style.cursor = 'pointer';
-//
-//   } else {
-//
-//     // if ( INTERSECTED ) INTERSECTED.material.color.setHex( INTERSECTED.currentHex );
-//
-//     INTERSECTED = null;
-//
-//     container.style.cursor = 'auto';
-//
-//   }
-//
-// }
-//
-// function onDocumentMouseDown( event ) {
-//
-//   event.preventDefault();
-//
-//   raycaster.setFromCamera( mouse, camera );
-//
-//   var intersects = raycaster.intersectObjects( objects );
-//
-//   if ( intersects.length > 0 ) {
-//
-//     controls.enabled = false;
-//
-//     SELECTED = intersects[ 0 ].object;
-//
-//     if ( raycaster.ray.intersectPlane( plane, intersection ) ) {
-//
-//       offset.copy( intersection ).sub( SELECTED.position );
-//
-//     }
-//
-//     container.style.cursor = 'move';
-//
-//   }
-//
-// }
-//
-// function onDocumentMouseUp( event ) {
-//
-//   event.preventDefault();
-//
-//   controls.enabled = true;
-//
-//   if ( INTERSECTED ) {
-//
-//     SELECTED = null;
-//
-//   }
-//
-//   container.style.cursor = 'auto';
-//
-// }
-
-
-
-
-////////////////////
-// CLASSES
-////////////////////
-
-function Animation() {
+function SmearMesh() {
   var model = new THREE.SphereGeometry(10, 24, 24);
-
-  //THREE.BAS.Utils.separateFaces(model);
-
+  // var model = new THREE.TorusGeometry(10, 6, 32, 32);
   var geometry = new THREE.BAS.ModelBufferGeometry(model);
 
   geometry.createAttribute('aSmearFactor', 1, function(data) {
-    data[0] = 1.0 + THREE.Math.randFloatSpread(0);
+    data[0] = 1.0 + THREE.Math.randFloatSpread(0.0);
   });
 
   var material = new THREE.BAS.PhongAnimationMaterial({
@@ -297,10 +191,10 @@ function Animation() {
 
   this.frustumCulled = false;
 }
-Animation.prototype = Object.create(THREE.Mesh.prototype);
-Animation.prototype.constructor = Animation;
+SmearMesh.prototype = Object.create(THREE.Mesh.prototype);
+SmearMesh.prototype.constructor = SmearMesh;
 
-Object.defineProperty(Animation.prototype, 'time', {
+Object.defineProperty(SmearMesh.prototype, 'time', {
   get: function () {
     return this.material.uniforms['uTime'].value;
   },
@@ -309,8 +203,10 @@ Object.defineProperty(Animation.prototype, 'time', {
   }
 });
 
-Animation.prototype.moveTo = function(target) {
+SmearMesh.prototype.moveTo = function(target) {
   this.material.uniforms['uDelta'].value.subVectors(target, this.position);
   this.position.copy(target);
-  // TweenMax.to(this.position, 10, {x:target.x, y:target.y, z:target.z, ease:Power0.easeIn});
+};
+SmearMesh.prototype.reset = function() {
+  this.material.uniforms['uDelta'].value.set(0, 0, 0);
 };
