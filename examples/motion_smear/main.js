@@ -5,7 +5,7 @@ function init() {
     fov: 40
   });
   root.renderer.setClearColor(0xffffff);
-  root.camera.position.set(0, 50, 250);
+  root.camera.position.set(0, 100, 250);
 
   // shadow things
   root.renderer.shadowMap.enabled = true;
@@ -49,9 +49,6 @@ function init() {
     smearFactor: 2.0,
     smearFactorVariance: 0.5,
     smearDecayFactor: 0.5,
-    materialParams: {
-      shading: THREE.SmoothShading
-    },
     createDepthMaterial: true
   });
   smearMesh.castShadow = true;
@@ -130,31 +127,31 @@ function DragController(camera, element, controls) {
     this.updatePointerUDC(e.clientX, e.clientY);
     this.handlePointerDown();
   }.bind(this));
+
   this.element.addEventListener('mousemove', function(e) {
     e.preventDefault();
     this.updatePointerUDC(e.clientX, e.clientY);
     this.handlePointerMove();
   }.bind(this));
+
   this.element.addEventListener('mouseup', function(e) {
     e.preventDefault();
     this.handlePointerUp();
   }.bind(this));
 
-  // FINGER todo
+  // FINGER todo touchmove doesn't want to work :(
   // this.element.addEventListener('touchstart', function(e) {
-  //   console.log('ts');
   //   e.preventDefault();
-  //   var p = e.touches[0];
-  //   this.updatePointerUDC(p.clientX, p.clientY);
+  //   this.updatePointerUDC(e.touches[0].clientX, e.touches[0].clientY);
   //   this.handlePointerDown();
   // }.bind(this));
+  //
   // this.element.addEventListener('touchmove', function(e) {
-  //   console.log('tm');
   //   e.preventDefault();
-  //   var p = e.touches[0];
-  //   this.updatePointerUDC(p.clientX, p.clientY);
+  //   this.updatePointerUDC(e.touches[0].clientX, e.touches[0].clientY);
   //   this.handlePointerMove();
   // }.bind(this));
+  //
   // this.element.addEventListener('touchend', function(e) {
   //   e.preventDefault();
   //   this.handlePointerUp();
@@ -187,7 +184,27 @@ DragController.prototype = {
   handlePointerMove: function() {
     this.raycaster.setFromCamera(this.pointerUDC, this.camera);
 
-    if (this.dragObject) {
+    if (!this.dragObject) {
+      var intersects = this.raycaster.intersectObjects(this.objects);
+
+      if (intersects.length > 0) {
+        if (this.hoverObject != intersects[0].object) {
+          this.hoverObject = intersects[0].object;
+
+          this.plane.setFromNormalAndCoplanarPoint(
+            this.camera.getWorldDirection(this.plane.normal),
+            this.hoverObject.position
+          );
+        }
+
+        this.element.style.cursor = 'pointer';
+      }
+      else {
+        this.hoverObject = null;
+        this.element.style.cursor = 'default';
+      }
+    }
+    else {
       if (this.raycaster.ray.intersectPlane(this.plane, this.intersection)) {
         var position = this.intersection.sub(this.offset);
 
@@ -196,25 +213,6 @@ DragController.prototype = {
           position: position
         });
       }
-
-      return;
-    }
-
-    var intersects = this.raycaster.intersectObjects(this.objects);
-
-    if (intersects.length > 0) {
-
-      if (this.hoverObject != intersects[0].object) {
-        this.hoverObject = intersects[0].object;
-
-        this.plane.setFromNormalAndCoplanarPoint(
-          this.camera.getWorldDirection(this.plane.normal),
-          this.hoverObject.position
-        );
-      }
-    }
-    else {
-      this.hoverObject = null;
     }
   },
   handlePointerUp: function() {

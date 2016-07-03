@@ -1,6 +1,6 @@
 function THREERoot(params) {
   // defaults
-  params = utils.extend({
+  params = Object.assign({
     container:'#three-container',
     fov:60,
     zNear:1,
