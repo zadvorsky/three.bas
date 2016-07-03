@@ -2,46 +2,117 @@ window.onload = init;
 
 function init() {
   var root = new THREERoot({
-    createCameraControls: true
+    fov: 40
   });
   root.renderer.setClearColor(0xffffff);
-  root.camera.position.set(0, 0, 120);
+  root.camera.position.set(0, 50, 250);
 
-  root.add(new THREE.AxisHelper(100));
+  // shadow things
+  root.renderer.shadowMap.enabled = true;
+  root.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-  // todo
-  window.controls = root.controls;
+  var PLANE_SIZE = 250;
+  var PLANE_OFFSET = -40;
 
+  // create lights
   var light = new THREE.DirectionalLight();
-  light.position.set(0, 0, 1);
+  light.position.set(0, 100, 0);
+  light.castShadow = true;
+  light.shadow.camera.near = 2;
+  light.shadow.camera.far = 102 - PLANE_OFFSET;
+  light.shadow.camera.right = PLANE_SIZE * 0.5;
+  light.shadow.camera.left = -PLANE_SIZE * 0.5;
+  light.shadow.camera.top = PLANE_SIZE * 0.5;
+  light.shadow.camera.bottom = -PLANE_SIZE * 0.5;
+  light.shadow.mapSize.width = 2048;
+  light.shadow.mapSize.height = 2048;
   root.scene.add(light);
+  // root.scene.add(new THREE.CameraHelper(light.shadow.camera));
 
-  light = new THREE.DirectionalLight();
-  light.position.set(0, 0, -1);
-  root.scene.add(light);
+  // ground
+  var plane = new THREE.Mesh(
+    new THREE.PlaneGeometry(PLANE_SIZE, PLANE_SIZE),
+    new THREE.MeshPhongMaterial({
+      color: 0xaaaaaa,
+      side: THREE.DoubleSide
+    })
+  );
+  plane.receiveShadow = true;
+  plane.rotation.x = Math.PI * -0.5;
+  plane.position.set(0, PLANE_OFFSET, 0);
+  root.add(plane);
 
-  var smearMesh = new SmearMesh();
+  // create a geometry for the smear mesh
+  var geometry = new THREE.OctahedronGeometry(10, 4);
+  // create the smear mesh
+  var smearMesh = new SmearMesh(geometry, {
+    smearFactor: 2.0,
+    smearFactorVariance: 0.5,
+    smearDecayFactor: 0.5,
+    materialParams: {
+      shading: THREE.SmoothShading
+    },
+    createDepthMaterial: true
+  });
+  smearMesh.castShadow = true;
+
   root.add(smearMesh);
-
-  smearMesh.addEventListener('drag', function(e) {
-    this.moveTo(e.point);
-  });
-  smearMesh.addEventListener('dragEnd', function(e) {
-    this.reset();
+  // smearMesh.update must be called each frame
+  root.addUpdateCallback(function() {
+    smearMesh.update();
   });
 
-  var dragController = new DragController(root.camera, root.renderer.domElement);
+  // ANIMATION
 
+  // proxy for position animation
+  var autoPosition = new THREE.Vector3();
+  // this function will be called every time one of the tweens below renders
+  var updateMeshPosition = function() {
+    smearMesh.moveTo(autoPosition);
+  };
+
+  var autoTween = new TimelineMax({repeat: -1, repeatDelay: 0.5, yoyo: true, onUpdate: updateMeshPosition});
+  // set the initial position to prevent jumping
+  smearMesh.position.set(-100, 0, 0);
+  // setup the animation
+  autoTween.fromTo(autoPosition, 1, {x: -100}, {x: 100, ease: Power4.easeInOut});
+
+  // DRAG INTERACTIVITY
+
+  // create a drag controller for mouse interactivity
+  var dragController = new DragController(root.camera, root.renderer.domElement, root.controls);
+  // register the mesh with the dragController so it will dispatch 'dragStart', 'drag' and 'dragEnd' events
   dragController.register(smearMesh);
+  // pause the tween on drag start
+  smearMesh.addEventListener('dragStart', function() {
+    autoTween.pause();
+  });
+  // resume the tween on drag end after the position is reset
+  smearMesh.addEventListener('dragEnd', function() {
+    autoPosition.copy(smearMesh.position);
+    TweenMax.to(autoPosition, 0.5, {x:-100, y: 0, z: 0, ease: Power2.easeInOut,
+      onUpdate: updateMeshPosition,
+      onComplete: function() {
+        autoTween.play(0);
+      }
+    })
+  });
+  // update position on drag
+  smearMesh.addEventListener('drag', function(e) {
+    // call the moveTo function instead of setting the position directly
+    // moveTo is where the smear effect is calculated
+    this.moveTo(e.position);
+  });
 }
 
 ////////////////////
 // CLASSES
 ////////////////////
 
-function DragController(camera, element) {
+function DragController(camera, element, controls) {
   this.camera = camera;
   this.element = element || window;
+  this.controls = controls;
 
   this.pointerUDC = new THREE.Vector2();
   this.plane = new THREE.Plane();
@@ -50,13 +121,13 @@ function DragController(camera, element) {
   this.raycaster = new THREE.Raycaster();
   this.objects = [];
 
-  this.SELECTED = null;
-  this.INTERSECTED = null;
+  this.dragObject = null;
+  this.hoverObject = null;
 
   // MOUSE
   this.element.addEventListener('mousedown', function(e) {
     e.preventDefault();
-    // this.updatePointerUDC(e.clientX, e.clientY);
+    this.updatePointerUDC(e.clientX, e.clientY);
     this.handlePointerDown();
   }.bind(this));
   this.element.addEventListener('mousemove', function(e) {
@@ -66,11 +137,28 @@ function DragController(camera, element) {
   }.bind(this));
   this.element.addEventListener('mouseup', function(e) {
     e.preventDefault();
-    // this.updatePointerUDC(e.clientX, e.clientY);
     this.handlePointerUp();
   }.bind(this));
 
   // FINGER todo
+  // this.element.addEventListener('touchstart', function(e) {
+  //   console.log('ts');
+  //   e.preventDefault();
+  //   var p = e.touches[0];
+  //   this.updatePointerUDC(p.clientX, p.clientY);
+  //   this.handlePointerDown();
+  // }.bind(this));
+  // this.element.addEventListener('touchmove', function(e) {
+  //   console.log('tm');
+  //   e.preventDefault();
+  //   var p = e.touches[0];
+  //   this.updatePointerUDC(p.clientX, p.clientY);
+  //   this.handlePointerMove();
+  // }.bind(this));
+  // this.element.addEventListener('touchend', function(e) {
+  //   e.preventDefault();
+  //   this.handlePointerUp();
+  // }.bind(this));
 }
 DragController.prototype = {
   updatePointerUDC: function(x, y) {
@@ -84,26 +172,28 @@ DragController.prototype = {
     var intersects = this.raycaster.intersectObjects(this.objects);
 
     if (intersects.length > 0) {
-      // todo
-      controls.enabled = false;
+      this.controls && (this.controls.enabled = false);
 
-      this.SELECTED = intersects[0].object;
+      this.dragObject = intersects[0].object;
+      this.dragObject.dispatchEvent({
+        type: 'dragStart'
+      });
 
       if (this.raycaster.ray.intersectPlane(this.plane, this.intersection)) {
-        this.offset.copy(this.intersection).sub(this.SELECTED.position);
+        this.offset.copy(this.intersection).sub(this.dragObject.position);
       }
     }
   },
   handlePointerMove: function() {
     this.raycaster.setFromCamera(this.pointerUDC, this.camera);
 
-    if (this.SELECTED) {
+    if (this.dragObject) {
       if (this.raycaster.ray.intersectPlane(this.plane, this.intersection)) {
-        var point = this.intersection.sub(this.offset);
+        var position = this.intersection.sub(this.offset);
 
-        this.SELECTED.dispatchEvent({
+        this.dragObject.dispatchEvent({
           type: 'drag',
-          point: point
+          position: position
         });
       }
 
@@ -114,29 +204,28 @@ DragController.prototype = {
 
     if (intersects.length > 0) {
 
-      if (this.INTERSECTED != intersects[0].object) {
-        this.INTERSECTED = intersects[0].object;
+      if (this.hoverObject != intersects[0].object) {
+        this.hoverObject = intersects[0].object;
 
         this.plane.setFromNormalAndCoplanarPoint(
           this.camera.getWorldDirection(this.plane.normal),
-          this.INTERSECTED.position
+          this.hoverObject.position
         );
       }
     }
     else {
-      this.INTERSECTED = null;
+      this.hoverObject = null;
     }
   },
   handlePointerUp: function() {
-    // todo
-    controls.enabled = true;
+    this.controls && (this.controls.enabled = true);
 
-    if (this.INTERSECTED && this.SELECTED) {
-      this.SELECTED.dispatchEvent({
+    if (this.hoverObject && this.dragObject) {
+      this.dragObject.dispatchEvent({
         type: 'dragEnd'
       });
 
-      this.SELECTED = null;
+      this.dragObject = null;
     }
   },
   register: function(object) {
@@ -144,69 +233,94 @@ DragController.prototype = {
   }
 };
 
-function SmearMesh() {
-  var model = new THREE.SphereGeometry(10, 24, 24);
-  // var model = new THREE.TorusGeometry(10, 6, 32, 32);
-  var geometry = new THREE.BAS.ModelBufferGeometry(model);
+function SmearMesh(geometry, settings) {
+  // defaults
+  settings = Object.assign({
+    smearFactor: 1.0,
+    smearFactorVariance: 0.0,
+    smearDecayFactor: 0.8,
+    smearVelocityThreshold: 0,
+    createDepthMaterial: false,
+    createDistanceMaterial: false,
+    Material: THREE.BAS.PhongAnimationMaterial,
+    materialParams: {}
+  }, settings);
 
-  geometry.createAttribute('aSmearFactor', 1, function(data) {
-    data[0] = 1.0 + THREE.Math.randFloatSpread(0.0);
+  this.smearDecayFactor = settings.smearDecayFactor;
+  this.smearVelocityThreshold = settings.smearVelocityThreshold;
+
+  // GEOMETRY
+
+  var bufferGeometry = new THREE.BAS.ModelBufferGeometry(geometry);
+  // store smear factor per vertex to create a per vertex offset / smear
+  bufferGeometry.createAttribute('aSmearFactor', 1, function(data) {
+    data[0] = settings.smearFactor + THREE.Math.randFloatSpread(settings.smearFactorVariance);
   });
 
-  var material = new THREE.BAS.PhongAnimationMaterial({
-    shading: THREE.FlatShading,
-    side: THREE.DoubleSide,
-    // wireframe: true,
+  // MATERIAL
+
+  // extend the defaults below with any arguments passed in the constructor
+  // todo vertexParameters & vertexPosition are overridden
+  var material = new settings.Material(Object.assign({
     uniforms: {
-      uTime: {value: 0},
       uDelta: {value: new THREE.Vector3()}
     },
-    uniformValues: {
-      diffuse: new THREE.Color(0xffffff)
-    },
-    vertexFunctions: [
-      THREE.BAS.ShaderChunk['ease_cubic_in_out'],
-      THREE.BAS.ShaderChunk['quaternion_rotation']
-    ],
     vertexParameters: [
-      'uniform float uTime;',
       'uniform vec3 uDelta;',
-
       'attribute float aSmearFactor;'
     ],
-    vertexInit: [
-    ],
     vertexPosition: [
-      'vec3 nt = normalize(transformed);',
-      'vec3 nd = normalize(uDelta);',
-      'float dp = dot(nt, nd);',
+      'if (length(uDelta) != 0.0) {',
+        'vec3 nt = normalize(transformed);',
+        'vec3 nd = normalize(uDelta);',
+        'float dp = dot(nt, nd);',
 
-      'if (dp < 0.0) {',
         'transformed -= uDelta * (1.0 - dp) * aSmearFactor;',
       '}'
     ]
-  });
+  }, settings.materialParams));
 
-  THREE.Mesh.call(this, geometry, material);
+  // normals for smooth shading
+  if (material.shading === THREE.SmoothShading) {
+    bufferGeometry.computeVertexNormals();
+  }
+
+  // for point light shadows
+  if (settings.createDistanceMaterial) {
+    this.customDistanceMaterial = THREE.BAS.Utils.createDistanceAnimationMaterial(material);
+  }
+
+  // for dir & spot light shadows
+  if (settings.createDepthMaterial) {
+    this.customDepthMaterial = THREE.BAS.Utils.createDepthAnimationMaterial(material);
+  }
+
+  THREE.Mesh.call(this, bufferGeometry, material);
 
   this.frustumCulled = false;
 }
 SmearMesh.prototype = Object.create(THREE.Mesh.prototype);
 SmearMesh.prototype.constructor = SmearMesh;
 
-Object.defineProperty(SmearMesh.prototype, 'time', {
-  get: function () {
-    return this.material.uniforms['uTime'].value;
-  },
-  set: function (v) {
-    this.material.uniforms['uTime'].value = v;
-  }
-});
-
 SmearMesh.prototype.moveTo = function(target) {
-  this.material.uniforms['uDelta'].value.subVectors(target, this.position);
+  var v = this.material.uniforms['uDelta'].value;
+
+  v.subVectors(target, this.position);
   this.position.copy(target);
+
+  if (v.length() < this.smearVelocityThreshold) {
+    v.setScalar(0.0);
+  }
 };
-SmearMesh.prototype.reset = function() {
-  this.material.uniforms['uDelta'].value.set(0, 0, 0);
+
+SmearMesh.prototype.update = function() {
+  this.material.uniforms['uDelta'].value.multiplyScalar(this.smearDecayFactor);
+
+  if (this.customDepthMaterial) {
+    this.customDepthMaterial.uniforms['uDelta'].value.copy(this.material.uniforms['uDelta'].value);
+  }
+
+  if (this.customDistanceMaterial) {
+    this.customDistanceMaterial.uniforms['uDelta'].value.copy(this.material.uniforms['uDelta'].value);
+  }
 };

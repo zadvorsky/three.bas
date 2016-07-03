@@ -2,9 +2,9 @@
  * A THREE.BufferGeometry for animating individual faces of a THREE.Geometry.
  *
  * @param {THREE.Geometry} model The THREE.Geometry to base this geometry on.
- * @param {Object} options
- * @param {Boolean} options.computeCentroids If true, a centroids will be computed for each face and stored in THREE.BAS.ModelBufferGeometry.centroids.
- * @param {Boolean} options.localizeFaces If true, the positions for each face will be stored relative to the centroid. This is useful if you want to rotate or scale faces around their center.
+ * @param {Object=} options
+ * @param {Boolean=false} options.computeCentroids If true, a centroids will be computed for each face and stored in THREE.BAS.ModelBufferGeometry.centroids.
+ * @param {Boolean=false} options.localizeFaces If true, the positions for each face will be stored relative to the centroid. This is useful if you want to rotate or scale faces around their center.
  * @constructor
  */
 THREE.BAS.ModelBufferGeometry = function(model, options) {
