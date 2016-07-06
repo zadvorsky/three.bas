@@ -27,132 +27,90 @@ function init() {
 ////////////////////
 
 function Animation(gridSize) {
+  // setup timeline
+  var timeline = new Timeline();
+
+  // scale down
+  timeline.append(1.0, {
+    scale: {
+      to: new THREE.Vector3(1.4, 0.4, 1.4)
+    },
+    ease: 'easeCubicOut'
+  });
+  // scale up
+  timeline.append(0.5, {
+    scale: {
+      to: new THREE.Vector3(0.8, 2.0, 0.8)
+    },
+    ease: 'easeCubicIn'
+  });
+  // move up
+  timeline.append(1.0, {
+    translate: {
+      to: new THREE.Vector3(0.0, 4.0, 0.0)
+    },
+    ease: 'easeCubicOut'
+  });
+  // move down
+  timeline.append(1.0, {
+    translate: {
+      to: new THREE.Vector3(0.0, 0.0, 0.0)
+    },
+    ease: 'easeCubicIn'
+  });
+  // land + squish
+  timeline.append(1.0, {
+    scale: {
+      to: new THREE.Vector3(1.4, 0.4, 1.4)
+    },
+    ease: 'easeCubicOut'
+  });
+  // un-squish
+  timeline.append(1.0, {
+    scale: {
+      to: new THREE.Vector3(1.0, 1.0, 1.0)
+    },
+    ease: 'easeBackOut'
+  });
+
+  // setup prefab
   var prefabSize = 0.5;
   var prefab = new THREE.BoxGeometry(prefabSize, prefabSize, prefabSize);
-
   prefab.translate(0, prefabSize * 0.5, 0);
 
+  // setup prefab geometry
   var prefabCount = gridSize * gridSize;
-
   var geometry = new THREE.BAS.PrefabBufferGeometry(prefab, prefabCount);
-
   var aPosition = geometry.createAttribute('aPosition', 3);
   var aDelayDuration = geometry.createAttribute('aDelayDuration', 2);
   var index = 0;
+  var dataArray = [];
 
   var maxDelay = 4.0;
-  var maxDuration = 5.5;
 
-  this.totalDuration = maxDuration + maxDelay;
+  this.totalDuration = timeline.totalDuration + maxDelay;
 
   for (var i = 0; i < gridSize; i++) {
     for (var j = 0; j < gridSize; j++) {
       var x = THREE.Math.mapLinear(i, 0, gridSize, -gridSize * 0.5, gridSize * 0.5) + 0.5;
       var y = THREE.Math.mapLinear(j, 0, gridSize, -gridSize * 0.5, gridSize * 0.5) + 0.5;
 
-      geometry.setPrefabData(aPosition, index, [x, 0, y]);
+      // position
+      dataArray[0] = x;
+      dataArray[1] = 0;
+      dataArray[2] = y;
+      geometry.setPrefabData(aPosition, index, dataArray);
 
-      //var delay = maxDelay * index / prefabCount;
-      var delay = maxDelay * Math.sqrt(x * x + y * y) / gridSize;
-      //var delay = maxDelay * Math.random();
-      var duration = maxDuration;
-
-      geometry.setPrefabData(aDelayDuration, index, [delay, duration]);
+      // animation
+      //dataArray[0] = maxDelay * index / prefabCount;
+      //dataArray[0] = maxDelay * Math.random();
+      dataArray[0] = maxDelay * Math.sqrt(x * x + y * y) / gridSize;
+      dataArray[1] = timeline.totalDuration;
+      geometry.setPrefabData(aDelayDuration, index, dataArray);
 
       index++;
     }
   }
-
-  function vecToString(v, p) {
-    return v.x.toPrecision(p) + ',' + v.y.toPrecision(p) + ',' + v.z.toPrecision(p);
-  }
-
-  function makeShaderChunk(key, delay, duration, ease, translateFrom, translateTo, scaleFrom, scaleTo) {
-    var tf = 'vec3(' + vecToString(translateFrom, 2) + ')';
-    var tt = 'vec3(' + vecToString(translateTo, 2) + ')';
-    var sf = 'vec3(' + vecToString(scaleFrom, 2) + ')';
-    var st = 'vec3(' + vecToString(scaleTo, 2) + ')';
-
-    return [
-      'float cDelay' + key + ' = ' + delay.toPrecision(2) + ';',
-      'float cDuration' + key + ' = ' + duration.toPrecision(2) + ';',
-      'vec3 cTranslateFrom' + key + ' = ' + tf + ';',
-      'vec3 cTranslateTo' + key + ' = ' + tt + ';',
-      'vec3 cScaleFrom' + key + ' = ' + sf + ';',
-      'vec3 cScaleTo' + key + ' = ' + st + ';',
-
-      'void applyScale' + key + '(float time, inout vec3 v) {',
-        'if (time < cDelay' + key + ' || time > (cDelay' + key + ' + cDuration' + key + ')) return;',
-
-        'float progress = clamp(time - cDelay' + key + ', 0.0, cDuration' + key + ') / cDuration' + key + ';',
-        'progress = ' + ease + '(progress);',
-
-        'v *= mix(cScaleFrom' + key + ', cScaleTo' + key + ', progress);',
-      '}',
-
-      'void applyTranslation' + key + '(float time, inout vec3 v) {',
-        'if (time < cDelay' + key + ' || time > (cDelay' + key + ' + cDuration' + key + ')) return;',
-
-        'float progress = clamp(time - cDelay' + key + ', 0.0, cDuration' + key + ') / cDuration' + key + ';',
-        'progress = ' + ease + '(progress);',
-
-        'v += mix(cTranslateFrom' + key + ', cTranslateTo' + key + ', progress);',
-      '}'
-    ].join('\n');
-  }
-
-  var animationSteps = [];
-
-  // scale down
-  animationSteps.push(makeShaderChunk('0', 0.0, 1.0, 'easeCubicOut',
-    new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(1.0, 1.0, 1.0), new THREE.Vector3(1.4, 0.4, 1.4)
-  ));
-
-  // scale up
-  animationSteps.push(makeShaderChunk('1', 1.0, 0.5, 'easeCubicIn',
-    new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(1.4, 0.4, 1.4), new THREE.Vector3(0.8, 2.0, 0.8)
-  ));
-
-  // move up
-  animationSteps.push(makeShaderChunk('2', 1.5, 1.0, 'easeCubicOut',
-    new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 4, 0),
-    new THREE.Vector3(0.8, 2.0, 0.8), new THREE.Vector3(0.8, 2.0, 0.8)
-  ));
-
-  // move down
-  animationSteps.push(makeShaderChunk('3', 2.5, 1.0, 'easeCubicIn',
-    new THREE.Vector3(0, 4, 0), new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(0.8, 2.0, 0.8), new THREE.Vector3(0.8, 2.0, 0.8)
-  ));
-
-  // land + squish
-  animationSteps.push(makeShaderChunk('4', 3.5, 1.0, 'easeCubicOut',
-    new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(0.8, 2.0, 0.8), new THREE.Vector3(1.4, 0.4, 1.4)
-  ));
-
-  // un-squish
-  animationSteps.push(makeShaderChunk('5', 4.5, 1.0, 'easeBackOut',
-    new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(1.4, 0.4, 1.4), new THREE.Vector3(1.0, 1.0, 1.0)
-  ));
-
-  var vertexFunctions = [
-    THREE.BAS.ShaderChunk['ease_cubic_in'],
-    THREE.BAS.ShaderChunk['ease_cubic_out'],
-    THREE.BAS.ShaderChunk['ease_cubic_in_out'],
-    THREE.BAS.ShaderChunk['ease_back_out'],
-  ].concat(animationSteps);
-
-  var scaleCalls = animationSteps.map(function(v, i) {
-    return 'applyScale' + i + '(tTime, transformed);';
-  }).join('\n');
-
-  var translateCalls = animationSteps.map(function(v, i) {
-    return 'applyTranslation' + i + '(tTime, transformed);';
-  }).join('\n');
 
   var material = new THREE.BAS.StandardAnimationMaterial({
     shading: THREE.FlatShading,
@@ -162,7 +120,12 @@ function Animation(gridSize) {
     uniformValues: {
       diffuse: new THREE.Color(0x888888)
     },
-    vertexFunctions: vertexFunctions,
+    vertexFunctions: [
+      THREE.BAS.ShaderChunk['ease_cubic_in'],
+      THREE.BAS.ShaderChunk['ease_cubic_out'],
+      THREE.BAS.ShaderChunk['ease_cubic_in_out'],
+      THREE.BAS.ShaderChunk['ease_back_out'],
+    ].concat(timeline.getChunks()),
     vertexParameters: [
       'uniform float uTime;',
 
@@ -172,8 +135,8 @@ function Animation(gridSize) {
     vertexPosition: [
       'float tTime = clamp(uTime - aDelayDuration.x, 0.0, aDelayDuration.y);',
 
-      scaleCalls,
-      translateCalls,
+      timeline.getScaleCalls(),
+      timeline.getTranslateCalls(),
 
       'transformed += aPosition;'
     ]
@@ -201,3 +164,130 @@ Animation.prototype.animate = function (duration, options) {
 
   return TweenMax.fromTo(this, duration, {time: 0.0}, options);
 };
+
+function Timeline() {
+  this.totalDuration = 0;
+  this.segments = [];
+}
+
+Timeline.prototype.append = function(duration, params) {
+  var key = this.segments.length.toString();
+  var delay = this.totalDuration;
+
+  this.totalDuration += duration;
+
+  // post-fill scale
+
+  params.scale = params.scale || {};
+
+  if (!params.scale.from) {
+    if (this.segments.length === 0) {
+      params.scale.from = new THREE.Vector3(1.0, 1.0, 1.0);
+    }
+    else {
+      params.scale.from = this.segments[this.segments.length - 1].scale.to;
+    }
+  }
+
+  if (!params.scale.to) {
+    if (this.segments.length === 0) {
+      params.scale.to = new THREE.Vector3(1.0, 1.0, 1.0);
+    }
+    else {
+      params.scale.to = this.segments[this.segments.length - 1].scale.to;
+    }
+  }
+
+  // post-fill translation
+
+  params.translate = params.translate || {};
+
+  if (!params.translate.from) {
+    if (this.segments.length === 0) {
+      params.translate.from = new THREE.Vector3(0.0, 0.0, 0.0);
+    }
+    else {
+      params.translate.from = this.segments[this.segments.length - 1].translate.to;
+    }
+  }
+
+  if (!params.translate.to) {
+    if (this.segments.length === 0) {
+      params.translate.to = new THREE.Vector3(0.0, 0.0, 0.0);
+    }
+    else {
+      params.translate.to = this.segments[this.segments.length - 1].translate.to;
+    }
+  }
+
+  var segment = new Segment(
+    key,
+    delay,
+    duration,
+    params.ease,
+    params.translate,
+    params.scale
+  );
+
+  this.segments.push(segment);
+};
+Timeline.prototype.getChunks = function() {
+  return this.segments.map(function(s) {
+    return s.chunk;
+  })
+};
+Timeline.prototype.getScaleCalls = function() {
+  return this.segments.map(function(s) {
+    return 'applyScale' + s.key + '(tTime, transformed);';
+  }).join('\n');
+};
+Timeline.prototype.getTranslateCalls = function() {
+  return this.segments.map(function(s) {
+    return 'applyTranslation' + s.key + '(tTime, transformed);';
+  }).join('\n');
+};
+
+function Segment(key, delay, duration, ease, translate, scale) {
+  this.key = key;
+  this.delay = delay;
+  this.duration = duration;
+  this.ease = ease;
+  this.translate = translate;
+  this.scale = scale;
+
+  function vecToString(v, p) {
+    return v.x.toPrecision(p) + ',' + v.y.toPrecision(p) + ',' + v.z.toPrecision(p);
+  }
+
+  var tf = 'vec3(' + vecToString(translate.from, 2) + ')';
+  var tt = 'vec3(' + vecToString(translate.to, 2) + ')';
+  var sf = 'vec3(' + vecToString(scale.from, 2) + ')';
+  var st = 'vec3(' + vecToString(scale.to, 2) + ')';
+
+  this.chunk = [
+    'float cDelay' + key + ' = ' + delay.toPrecision(2) + ';',
+    'float cDuration' + key + ' = ' + duration.toPrecision(2) + ';',
+    'vec3 cTranslateFrom' + key + ' = ' + tf + ';',
+    'vec3 cTranslateTo' + key + ' = ' + tt + ';',
+    'vec3 cScaleFrom' + key + ' = ' + sf + ';',
+    'vec3 cScaleTo' + key + ' = ' + st + ';',
+
+    'void applyScale' + key + '(float time, inout vec3 v) {',
+      'if (time < cDelay' + key + ' || time > (cDelay' + key + ' + cDuration' + key + ')) return;',
+
+      'float progress = clamp(time - cDelay' + key + ', 0.0, cDuration' + key + ') / cDuration' + key + ';',
+      'progress = ' + ease + '(progress);',
+
+      'v *= mix(cScaleFrom' + key + ', cScaleTo' + key + ', progress);',
+    '}',
+
+    'void applyTranslation' + key + '(float time, inout vec3 v) {',
+      'if (time < cDelay' + key + ' || time > (cDelay' + key + ' + cDuration' + key + ')) return;',
+
+      'float progress = clamp(time - cDelay' + key + ', 0.0, cDuration' + key + ') / cDuration' + key + ';',
+      'progress = ' + ease + '(progress);',
+
+      'v += mix(cTranslateFrom' + key + ', cTranslateTo' + key + ', progress);',
+    '}'
+  ].join('\n');
+}
