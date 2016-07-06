@@ -12,7 +12,7 @@ function init() {
     light.position.copy(root.camera.position).normalize();
   });
 
-  var gridSize = 10;
+  var gridSize = 500;
 
   var gridHelper = new THREE.GridHelper(gridSize * 0.5, 1, 0x222222, 0x444444);
   root.add(gridHelper);
@@ -40,33 +40,33 @@ function Animation(gridSize) {
   // scale up
   timeline.append(0.5, {
     scale: {
-      to: new THREE.Vector3(0.8, 2.0, 0.8)
+      to: new THREE.Vector3(0.4, 3.0, 0.4)
     },
     ease: 'easeCubicIn'
   });
   // move up
   timeline.append(1.0, {
     translate: {
-      to: new THREE.Vector3(0.0, 4.0, 0.0)
+      to: new THREE.Vector3(0.0, 6.0, 0.0)
     },
     ease: 'easeCubicOut'
   });
   // move down
-  timeline.append(1.0, {
+  timeline.append(0.5, {
     translate: {
       to: new THREE.Vector3(0.0, 0.0, 0.0)
     },
     ease: 'easeCubicIn'
   });
   // land + squish
-  timeline.append(1.0, {
+  timeline.append(0.5, {
     scale: {
       to: new THREE.Vector3(1.4, 0.4, 1.4)
     },
     ease: 'easeCubicOut'
   });
   // un-squish
-  timeline.append(1.0, {
+  timeline.append(2.0, {
     scale: {
       to: new THREE.Vector3(1.0, 1.0, 1.0)
     },
