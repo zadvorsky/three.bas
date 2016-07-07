@@ -114,7 +114,7 @@ THREE.BAS.Utils = {
    *
    * @param {THREE.Geometry} geometry Geometry instance the face is in.
    * @param {THREE.Face3} face Face object from the THREE.Geometry.faces array
-   * @param {THREE.Vector3} v Optional vector to store result in.
+   * @param {THREE.Vector3=} v Optional vector to store result in.
    * @returns {THREE.Vector3}
    */
   computeCentroid: function(geometry, face, v) {
@@ -135,7 +135,7 @@ THREE.BAS.Utils = {
    * Get a random vector between box.min and box.max.
    *
    * @param {THREE.Box3} box THREE.Box3 instance.
-   * @param {THREE.Vector3} v Optional vector to store result in.
+   * @param {THREE.Vector3=} v Optional vector to store result in.
    * @returns {THREE.Vector3}
    */
   randomInBox: function(box, v) {
@@ -151,7 +151,7 @@ THREE.BAS.Utils = {
   /**
    * Get a random axis for quaternion rotation.
    *
-   * @param {THREE.Vector3} v Option vector to store result in.
+   * @param {THREE.Vector3=} v Option vector to store result in.
    * @returns {THREE.Vector3}
    */
   randomAxis: function(v) {
@@ -209,8 +209,8 @@ THREE.BAS.Utils = {
  *
  * @param {THREE.Geometry} model The THREE.Geometry to base this geometry on.
  * @param {Object=} options
- * @param {Boolean=false} options.computeCentroids If true, a centroids will be computed for each face and stored in THREE.BAS.ModelBufferGeometry.centroids.
- * @param {Boolean=false} options.localizeFaces If true, the positions for each face will be stored relative to the centroid. This is useful if you want to rotate or scale faces around their center.
+ * @param {Boolean=} options.computeCentroids If true, a centroids will be computed for each face and stored in THREE.BAS.ModelBufferGeometry.centroids.
+ * @param {Boolean=} options.localizeFaces If true, the positions for each face will be stored relative to the centroid. This is useful if you want to rotate or scale faces around their center.
  * @constructor
  */
 THREE.BAS.ModelBufferGeometry = function(model, options) {
@@ -340,7 +340,7 @@ THREE.BAS.ModelBufferGeometry.prototype.bufferUVs = function() {
  *
  * @param {String} name Name of the attribute.
  * @param {int} itemSize Number of floats per vertex (typically 1, 2, 3 or 4).
- * @param {function} factory Function that will be called for each face upon creation. Accepts 3 arguments: data[], index and faceCount. Calls setFaceData.
+ * @param {function=} factory Function that will be called for each face upon creation. Accepts 3 arguments: data[], index and faceCount. Calls setFaceData.
  *
  * @returns {THREE.BufferAttribute}
  */
@@ -485,7 +485,7 @@ THREE.BAS.PrefabBufferGeometry.prototype.bufferUvs = function() {
  *
  * @param {String} name Name of the attribute.
  * @param {Number} itemSize Number of floats per vertex (typically 1, 2, 3 or 4).
- * @param {function} factory Function that will be called for each prefab upon creation. Accepts 3 arguments: data[], index and prefabCount. Calls setPrefabData.
+ * @param {function=} factory Function that will be called for each prefab upon creation. Accepts 3 arguments: data[], index and prefabCount. Calls setPrefabData.
  *
  * @returns {THREE.BufferAttribute}
  */

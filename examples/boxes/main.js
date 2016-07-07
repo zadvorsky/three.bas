@@ -1,5 +1,11 @@
 window.onload = init;
 
+/**
+ * This is a proof-of-concept for 'embedding' an animation timeline inside the vertex shader.
+ * Implementation is very rough. Only translation and scale are supported.
+ * This may or may not end up being useful.
+ */
+
 function init() {
   var root = new THREERoot();
   root.renderer.setClearColor(0x000000);
@@ -72,6 +78,9 @@ function init() {
 
 function Animation(gridSize) {
   // setup timeline
+
+  // the timeline generates shader chunks where an animation step is baked into.
+  // each prefab will execute the same animation, with in offset position and time (delay).
   var timeline = new Timeline();
 
   // scale down
@@ -125,11 +134,11 @@ function Animation(gridSize) {
   // setup prefab geometry
   var prefabCount = gridSize * gridSize;
   var geometry = new THREE.BAS.PrefabBufferGeometry(prefab, prefabCount);
+
   var aPosition = geometry.createAttribute('aPosition', 3);
   var aDelayDuration = geometry.createAttribute('aDelayDuration', 2);
   var index = 0;
   var dataArray = [];
-
   var maxDelay = 4.0;
 
   this.totalDuration = timeline.totalDuration + maxDelay;
@@ -146,8 +155,6 @@ function Animation(gridSize) {
       geometry.setPrefabData(aPosition, index, dataArray);
 
       // animation
-      //dataArray[0] = maxDelay * index / prefabCount;
-      //dataArray[0] = maxDelay * Math.random();
       dataArray[0] = maxDelay * Math.sqrt(x * x + y * y) / gridSize;
       dataArray[1] = timeline.totalDuration;
       geometry.setPrefabData(aDelayDuration, index, dataArray);
@@ -167,10 +174,12 @@ function Animation(gridSize) {
       roughness: 1.0
     },
     vertexFunctions: [
+      // the eases used by the timeline defined above
       THREE.BAS.ShaderChunk['ease_cubic_in'],
       THREE.BAS.ShaderChunk['ease_cubic_out'],
       THREE.BAS.ShaderChunk['ease_cubic_in_out'],
       THREE.BAS.ShaderChunk['ease_back_out'],
+      // getChunks outputs the shader chunks where the animation is baked into
     ].concat(timeline.getChunks()),
     vertexParameters: [
       'uniform float uTime;',
@@ -179,11 +188,14 @@ function Animation(gridSize) {
       'attribute vec2 aDelayDuration;'
     ],
     vertexPosition: [
+      // calculate animation time for the prefab
       'float tTime = clamp(uTime - aDelayDuration.x, 0.0, aDelayDuration.y);',
 
+      // apply timeline transformations based on 'tTime'
       timeline.getScaleCalls(),
       timeline.getTranslateCalls(),
 
+      // translate the vertex by prefab position
       'transformed += aPosition;'
     ]
   });
@@ -310,6 +322,7 @@ function Segment(key, delay, duration, ease, translate, scale) {
   var sf = 'vec3(' + vecToString(scale.from, 2) + ')';
   var st = 'vec3(' + vecToString(scale.to, 2) + ')';
 
+  // this is where the magic happens, but the magic still needs a lot of work
   this.chunk = [
     'float cDelay' + key + ' = ' + delay.toPrecision(2) + ';',
     'float cDuration' + key + ' = ' + duration.toPrecision(2) + ';',

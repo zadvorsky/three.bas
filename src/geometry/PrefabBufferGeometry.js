@@ -101,7 +101,7 @@ THREE.BAS.PrefabBufferGeometry.prototype.bufferUvs = function() {
  *
  * @param {String} name Name of the attribute.
  * @param {Number} itemSize Number of floats per vertex (typically 1, 2, 3 or 4).
- * @param {function} factory Function that will be called for each prefab upon creation. Accepts 3 arguments: data[], index and prefabCount. Calls setPrefabData.
+ * @param {function=} factory Function that will be called for each prefab upon creation. Accepts 3 arguments: data[], index and prefabCount. Calls setPrefabData.
  *
  * @returns {THREE.BufferAttribute}
  */

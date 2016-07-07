@@ -41,7 +41,7 @@ THREE.BAS.Utils = {
    *
    * @param {THREE.Geometry} geometry Geometry instance the face is in.
    * @param {THREE.Face3} face Face object from the THREE.Geometry.faces array
-   * @param {THREE.Vector3} v Optional vector to store result in.
+   * @param {THREE.Vector3=} v Optional vector to store result in.
    * @returns {THREE.Vector3}
    */
   computeCentroid: function(geometry, face, v) {
@@ -62,7 +62,7 @@ THREE.BAS.Utils = {
    * Get a random vector between box.min and box.max.
    *
    * @param {THREE.Box3} box THREE.Box3 instance.
-   * @param {THREE.Vector3} v Optional vector to store result in.
+   * @param {THREE.Vector3=} v Optional vector to store result in.
    * @returns {THREE.Vector3}
    */
   randomInBox: function(box, v) {
@@ -78,7 +78,7 @@ THREE.BAS.Utils = {
   /**
    * Get a random axis for quaternion rotation.
    *
-   * @param {THREE.Vector3} v Option vector to store result in.
+   * @param {THREE.Vector3=} v Option vector to store result in.
    * @returns {THREE.Vector3}
    */
   randomAxis: function(v) {
