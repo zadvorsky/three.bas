@@ -1289,7 +1289,7 @@ THREE.BAS.StandardAnimationMaterial.prototype._concatFragmentShader = function (
     '#endif',
 
     //'#include <metalnessmap_fragment>',
-    'float metalnessFactor = roughness;',
+    'float metalnessFactor = metalness;',
     this._stringifyChunk('fragmentMetalness'),
     '#ifdef USE_METALNESSMAP',
     ' metalnessFactor *= texture2D( metalnessMap, vUv ).r;',

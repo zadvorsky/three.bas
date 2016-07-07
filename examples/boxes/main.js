@@ -3,7 +3,7 @@ window.onload = init;
 function init() {
   var root = new THREERoot();
   root.renderer.setClearColor(0x000000);
-  root.camera.position.set(8, 6, 4);
+  root.camera.position.set(12, 12, 0);
 
   var light = new THREE.DirectionalLight(0xffffff, 1.0);
   light.position.set(0, 1, 0);
@@ -12,14 +12,58 @@ function init() {
     light.position.copy(root.camera.position).normalize();
   });
 
-  var gridSize = 500;
+  var pointLight = new THREE.PointLight();
+  pointLight.position.set(0, 10, 0);
+  root.add(pointLight);
 
-  var gridHelper = new THREE.GridHelper(gridSize * 0.5, 1, 0x222222, 0x444444);
-  root.add(gridHelper);
+  var gridHelper, animation, tween;
 
-  var animation = new Animation(gridSize);
-  animation.animate(animation.totalDuration, {repeat:-1, repeatDelay: 0.0, ease:Power0.easeNone}).timeScale(2.0);
-  root.add(animation);
+  // html stuff
+  var elCount = document.querySelector('.count');
+  var elBtnLeft = document.querySelector('.btn.left');
+  var elBtnRight = document.querySelector('.btn.right');
+
+  var sizes = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
+  var index = 0;
+
+  function createAnimation(i) {
+    var gridSize = sizes[i];
+
+    elCount.innerHTML = gridSize;
+    elBtnRight.classList.toggle('disabled', i === sizes.length - 1);
+    elBtnLeft.classList.toggle('disabled', index === 0);
+
+    if (gridHelper) {
+      root.remove(gridHelper);
+      gridHelper.material.dispose();
+      gridHelper.geometry.dispose();
+    }
+
+    if (animation) {
+      root.remove(animation);
+      animation.material.dispose();
+      animation.geometry.dispose();
+    }
+
+    gridHelper = new THREE.GridHelper(gridSize * 0.5, 1, 0x222222, 0x444444);
+    root.add(gridHelper);
+
+    animation = new Animation(gridSize);
+    root.add(animation);
+
+    tween = animation.animate({repeat:-1, repeatDelay: 0.0, ease:Power0.easeNone}).timeScale(2.0);
+  }
+
+  elBtnLeft.addEventListener('click', function() {
+    index = Math.max(0, index - 1);
+    createAnimation(index);
+  });
+  elBtnRight.addEventListener('click', function() {
+    index = Math.min(index + 1, sizes.length - 1);
+    createAnimation(index);
+  });
+
+  createAnimation(index);
 }
 
 ////////////////////
@@ -66,7 +110,7 @@ function Animation(gridSize) {
     ease: 'easeCubicOut'
   });
   // un-squish
-  timeline.append(2.0, {
+  timeline.append(1.5, {
     scale: {
       to: new THREE.Vector3(1.0, 1.0, 1.0)
     },
@@ -118,7 +162,9 @@ function Animation(gridSize) {
       uTime: {value: 0}
     },
     uniformValues: {
-      diffuse: new THREE.Color(0x888888)
+      diffuse: new THREE.Color(0x888888),
+      metalness: 1.0,
+      roughness: 1.0
     },
     vertexFunctions: [
       THREE.BAS.ShaderChunk['ease_cubic_in'],
@@ -158,11 +204,11 @@ Object.defineProperty(Animation.prototype, 'time', {
   }
 });
 
-Animation.prototype.animate = function (duration, options) {
+Animation.prototype.animate = function (options) {
   options = options || {};
   options.time = this.totalDuration;
 
-  return TweenMax.fromTo(this, duration, {time: 0.0}, options);
+  return TweenMax.fromTo(this, this.totalDuration, {time: 0.0}, options);
 };
 
 function Timeline() {

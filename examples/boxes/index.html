@@ -9,11 +9,53 @@
       margin: 0;
       overflow: hidden;
       font-family: monospace;
+      background: #000;
     }
+
+    #three-container {
+      cursor: move;
+    }
+
+    .controls {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 12px;
+      text-align: center;
+      color: white;
+      font-size: 48px;
+    }
+    .btn {
+      cursor: pointer;
+      font-weight: bolder;
+      transition: color .15s;
+    }
+    .btn:hover {
+      color: #aaa;
+    }
+    .btn.disabled {
+      pointer-events: none;
+      color: #666;
+    }
+    .count {
+      display: inline-block;
+      width: 100px;
+      padding: 0 60px;
+      user-select: none;
+      -moz-user-select: none;
+      -webkit-user-select: none;
+      -ms-user-select: none;
+      pointer-events: none;
+    }
+
   </style>
 </head>
 <body>
 <div id="three-container"></div>
+
+<div class="controls">
+  <span class="btn left disabled"><</span><span class="count">10</span><span class="btn right">></span>
+</div>
 
 <script src="../_lib/TweenMax.min.js"></script>
 <script src="../../bower_components/three.js/build/three.js"></script>
