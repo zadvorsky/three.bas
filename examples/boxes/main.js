@@ -237,74 +237,64 @@ function Timeline() {
 Timeline.prototype.append = function(duration, params) {
   var delay = this.totalDuration;
 
-  this.totalDuration += duration;
-
-  // scale
-
   if (params.scale) {
-    if (!params.scale.from) {
-      if (this.scaleSegments.length === 0) {
-        params.scale.from = new THREE.Vector3(1.0, 1.0, 1.0);
-      }
-      else {
-        params.scale.from = this.scaleSegments[this.scaleSegments.length - 1].scale.to;
-      }
-    }
-
-    if (this.scaleSegments.length > 0) {
-      var lastScale = this.scaleSegments[this.scaleSegments.length - 1];
-      lastScale.trail = delay - lastScale.end;
-    }
-
-    this.scaleSegments.push(new ScaleSegment(
-      (this.__key++).toString(),
-      delay,
-      duration,
-      params.ease,
-      params.scale
-    ));
+    this._processScale(delay, duration, params);
   }
-
-  // translation
 
   if (params.translate) {
-    if (!params.translate.from) {
-      if (this.translationSegments.length === 0) {
-        params.translate.from = new THREE.Vector3(0.0, 0.0, 0.0);
-      }
-      else {
-        params.translate.from = this.translationSegments[this.translationSegments.length - 1].translation.to;
-      }
-    }
-
-    if (this.translationSegments.length > 0) {
-      var lastTranslation = this.translationSegments[this.translationSegments.length - 1];
-      lastTranslation.trail = delay - lastTranslation.end;
-    }
-
-    this.translationSegments.push(new TranslationSegment(
-      (this.__key++).toString(),
-      delay,
-      duration,
-      params.ease,
-      params.translate
-    ));
+    this._processTranslation(delay, duration, params);
   }
+
+  this.totalDuration += duration;
 };
+
+Timeline.prototype._processScale = function(delay, duration, params) {
+  if (!params.scale.from) {
+    if (this.scaleSegments.length === 0) {
+      params.scale.from = new THREE.Vector3(1.0, 1.0, 1.0);
+    }
+    else {
+      params.scale.from = this.scaleSegments[this.scaleSegments.length - 1].scale.to;
+    }
+  }
+
+  this._pad(this.scaleSegments);
+
+  this.scaleSegments.push(new ScaleSegment(
+    this._getKey(),
+    delay,
+    duration,
+    params.ease,
+    params.scale
+  ));
+};
+
+Timeline.prototype._processTranslation = function(delay, duration, params) {
+  if (!params.translate.from) {
+    if (this.translationSegments.length === 0) {
+      params.translate.from = new THREE.Vector3(0.0, 0.0, 0.0);
+    }
+    else {
+      params.translate.from = this.translationSegments[this.translationSegments.length - 1].translation.to;
+    }
+  }
+
+  this._pad(this.translationSegments);
+
+  this.translationSegments.push(new TranslationSegment(
+    this._getKey(),
+    delay,
+    duration,
+    params.ease,
+    params.translate
+  ));
+};
+
 Timeline.prototype.compile = function() {
   var c = [];
 
-  var lastScale = this.scaleSegments[this.scaleSegments.length - 1];
-
-  if (lastScale.end < this.totalDuration) {
-    lastScale.trail = this.totalDuration - lastScale.end;
-  }
-
-  var lastTranslation = this.translationSegments[this.translationSegments.length - 1];
-
-  if (lastTranslation.end < this.totalDuration) {
-    lastTranslation.trail = this.totalDuration - lastTranslation.end;
-  }
+  this._pad(this.scaleSegments);
+  this._pad(this.translationSegments);
 
   this.scaleSegments.forEach(function(s) {
     c.push(s.compile());
@@ -316,6 +306,20 @@ Timeline.prototype.compile = function() {
 
   return c;
 };
+Timeline.prototype._pad = function(segments) {
+  if (segments.length === 0) return;
+
+  var last = segments[segments.length - 1];
+
+  if (last.end < this.totalDuration) {
+    last.trail = this.totalDuration - last.end;
+  }
+};
+Timeline.prototype._getKey = function() {
+  return (this.__key++).toString();
+};
+
+
 Timeline.prototype.getScaleCalls = function() {
   return this.scaleSegments.map(function(s) {
     return 'applyScale' + s.key + '(tTime, transformed);';
@@ -328,7 +332,7 @@ Timeline.prototype.getTranslateCalls = function() {
 };
 
 var TimelineUtils = {
-  vec3ToConst: function(n, v, p) {
+  vec3: function(n, v, p) {
     return 'vec3 ' + n + ' = vec3(' + v.x.toPrecision(p) + ',' + v.y.toPrecision(p) + ',' + v.z.toPrecision(p) + ');';
   },
   delayDuration: function(key, delay, duration) {
@@ -336,6 +340,18 @@ var TimelineUtils = {
       'float cDelay' + key + ' = ' + delay.toPrecision(4) + ';',
       'float cDuration' + key + ' = ' + duration.toPrecision(4) + ';'
     ].join('\n');
+  },
+  progress: function(key, ease) {
+    return [
+      'float progress = clamp(time - cDelay' + key + ', 0.0, cDuration' + key + ') / cDuration' + key + ';',
+      'progress = ' + ease + '(progress);'
+    ].join('\n');
+  },
+  renderCheck: function(segment) {
+    var startTime = segment.delay.toPrecision(4);
+    var endTime = (segment.end + segment.trail).toPrecision(4);
+
+    return 'if (time < ' + startTime + ' || time > ' + endTime + ') return;';
   }
 };
 
@@ -348,21 +364,17 @@ function ScaleSegment(key, delay, duration, ease, scale) {
   this.trail = 0;
 }
 ScaleSegment.prototype.compile = function() {
-  var startTime = this.delay.toPrecision(4);
-  var endTime = (this.delay + this.duration + this.trail).toPrecision(4);
-
   return [
     TimelineUtils.delayDuration(this.key, this.delay, this.duration),
-    TimelineUtils.vec3ToConst('cScaleFrom' + this.key, this.scale.from, 2),
-    TimelineUtils.vec3ToConst('cScaleTo' + this.key, this.scale.to, 2),
+    TimelineUtils.vec3('cScaleFrom' + this.key, this.scale.from, 2),
+    TimelineUtils.vec3('cScaleTo' + this.key, this.scale.to, 2),
 
     'void applyScale' + this.key + '(float time, inout vec3 v) {',
-    ' if (time < ' + startTime + ' || time > ' + endTime + ') return;',
 
-    ' float progress = clamp(time - cDelay' + this.key + ', 0.0, cDuration' + this.key + ') / cDuration' + this.key + ';',
-    ' progress = ' + this.ease + '(progress);',
+    TimelineUtils.renderCheck(this),
+    TimelineUtils.progress(this.key, this.ease),
 
-    ' v *= mix(cScaleFrom' + this.key + ', cScaleTo' + this.key + ', progress);',
+    'v *= mix(cScaleFrom' + this.key + ', cScaleTo' + this.key + ', progress);',
     '}'
   ].join('\n');
 };
@@ -381,21 +393,17 @@ function TranslationSegment(key, delay, duration, ease, translation) {
   this.trail = 0;
 }
 TranslationSegment.prototype.compile = function() {
-  var startTime = this.delay.toPrecision(4);
-  var endTime = (this.delay + this.duration + this.trail).toPrecision(4);
-
   return [
     TimelineUtils.delayDuration(this.key, this.delay, this.duration),
-    TimelineUtils.vec3ToConst('cTranslateFrom' + this.key, this.translation.from, 2),
-    TimelineUtils.vec3ToConst('cTranslateTo' + this.key, this.translation.to, 2),
+    TimelineUtils.vec3('cTranslateFrom' + this.key, this.translation.from, 2),
+    TimelineUtils.vec3('cTranslateTo' + this.key, this.translation.to, 2),
 
     'void applyTranslation' + this.key + '(float time, inout vec3 v) {',
-    ' if (time < ' + startTime + ' || time > ' + endTime + ') return;',
 
-    ' float progress = clamp(time - cDelay' + this.key + ', 0.0, cDuration' + this.key + ') / cDuration' + this.key + ';',
-    ' progress = ' + this.ease + '(progress);',
+    TimelineUtils.renderCheck(this),
+    TimelineUtils.progress(this.key, this.ease),
 
-    ' v += mix(cTranslateFrom' + this.key + ', cTranslateTo' + this.key + ', progress);',
+    'v += mix(cTranslateFrom' + this.key + ', cTranslateTo' + this.key + ', progress);',
     '}'
   ].join('\n');
 };
