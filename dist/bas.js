@@ -68,7 +68,9 @@ THREE.BAS.ShaderChunk["ease_sine_in_out"] = "float easeSineInOut(float p) {\n  r
 
 THREE.BAS.ShaderChunk["ease_sine_out"] = "float easeSineOut(float p) {\n  return sin(p * 1.57079632679);\n}\n\nfloat easeSineOut(float t, float b, float c, float d) {\n  return b + easeSineOut(t / d) * c;\n}\n";
 
-THREE.BAS.ShaderChunk["quaternion_rotation"] = "vec3 rotateVector(vec4 q, vec3 v) {\n    return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);\n}\n\nvec4 quatFromAxisAngle(vec3 axis, float angle) {\n    float halfAngle = angle * 0.5;\n    return vec4(axis.xyz * sin(halfAngle), cos(halfAngle));\n}\n\nvec4 quatSlerp(vec4 q0, vec4 q1, float t) {\n\n    float s = 1.0 - t;\n    float c = dot(q0, q1);\n    float dir = -1.0; //c >= 0.0 ? 1.0 : -1.0;\n    float sqrSn = 1.0 - c * c;\n\n    if (sqrSn > 2.220446049250313e-16) {\n        float sn = sqrt(sqrSn);\n        float len = atan(sn, c * dir);\n\n        s = sin(s * len) / sn;\n        t = sin(t * len) / sn;\n    }\n\n    float tDir = t * dir;\n\n    return normalize(q0 * s + q1 * tDir);\n}\n";
+THREE.BAS.ShaderChunk["quaternion_rotation"] = "vec3 rotateVector(vec4 q, vec3 v) {\n    return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);\n}\n\nvec4 quatFromAxisAngle(vec3 axis, float angle) {\n    float halfAngle = angle * 0.5;\n    return vec4(axis.xyz * sin(halfAngle), cos(halfAngle));\n}\n";
+
+THREE.BAS.ShaderChunk["quaternion_slerp"] = "vec4 quatSlerp(vec4 q0, vec4 q1, float t) {\n    float s = 1.0 - t;\n    float c = dot(q0, q1);\n    float dir = -1.0; //c >= 0.0 ? 1.0 : -1.0;\n    float sqrSn = 1.0 - c * c;\n\n    if (sqrSn > 2.220446049250313e-16) {\n        float sn = sqrt(sqrSn);\n        float len = atan(sn, c * dir);\n\n        s = sin(s * len) / sn;\n        t = sin(t * len) / sn;\n    }\n\n    float tDir = t * dir;\n\n    return normalize(q0 * s + q1 * tDir);\n}\n";
 
 
 /**

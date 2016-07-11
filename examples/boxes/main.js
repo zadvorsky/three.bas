@@ -9,7 +9,7 @@ window.onload = init;
 function init() {
   var root = new THREERoot();
   root.renderer.setClearColor(0x000000);
-  root.camera.position.set(4, 4, 0);
+  root.camera.position.set(12, 12, 0);
 
   var light = new THREE.DirectionalLight(0xffffff, 1.0);
   light.position.set(0, 1, 0);
@@ -57,7 +57,7 @@ function init() {
     animation = new Animation(gridSize);
     root.add(animation);
 
-    tween = animation.animate({repeat:-1, repeatDelay: 0.0, ease:Power0.easeNone}).timeScale(1);
+    tween = animation.animate({repeat:-1, repeatDelay: 0.0, ease:Power0.easeNone}).timeScale(2.0);
   }
 
   elBtnLeft.addEventListener('click', function() {
@@ -83,86 +83,52 @@ function Animation(gridSize) {
   // each prefab will execute the same animation, with in offset position and time (delay).
   var timeline = new Timeline();
 
-  timeline.append(1.0, {
-    rotate: {
-      to: new THREE.Quaternion().setFromAxisAngle(
-        new THREE.Vector3(0, 1, 0),
-        Math.PI * 0.0
-      ),
-      from: new THREE.Quaternion().setFromAxisAngle(
-        new THREE.Vector3(0, 1, 0),
-        Math.PI * 1.0
-      )
-    },
-    ease: 'easeCubicInOut'
-  });
-
-  //timeline.append(1.0, {
-  //  translate: {
-  //    to: new THREE.Vector3(0, 5, 0)
-  //  },
-  //  ease: 'easeCubicInOut'
-  //});
-  //
-  //timeline.append(1.0, {
-  //  scale: {
-  //    to: new THREE.Vector3(2, 2, 2)
-  //  },
-  //  ease: 'easeCubicInOut'
-  //});
-  //
-  //timeline.append(1.0, {
-  //  scale: {
-  //    to: new THREE.Vector3(1, 1, 1)
-  //  },
-  //  translate: {
-  //    to: new THREE.Vector3(0, 0, 0)
-  //  },
-  //  ease: 'easeCubicInOut'
-  //}, '+=0.5');
-
   //// scale down
-  //timeline.append(1.0, {
-  //  scale: {
-  //    to: new THREE.Vector3(1.4, 0.4, 1.4)
-  //  },
-  //  ease: 'easeCubicOut'
-  //});
-  //// scale up
-  //timeline.append(0.5, {
-  //  scale: {
-  //    to: new THREE.Vector3(0.4, 3.0, 0.4)
-  //  },
-  //  ease: 'easeCubicIn'
-  //});
-  //// move up
-  //timeline.append(1.0, {
-  //  translate: {
-  //    to: new THREE.Vector3(0.0, 6.0, 0.0)
-  //  },
-  //  ease: 'easeCubicOut'
-  //});
-  //// move down
-  //timeline.append(0.5, {
-  //  translate: {
-  //    to: new THREE.Vector3(0.0, 0.0, 0.0)
-  //  },
-  //  ease: 'easeCubicIn'
-  //});
-  //// land + squish
-  //timeline.append(0.5, {
-  //  scale: {
-  //    to: new THREE.Vector3(1.4, 0.4, 1.4)
-  //  },
-  //  ease: 'easeCubicOut'
-  //});
-  //// un-squish
-  //timeline.append(1.5, {
-  //  scale: {
-  //    to: new THREE.Vector3(1.0, 1.0, 1.0)
-  //  },
-  //  ease: 'easeBackOut'
-  //});
+  timeline.add(1.0, {
+    scale: {
+      to: new THREE.Vector3(1.4, 0.4, 1.4)
+    },
+    ease: 'easeCubicOut'
+  });
+  // scale up
+  timeline.add(0.5, {
+    scale: {
+      to: new THREE.Vector3(0.4, 3.0, 0.4)
+    },
+    ease: 'easeCubicIn'
+  });
+  // move up + rotate
+  timeline.add(1.0, {
+    translate: {
+      to: new THREE.Vector3(0.0, 6.0, 0.0)
+    },
+    rotate: {
+      axis: new THREE.Vector3(0, 1, 0),
+      to: Math.PI
+    },
+    ease: 'easeCubicOut'
+  });
+  // move down
+  timeline.add(0.5, {
+    translate: {
+      to: new THREE.Vector3(0.0, 0.0, 0.0)
+    },
+    ease: 'easeCubicIn'
+  });
+  // land + squish
+  timeline.add(0.5, {
+    scale: {
+      to: new THREE.Vector3(1.4, 0.4, 1.4)
+    },
+    ease: 'easeCubicOut'
+  });
+  // un-squish
+  timeline.add(1.5, {
+    scale: {
+      to: new THREE.Vector3(1.0, 1.0, 1.0)
+    },
+    ease: 'easeBackOut'
+  });
 
   // setup prefab
   var prefabSize = 0.5;
@@ -272,7 +238,7 @@ function Timeline() {
   this.translationSegments = [];
 }
 
-Timeline.prototype.append = function(duration, params, positionOffset) {
+Timeline.prototype.add = function(duration, params, positionOffset) {
   var start = this.totalDuration;
 
   if (positionOffset !== undefined) {
@@ -324,12 +290,14 @@ Timeline.prototype._processScale = function(start, duration, params) {
 Timeline.prototype._processRotation = function(start, duration, params) {
   if (!params.rotate.from) {
     if (this.rotationSegments.length === 0) {
-      params.rotate.from = new THREE.Quaternion();
+      params.rotate.from = 0;
     }
     else {
       params.rotate.from = this.rotationSegments[this.rotationSegments.length - 1].rotate.to;
     }
   }
+
+  console.log('>>', params);
 
   this.rotationSegments.push(new RotationSegment(
     this._getKey(),
@@ -481,18 +449,33 @@ function RotationSegment(key, start, duration, ease, rotation) {
   this.trail = 0;
 }
 RotationSegment.prototype.compile = function() {
+  var fromAxisAngle = new THREE.Vector4(
+    this.rotation.axis.x,
+    this.rotation.axis.y,
+    this.rotation.axis.z,
+    this.rotation.from
+  );
+
+  var toAxisAngle = new THREE.Vector4(
+    this.rotation.axis.x,
+    this.rotation.axis.y,
+    this.rotation.axis.z,
+    this.rotation.to
+  );
+
+  console.log('>>>>?>', this.ease)
+
   return [
     TimelineChunks.delayDuration(this.key, this.start, this.duration),
-    TimelineChunks.vec4('cRotationFrom' + this.key, this.rotation.from, 2),
-    TimelineChunks.vec4('cRotationTo' + this.key, this.rotation.to, 2),
+    TimelineChunks.vec4('cRotationFrom' + this.key, fromAxisAngle, 8),
+    TimelineChunks.vec4('cRotationTo' + this.key, toAxisAngle, 8),
 
     'void applyRotation' + this.key + '(float time, inout vec3 v) {',
 
     TimelineChunks.renderCheck(this),
     TimelineChunks.progress(this.key, this.ease),
 
-    'vec4 q = quatSlerp(cRotationFrom' + this.key + ', cRotationTo' + this.key + ', progress);',
-    //'vec4 q = vec4(0.0, 0.25, 0.120, 1.0);',
+    'vec4 q = quatFromAxisAngle(cRotationFrom' + this.key + '.xyz' + ', mix(cRotationFrom' + this.key + '.w, cRotationTo' + this.key + '.w, progress));',
     'v = rotateVector(q, v);',
     '}'
   ].join('\n');
