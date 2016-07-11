@@ -9,7 +9,7 @@ window.onload = init;
 function init() {
   var root = new THREERoot();
   root.renderer.setClearColor(0x000000);
-  root.camera.position.set(12, 12, 0);
+  root.camera.position.set(4, 4, 0);
 
   var light = new THREE.DirectionalLight(0xffffff, 1.0);
   light.position.set(0, 1, 0);
@@ -83,6 +83,20 @@ function Animation(gridSize) {
   // each prefab will execute the same animation, with in offset position and time (delay).
   var timeline = new Timeline();
 
+  timeline.append(1.0, {
+    rotate: {
+      to: new THREE.Quaternion().setFromAxisAngle(
+        new THREE.Vector3(0, 1, 0),
+        Math.PI * 0.0
+      ),
+      from: new THREE.Quaternion().setFromAxisAngle(
+        new THREE.Vector3(0, 1, 0),
+        Math.PI * 1.0
+      )
+    },
+    ease: 'easeCubicInOut'
+  });
+
   //timeline.append(1.0, {
   //  translate: {
   //    to: new THREE.Vector3(0, 5, 0)
@@ -107,51 +121,48 @@ function Animation(gridSize) {
   //  ease: 'easeCubicInOut'
   //}, '+=0.5');
 
-  // scale down
-  timeline.append(1.0, {
-    scale: {
-      to: new THREE.Vector3(1.4, 0.4, 1.4)
-    },
-    //translate: {
-    //  to: new THREE.Vector3(1, 0, 0)
-    //},
-    ease: 'easeCubicOut'
-  });
-  // scale up
-  timeline.append(0.5, {
-    scale: {
-      to: new THREE.Vector3(0.4, 3.0, 0.4)
-    },
-    ease: 'easeCubicIn'
-  });
-  // move up
-  timeline.append(1.0, {
-    translate: {
-      to: new THREE.Vector3(0.0, 6.0, 0.0)
-    },
-    ease: 'easeCubicOut'
-  });
-  // move down
-  timeline.append(0.5, {
-    translate: {
-      to: new THREE.Vector3(0.0, 0.0, 0.0)
-    },
-    ease: 'easeCubicIn'
-  });
-  // land + squish
-  timeline.append(0.5, {
-    scale: {
-      to: new THREE.Vector3(1.4, 0.4, 1.4)
-    },
-    ease: 'easeCubicOut'
-  });
-  // un-squish
-  timeline.append(1.5, {
-    scale: {
-      to: new THREE.Vector3(1.0, 1.0, 1.0)
-    },
-    ease: 'easeBackOut'
-  });
+  //// scale down
+  //timeline.append(1.0, {
+  //  scale: {
+  //    to: new THREE.Vector3(1.4, 0.4, 1.4)
+  //  },
+  //  ease: 'easeCubicOut'
+  //});
+  //// scale up
+  //timeline.append(0.5, {
+  //  scale: {
+  //    to: new THREE.Vector3(0.4, 3.0, 0.4)
+  //  },
+  //  ease: 'easeCubicIn'
+  //});
+  //// move up
+  //timeline.append(1.0, {
+  //  translate: {
+  //    to: new THREE.Vector3(0.0, 6.0, 0.0)
+  //  },
+  //  ease: 'easeCubicOut'
+  //});
+  //// move down
+  //timeline.append(0.5, {
+  //  translate: {
+  //    to: new THREE.Vector3(0.0, 0.0, 0.0)
+  //  },
+  //  ease: 'easeCubicIn'
+  //});
+  //// land + squish
+  //timeline.append(0.5, {
+  //  scale: {
+  //    to: new THREE.Vector3(1.4, 0.4, 1.4)
+  //  },
+  //  ease: 'easeCubicOut'
+  //});
+  //// un-squish
+  //timeline.append(1.5, {
+  //  scale: {
+  //    to: new THREE.Vector3(1.0, 1.0, 1.0)
+  //  },
+  //  ease: 'easeBackOut'
+  //});
 
   // setup prefab
   var prefabSize = 0.5;
@@ -166,7 +177,7 @@ function Animation(gridSize) {
   var aDelayDuration = geometry.createAttribute('aDelayDuration', 2);
   var index = 0;
   var dataArray = [];
-  var maxDelay = 4.0;
+  var maxDelay = gridSize === 1 ? 0 : 4.0;
 
   this.totalDuration = timeline.totalDuration + maxDelay;
 
@@ -206,6 +217,7 @@ function Animation(gridSize) {
       THREE.BAS.ShaderChunk['ease_cubic_out'],
       THREE.BAS.ShaderChunk['ease_cubic_in_out'],
       THREE.BAS.ShaderChunk['ease_back_out'],
+      THREE.BAS.ShaderChunk['quaternion_rotation'],
       // getChunks outputs the shader chunks where the animation is baked into
     ].concat(timeline.compile()),
     vertexParameters: [
@@ -220,6 +232,7 @@ function Animation(gridSize) {
 
       // apply timeline transformations based on 'tTime'
       timeline.getScaleCalls(),
+      timeline.getRotateCalls(),
       timeline.getTranslateCalls(),
 
       // translate the vertex by prefab position
@@ -255,6 +268,7 @@ function Timeline() {
   this.__key = 0;
 
   this.scaleSegments = [];
+  this.rotationSegments = [];
   this.translationSegments = [];
 }
 
@@ -268,6 +282,7 @@ Timeline.prototype.append = function(duration, params, positionOffset) {
     else if (typeof positionOffset === 'string') {
       eval('start' + positionOffset);
     }
+
     this.totalDuration = Math.max(this.totalDuration, start + duration);
   }
   else {
@@ -276,6 +291,10 @@ Timeline.prototype.append = function(duration, params, positionOffset) {
 
   if (params.scale) {
     this._processScale(start, duration, params);
+  }
+
+  if (params.rotate) {
+    this._processRotation(start, duration, params);
   }
 
   if (params.translate) {
@@ -302,6 +321,25 @@ Timeline.prototype._processScale = function(start, duration, params) {
   ));
 };
 
+Timeline.prototype._processRotation = function(start, duration, params) {
+  if (!params.rotate.from) {
+    if (this.rotationSegments.length === 0) {
+      params.rotate.from = new THREE.Quaternion();
+    }
+    else {
+      params.rotate.from = this.rotationSegments[this.rotationSegments.length - 1].rotate.to;
+    }
+  }
+
+  this.rotationSegments.push(new RotationSegment(
+    this._getKey(),
+    start,
+    duration,
+    params.ease,
+    params.rotate
+  ));
+};
+
 Timeline.prototype._processTranslation = function(start, duration, params) {
   if (!params.translate.from) {
     if (this.translationSegments.length === 0) {
@@ -325,9 +363,14 @@ Timeline.prototype.compile = function() {
   var c = [];
 
   this._pad(this.scaleSegments);
+  this._pad(this.rotationSegments);
   this._pad(this.translationSegments);
 
   this.scaleSegments.forEach(function(s) {
+    c.push(s.compile());
+  });
+
+  this.rotationSegments.forEach(function(s) {
     c.push(s.compile());
   });
 
@@ -362,6 +405,11 @@ Timeline.prototype.getScaleCalls = function() {
     return 'applyScale' + s.key + '(tTime, transformed);';
   }).join('\n');
 };
+Timeline.prototype.getRotateCalls = function() {
+  return this.rotationSegments.map(function(s) {
+    return 'applyRotation' + s.key + '(tTime, transformed);';
+  }).join('\n');
+};
 Timeline.prototype.getTranslateCalls = function() {
   return this.translationSegments.map(function(s) {
     return 'applyTranslation' + s.key + '(tTime, transformed);';
@@ -371,6 +419,9 @@ Timeline.prototype.getTranslateCalls = function() {
 var TimelineChunks = {
   vec3: function(n, v, p) {
     return 'vec3 ' + n + ' = vec3(' + v.x.toPrecision(p) + ',' + v.y.toPrecision(p) + ',' + v.z.toPrecision(p) + ');';
+  },
+  vec4: function(n, v, p) {
+    return 'vec4 ' + n + ' = vec4(' + v.x.toPrecision(p) + ',' + v.y.toPrecision(p) + ',' + v.z.toPrecision(p) + ',' + v.w.toPrecision(p) + ');';
   },
   delayDuration: function(key, delay, duration) {
     return [
@@ -416,6 +467,37 @@ ScaleSegment.prototype.compile = function() {
   ].join('\n');
 };
 Object.defineProperty(ScaleSegment.prototype, 'end', {
+  get: function() {
+    return this.start + this.duration;
+  }
+});
+
+function RotationSegment(key, start, duration, ease, rotation) {
+  this.key = key;
+  this.start = start;
+  this.duration = duration;
+  this.ease = ease;
+  this.rotation = rotation;
+  this.trail = 0;
+}
+RotationSegment.prototype.compile = function() {
+  return [
+    TimelineChunks.delayDuration(this.key, this.start, this.duration),
+    TimelineChunks.vec4('cRotationFrom' + this.key, this.rotation.from, 2),
+    TimelineChunks.vec4('cRotationTo' + this.key, this.rotation.to, 2),
+
+    'void applyRotation' + this.key + '(float time, inout vec3 v) {',
+
+    TimelineChunks.renderCheck(this),
+    TimelineChunks.progress(this.key, this.ease),
+
+    'vec4 q = quatSlerp(cRotationFrom' + this.key + ', cRotationTo' + this.key + ', progress);',
+    //'vec4 q = vec4(0.0, 0.25, 0.120, 1.0);',
+    'v = rotateVector(q, v);',
+    '}'
+  ].join('\n');
+};
+Object.defineProperty(RotationSegment.prototype, 'end', {
   get: function() {
     return this.start + this.duration;
   }
