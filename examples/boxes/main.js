@@ -30,7 +30,7 @@ function init() {
   var elBtnRight = document.querySelector('.btn.right');
 
   var sizes = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
-  var index = 3;
+  var index = 0;
 
   function createAnimation(i) {
     var gridSize = sizes[i];
@@ -57,7 +57,7 @@ function init() {
     animation = new Animation(gridSize);
     root.add(animation);
 
-    tween = animation.animate({repeat:-1, repeatDelay: 0.0, ease:Power0.easeNone}).timeScale(2);
+    tween = animation.animate({repeat:-1, repeatDelay: 0.0, ease:Power0.easeNone}).timeScale(1);
   }
 
   elBtnLeft.addEventListener('click', function() {
@@ -82,6 +82,30 @@ function Animation(gridSize) {
   // the timeline generates shader chunks where an animation step is baked into.
   // each prefab will execute the same animation, with in offset position and time (delay).
   var timeline = new Timeline();
+
+  //timeline.append(1.0, {
+  //  translate: {
+  //    to: new THREE.Vector3(0, 5, 0)
+  //  },
+  //  ease: 'easeCubicInOut'
+  //});
+  //
+  //timeline.append(1.0, {
+  //  scale: {
+  //    to: new THREE.Vector3(2, 2, 2)
+  //  },
+  //  ease: 'easeCubicInOut'
+  //});
+  //
+  //timeline.append(1.0, {
+  //  scale: {
+  //    to: new THREE.Vector3(1, 1, 1)
+  //  },
+  //  translate: {
+  //    to: new THREE.Vector3(0, 0, 0)
+  //  },
+  //  ease: 'easeCubicInOut'
+  //}, '+=0.5');
 
   // scale down
   timeline.append(1.0, {
@@ -234,21 +258,32 @@ function Timeline() {
   this.translationSegments = [];
 }
 
-Timeline.prototype.append = function(duration, params) {
-  var delay = this.totalDuration;
+Timeline.prototype.append = function(duration, params, positionOffset) {
+  var start = this.totalDuration;
+
+  if (positionOffset !== undefined) {
+    if (typeof positionOffset === 'number') {
+      start = positionOffset;
+    }
+    else if (typeof positionOffset === 'string') {
+      eval('start' + positionOffset);
+    }
+    this.totalDuration = Math.max(this.totalDuration, start + duration);
+  }
+  else {
+    this.totalDuration += duration;
+  }
 
   if (params.scale) {
-    this._processScale(delay, duration, params);
+    this._processScale(start, duration, params);
   }
 
   if (params.translate) {
-    this._processTranslation(delay, duration, params);
+    this._processTranslation(start, duration, params);
   }
-
-  this.totalDuration += duration;
 };
 
-Timeline.prototype._processScale = function(delay, duration, params) {
+Timeline.prototype._processScale = function(start, duration, params) {
   if (!params.scale.from) {
     if (this.scaleSegments.length === 0) {
       params.scale.from = new THREE.Vector3(1.0, 1.0, 1.0);
@@ -258,18 +293,16 @@ Timeline.prototype._processScale = function(delay, duration, params) {
     }
   }
 
-  this._pad(this.scaleSegments);
-
   this.scaleSegments.push(new ScaleSegment(
     this._getKey(),
-    delay,
+    start,
     duration,
     params.ease,
     params.scale
   ));
 };
 
-Timeline.prototype._processTranslation = function(delay, duration, params) {
+Timeline.prototype._processTranslation = function(start, duration, params) {
   if (!params.translate.from) {
     if (this.translationSegments.length === 0) {
       params.translate.from = new THREE.Vector3(0.0, 0.0, 0.0);
@@ -279,11 +312,9 @@ Timeline.prototype._processTranslation = function(delay, duration, params) {
     }
   }
 
-  this._pad(this.translationSegments);
-
   this.translationSegments.push(new TranslationSegment(
     this._getKey(),
-    delay,
+    start,
     duration,
     params.ease,
     params.translate
@@ -309,16 +340,22 @@ Timeline.prototype.compile = function() {
 Timeline.prototype._pad = function(segments) {
   if (segments.length === 0) return;
 
-  var last = segments[segments.length - 1];
+  var s0, s1;
 
-  if (last.end < this.totalDuration) {
-    last.trail = this.totalDuration - last.end;
+  for (var i = 0; i < segments.length - 1; i++) {
+    s0 = segments[i];
+    s1 = segments[i + 1];
+
+    s0.trail = s1.start - s0.end;
   }
+
+  // pad last segment until end of timeline
+  s0 = segments[segments.length - 1];
+  s0.trail = this.totalDuration - s0.end;
 };
 Timeline.prototype._getKey = function() {
   return (this.__key++).toString();
 };
-
 
 Timeline.prototype.getScaleCalls = function() {
   return this.scaleSegments.map(function(s) {
@@ -331,7 +368,7 @@ Timeline.prototype.getTranslateCalls = function() {
   }).join('\n');
 };
 
-var TimelineUtils = {
+var TimelineChunks = {
   vec3: function(n, v, p) {
     return 'vec3 ' + n + ' = vec3(' + v.x.toPrecision(p) + ',' + v.y.toPrecision(p) + ',' + v.z.toPrecision(p) + ');';
   },
@@ -348,16 +385,16 @@ var TimelineUtils = {
     ].join('\n');
   },
   renderCheck: function(segment) {
-    var startTime = segment.delay.toPrecision(4);
+    var startTime = segment.start.toPrecision(4);
     var endTime = (segment.end + segment.trail).toPrecision(4);
 
     return 'if (time < ' + startTime + ' || time > ' + endTime + ') return;';
   }
 };
 
-function ScaleSegment(key, delay, duration, ease, scale) {
+function ScaleSegment(key, start, duration, ease, scale) {
   this.key = key;
-  this.delay = delay;
+  this.start = start;
   this.duration = duration;
   this.ease = ease;
   this.scale = scale;
@@ -365,14 +402,14 @@ function ScaleSegment(key, delay, duration, ease, scale) {
 }
 ScaleSegment.prototype.compile = function() {
   return [
-    TimelineUtils.delayDuration(this.key, this.delay, this.duration),
-    TimelineUtils.vec3('cScaleFrom' + this.key, this.scale.from, 2),
-    TimelineUtils.vec3('cScaleTo' + this.key, this.scale.to, 2),
+    TimelineChunks.delayDuration(this.key, this.start, this.duration),
+    TimelineChunks.vec3('cScaleFrom' + this.key, this.scale.from, 2),
+    TimelineChunks.vec3('cScaleTo' + this.key, this.scale.to, 2),
 
     'void applyScale' + this.key + '(float time, inout vec3 v) {',
 
-    TimelineUtils.renderCheck(this),
-    TimelineUtils.progress(this.key, this.ease),
+    TimelineChunks.renderCheck(this),
+    TimelineChunks.progress(this.key, this.ease),
 
     'v *= mix(cScaleFrom' + this.key + ', cScaleTo' + this.key + ', progress);',
     '}'
@@ -380,13 +417,13 @@ ScaleSegment.prototype.compile = function() {
 };
 Object.defineProperty(ScaleSegment.prototype, 'end', {
   get: function() {
-    return this.delay + this.duration;
+    return this.start + this.duration;
   }
 });
 
-function TranslationSegment(key, delay, duration, ease, translation) {
+function TranslationSegment(key, start, duration, ease, translation) {
   this.key = key;
-  this.delay = delay;
+  this.start = start;
   this.duration = duration;
   this.ease = ease;
   this.translation = translation;
@@ -394,14 +431,14 @@ function TranslationSegment(key, delay, duration, ease, translation) {
 }
 TranslationSegment.prototype.compile = function() {
   return [
-    TimelineUtils.delayDuration(this.key, this.delay, this.duration),
-    TimelineUtils.vec3('cTranslateFrom' + this.key, this.translation.from, 2),
-    TimelineUtils.vec3('cTranslateTo' + this.key, this.translation.to, 2),
+    TimelineChunks.delayDuration(this.key, this.start, this.duration),
+    TimelineChunks.vec3('cTranslateFrom' + this.key, this.translation.from, 2),
+    TimelineChunks.vec3('cTranslateTo' + this.key, this.translation.to, 2),
 
     'void applyTranslation' + this.key + '(float time, inout vec3 v) {',
 
-    TimelineUtils.renderCheck(this),
-    TimelineUtils.progress(this.key, this.ease),
+    TimelineChunks.renderCheck(this),
+    TimelineChunks.progress(this.key, this.ease),
 
     'v += mix(cTranslateFrom' + this.key + ', cTranslateTo' + this.key + ', progress);',
     '}'
@@ -409,6 +446,6 @@ TranslationSegment.prototype.compile = function() {
 };
 Object.defineProperty(TranslationSegment.prototype, 'end', {
   get: function() {
-    return this.delay + this.duration;
+    return this.start + this.duration;
   }
 });
