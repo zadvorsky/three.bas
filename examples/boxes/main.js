@@ -146,7 +146,7 @@ function Animation(gridSize) {
   var dataArray = [];
   var maxDelay = gridSize === 1 ? 0 : 4.0;
 
-  this.totalDuration = timeline.totalDuration + maxDelay;
+  this.totalDuration = timeline.duration + maxDelay;
 
   for (var i = 0; i < gridSize; i++) {
     for (var j = 0; j < gridSize; j++) {
@@ -161,7 +161,7 @@ function Animation(gridSize) {
 
       // animation
       dataArray[0] = maxDelay * Math.sqrt(x * x + y * y) / gridSize;
-      dataArray[1] = timeline.totalDuration;
+      dataArray[1] = timeline.duration;
       geometry.setPrefabData(aDelayDuration, index, dataArray);
 
       index++;
@@ -198,9 +198,9 @@ function Animation(gridSize) {
       'float tTime = clamp(uTime - aDelayDuration.x, 0.0, aDelayDuration.y);',
 
       // apply timeline transformations based on 'tTime'
-      timeline.getScaleCalls(),
-      timeline.getRotateCalls(),
-      timeline.getTranslateCalls(),
+      timeline.getTransformCalls('scale'),
+      timeline.getTransformCalls('rotate'),
+      timeline.getTransformCalls('translate'),
 
       // translate the vertex by prefab position
       'transformed += aPosition;'

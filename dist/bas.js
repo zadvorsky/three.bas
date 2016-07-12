@@ -1,5 +1,204 @@
 THREE.BAS = {};
 
+THREE.BAS.BaseAnimationMaterial = function (parameters, uniforms) {
+  THREE.ShaderMaterial.call(this);
+
+  var uniformValues = parameters.uniformValues;
+
+  delete parameters.uniformValues;
+
+  this.setValues(parameters);
+
+  this.uniforms = THREE.UniformsUtils.merge([uniforms, this.uniforms]);
+
+  this.setUniformValues(uniformValues);
+
+  if (uniformValues) {
+    uniformValues.map && (this.defines['USE_MAP'] = '');
+    uniformValues.normalMap && (this.defines['USE_NORMALMAP'] = '');
+    uniformValues.envMap && (this.defines['USE_ENVMAP'] = '');
+    uniformValues.aoMap && (this.defines['USE_AOMAP'] = '');
+    uniformValues.specularMap && (this.defines['USE_SPECULARMAP'] = '');
+    uniformValues.alphaMap && (this.defines['USE_ALPHAMAP'] = '');
+    uniformValues.lightMap && (this.defines['USE_LIGHTMAP'] = '');
+    uniformValues.emissiveMap && (this.defines['USE_EMISSIVEMAP'] = '');
+    uniformValues.bumpMap && (this.defines['USE_BUMPMAP'] = '');
+    uniformValues.displacementMap && (this.defines['USE_DISPLACEMENTMAP'] = '');
+    uniformValues.roughnessMap && (this.defines['USE_DISPLACEMENTMAP'] = '');
+    uniformValues.roughnessMap && (this.defines['USE_ROUGHNESSMAP'] = '');
+    uniformValues.metalnessMap && (this.defines['USE_METALNESSMAP'] = '');
+
+    if (uniformValues.envMap) {
+      this.defines['USE_ENVMAP'] = '';
+
+      var envMapTypeDefine = 'ENVMAP_TYPE_CUBE';
+      var envMapModeDefine = 'ENVMAP_MODE_REFLECTION';
+      var envMapBlendingDefine = 'ENVMAP_BLENDING_MULTIPLY';
+
+      switch (uniformValues.envMap.mapping) {
+        case THREE.CubeReflectionMapping:
+        case THREE.CubeRefractionMapping:
+          envMapTypeDefine = 'ENVMAP_TYPE_CUBE';
+          break;
+        case THREE.CubeUVReflectionMapping:
+        case THREE.CubeUVRefractionMapping:
+          envMapTypeDefine = 'ENVMAP_TYPE_CUBE_UV';
+          break;
+        case THREE.EquirectangularReflectionMapping:
+        case THREE.EquirectangularRefractionMapping:
+          envMapTypeDefine = 'ENVMAP_TYPE_EQUIREC';
+          break;
+        case THREE.SphericalReflectionMapping:
+          envMapTypeDefine = 'ENVMAP_TYPE_SPHERE';
+          break;
+      }
+
+      switch (uniformValues.envMap.mapping) {
+        case THREE.CubeRefractionMapping:
+        case THREE.EquirectangularRefractionMapping:
+          envMapModeDefine = 'ENVMAP_MODE_REFRACTION';
+          break;
+      }
+
+      switch (uniformValues.combine) {
+        case THREE.MixOperation:
+          envMapBlendingDefine = 'ENVMAP_BLENDING_MIX';
+          break;
+        case THREE.AddOperation:
+          envMapBlendingDefine = 'ENVMAP_BLENDING_ADD';
+          break;
+        case THREE.MultiplyOperation:
+        default:
+          envMapBlendingDefine = 'ENVMAP_BLENDING_MULTIPLY';
+          break;
+      }
+
+      this.defines[envMapTypeDefine] = '';
+      this.defines[envMapBlendingDefine] = '';
+      this.defines[envMapModeDefine] = '';
+    }
+  }
+};
+THREE.BAS.BaseAnimationMaterial.prototype = Object.create(THREE.ShaderMaterial.prototype);
+THREE.BAS.BaseAnimationMaterial.prototype.constructor = THREE.BAS.BaseAnimationMaterial;
+
+THREE.BAS.BaseAnimationMaterial.prototype.setUniformValues = function (values) {
+  for (var key in values) {
+    if (key in this.uniforms) {
+      var uniform = this.uniforms[key];
+      var value = values[key];
+
+      uniform.value = value;
+    }
+  }
+};
+
+THREE.BAS.BaseAnimationMaterial.prototype._stringifyChunk = function(name) {
+  return this[name] ? (this[name].join('\n')) : '';
+};
+
+THREE.BAS.Timeline = function() {
+  this.duration = 0;
+  this.segments = {};
+  this.timeKey = 'tTime';
+
+  this.__key = 0;
+};
+
+Object.assign(THREE.BAS.Timeline, {
+  segmentDefinitions: {},
+  register: function(key, definition) {
+    THREE.BAS.Timeline.segmentDefinitions[key] = definition;
+  }
+});
+
+THREE.BAS.Timeline.prototype.add = function(duration, transitions, positionOffset) {
+  var start = this.duration;
+
+  if (positionOffset !== undefined) {
+    if (typeof positionOffset === 'number') {
+      start = positionOffset;
+    }
+    else if (typeof positionOffset === 'string') {
+      eval('start' + positionOffset);
+    }
+
+    this.duration = Math.max(this.duration, start + duration);
+  }
+  else {
+    this.duration += duration;
+  }
+
+  var keys = Object.keys(transitions), key;
+
+  for (var i = 0; i < keys.length; i++) {
+    key = keys[i];
+
+    this._processTransition(key, transitions[key], start, duration);
+  }
+};
+
+THREE.BAS.Timeline.prototype._processTransition = function(key, transition, start, duration) {
+  var definition = THREE.BAS.Timeline.segmentDefinitions[key];
+
+  var segments = this.segments[key];
+  if (!segments) segments = this.segments[key] = [];
+
+  if (!transition.from) {
+    if (segments.length === 0) {
+      transition.from = definition.defaultFrom;
+    }
+    else {
+      transition.from = segments[segments.length - 1].transition.to;
+    }
+  }
+
+  segments.push(new THREE.BAS.TimelineSegment((this.__key++).toString(), start, duration, transition, definition.compiler));
+};
+
+THREE.BAS.Timeline.prototype.compile = function() {
+  var c = [];
+
+  var keys = Object.keys(this.segments);
+  var segments;
+
+  for (var i = 0; i < keys.length; i++) {
+    segments = this.segments[keys[i]];
+
+    this._pad(segments);
+
+    segments.forEach(function(s) {
+      c.push(s.compile());
+    });
+  }
+
+  return c;
+};
+THREE.BAS.Timeline.prototype._pad = function(segments) {
+  if (segments.length === 0) return;
+
+  var s0, s1;
+
+  for (var i = 0; i < segments.length - 1; i++) {
+    s0 = segments[i];
+    s1 = segments[i + 1];
+
+    s0.trail = s1.start - s0.end;
+  }
+
+  // pad last segment until end of timeline
+  s0 = segments[segments.length - 1];
+  s0.trail = this.duration - s0.end;
+};
+
+THREE.BAS.Timeline.prototype.getTransformCalls = function(key) {
+  var t = this.timeKey;
+
+  return this.segments[key].map(function(s) {
+    return 'applyTransform' + s.key + '(' + t + ', transformed);';
+  }).join('\n');
+};
+
 THREE.BAS.ShaderChunk = {};
 
 THREE.BAS.ShaderChunk["catmull_rom_spline"] = "vec4 catmullRomSpline(vec4 p0, vec4 p1, vec4 p2, vec4 p3, float t, vec2 c) {\n    vec4 v0 = (p2 - p0) * c.x;\n    vec4 v1 = (p3 - p1) * c.y;\n    float t2 = t * t;\n    float t3 = t * t * t;\n\n    return vec4((2.0 * p1 - 2.0 * p2 + v0 + v1) * t3 + (-3.0 * p1 + 3.0 * p2 - 2.0 * v0 - v1) * t2 + v0 * t + p1);\n}\nvec4 catmullRomSpline(vec4 p0, vec4 p1, vec4 p2, vec4 p3, float t) {\n    return catmullRomSpline(p0, p1, p2, p3, t, vec2(0.5, 0.5));\n}\n\nvec3 catmullRomSpline(vec3 p0, vec3 p1, vec3 p2, vec3 p3, float t, vec2 c) {\n    vec3 v0 = (p2 - p0) * c.x;\n    vec3 v1 = (p3 - p1) * c.y;\n    float t2 = t * t;\n    float t3 = t * t * t;\n\n    return vec3((2.0 * p1 - 2.0 * p2 + v0 + v1) * t3 + (-3.0 * p1 + 3.0 * p2 - 2.0 * v0 - v1) * t2 + v0 * t + p1);\n}\nvec3 catmullRomSpline(vec3 p0, vec3 p1, vec3 p2, vec3 p3, float t) {\n    return catmullRomSpline(p0, p1, p2, p3, t, vec2(0.5, 0.5));\n}\n\nvec2 catmullRomSpline(vec2 p0, vec2 p1, vec2 p2, vec2 p3, float t, vec2 c) {\n    vec2 v0 = (p2 - p0) * c.x;\n    vec2 v1 = (p3 - p1) * c.y;\n    float t2 = t * t;\n    float t3 = t * t * t;\n\n    return vec2((2.0 * p1 - 2.0 * p2 + v0 + v1) * t3 + (-3.0 * p1 + 3.0 * p2 - 2.0 * v0 - v1) * t2 + v0 * t + p1);\n}\nvec2 catmullRomSpline(vec2 p0, vec2 p1, vec2 p2, vec2 p3, float t) {\n    return catmullRomSpline(p0, p1, p2, p3, t, vec2(0.5, 0.5));\n}\n\nfloat catmullRomSpline(float p0, float p1, float p2, float p3, float t, vec2 c) {\n    float v0 = (p2 - p0) * c.x;\n    float v1 = (p3 - p1) * c.y;\n    float t2 = t * t;\n    float t3 = t * t * t;\n\n    return float((2.0 * p1 - 2.0 * p2 + v0 + v1) * t3 + (-3.0 * p1 + 3.0 * p2 - 2.0 * v0 - v1) * t2 + v0 * t + p1);\n}\nfloat catmullRomSpline(float p0, float p1, float p2, float p3, float t) {\n    return catmullRomSpline(p0, p1, p2, p3, t, vec2(0.5, 0.5));\n}\n\nivec4 getCatmullRomSplineIndices(float l, float p) {\n    float index = floor(p);\n    int i0 = int(max(0.0, index - 1.0));\n    int i1 = int(index);\n    int i2 = int(min(index + 1.0, l));\n    int i3 = int(min(index + 2.0, l));\n\n    return ivec4(i0, i1, i2, i3);\n}\n\nivec4 getCatmullRomSplineIndicesClosed(float l, float p) {\n    float index = floor(p);\n    int i0 = int(index == 0.0 ? l : index - 1.0);\n    int i1 = int(index);\n    int i2 = int(mod(index + 1.0, l));\n    int i3 = int(mod(index + 2.0, l));\n\n    return ivec4(i0, i1, i2, i3);\n}\n";
@@ -527,103 +726,6 @@ THREE.BAS.PrefabBufferGeometry.prototype.setPrefabData = function(attribute, pre
       attribute.array[offset++] = data[j];
     }
   }
-};
-
-THREE.BAS.BaseAnimationMaterial = function (parameters, uniforms) {
-  THREE.ShaderMaterial.call(this);
-
-  var uniformValues = parameters.uniformValues;
-
-  delete parameters.uniformValues;
-
-  this.setValues(parameters);
-
-  this.uniforms = THREE.UniformsUtils.merge([uniforms, this.uniforms]);
-
-  this.setUniformValues(uniformValues);
-
-  if (uniformValues) {
-    uniformValues.map && (this.defines['USE_MAP'] = '');
-    uniformValues.normalMap && (this.defines['USE_NORMALMAP'] = '');
-    uniformValues.envMap && (this.defines['USE_ENVMAP'] = '');
-    uniformValues.aoMap && (this.defines['USE_AOMAP'] = '');
-    uniformValues.specularMap && (this.defines['USE_SPECULARMAP'] = '');
-    uniformValues.alphaMap && (this.defines['USE_ALPHAMAP'] = '');
-    uniformValues.lightMap && (this.defines['USE_LIGHTMAP'] = '');
-    uniformValues.emissiveMap && (this.defines['USE_EMISSIVEMAP'] = '');
-    uniformValues.bumpMap && (this.defines['USE_BUMPMAP'] = '');
-    uniformValues.displacementMap && (this.defines['USE_DISPLACEMENTMAP'] = '');
-    uniformValues.roughnessMap && (this.defines['USE_DISPLACEMENTMAP'] = '');
-    uniformValues.roughnessMap && (this.defines['USE_ROUGHNESSMAP'] = '');
-    uniformValues.metalnessMap && (this.defines['USE_METALNESSMAP'] = '');
-
-    if (uniformValues.envMap) {
-      this.defines['USE_ENVMAP'] = '';
-
-      var envMapTypeDefine = 'ENVMAP_TYPE_CUBE';
-      var envMapModeDefine = 'ENVMAP_MODE_REFLECTION';
-      var envMapBlendingDefine = 'ENVMAP_BLENDING_MULTIPLY';
-
-      switch (uniformValues.envMap.mapping) {
-        case THREE.CubeReflectionMapping:
-        case THREE.CubeRefractionMapping:
-          envMapTypeDefine = 'ENVMAP_TYPE_CUBE';
-          break;
-        case THREE.CubeUVReflectionMapping:
-        case THREE.CubeUVRefractionMapping:
-          envMapTypeDefine = 'ENVMAP_TYPE_CUBE_UV';
-          break;
-        case THREE.EquirectangularReflectionMapping:
-        case THREE.EquirectangularRefractionMapping:
-          envMapTypeDefine = 'ENVMAP_TYPE_EQUIREC';
-          break;
-        case THREE.SphericalReflectionMapping:
-          envMapTypeDefine = 'ENVMAP_TYPE_SPHERE';
-          break;
-      }
-
-      switch (uniformValues.envMap.mapping) {
-        case THREE.CubeRefractionMapping:
-        case THREE.EquirectangularRefractionMapping:
-          envMapModeDefine = 'ENVMAP_MODE_REFRACTION';
-          break;
-      }
-
-      switch (uniformValues.combine) {
-        case THREE.MixOperation:
-          envMapBlendingDefine = 'ENVMAP_BLENDING_MIX';
-          break;
-        case THREE.AddOperation:
-          envMapBlendingDefine = 'ENVMAP_BLENDING_ADD';
-          break;
-        case THREE.MultiplyOperation:
-        default:
-          envMapBlendingDefine = 'ENVMAP_BLENDING_MULTIPLY';
-          break;
-      }
-
-      this.defines[envMapTypeDefine] = '';
-      this.defines[envMapBlendingDefine] = '';
-      this.defines[envMapModeDefine] = '';
-    }
-  }
-};
-THREE.BAS.BaseAnimationMaterial.prototype = Object.create(THREE.ShaderMaterial.prototype);
-THREE.BAS.BaseAnimationMaterial.prototype.constructor = THREE.BAS.BaseAnimationMaterial;
-
-THREE.BAS.BaseAnimationMaterial.prototype.setUniformValues = function (values) {
-  for (var key in values) {
-    if (key in this.uniforms) {
-      var uniform = this.uniforms[key];
-      var value = values[key];
-
-      uniform.value = value;
-    }
-  }
-};
-
-THREE.BAS.BaseAnimationMaterial.prototype._stringifyChunk = function(name) {
-  return this[name] ? (this[name].join('\n')) : '';
 };
 
 /**
@@ -1325,206 +1427,58 @@ THREE.BAS.StandardAnimationMaterial.prototype._concatFragmentShader = function (
   ].join( "\n" )
 };
 
-THREE.BAS.RotationSegment = function(key, start, duration, transition) {
-  this.key = key;
-  this.start = start;
-  this.duration = duration;
-  this.transition = transition;
-  this.trail = 0;
-};
-THREE.BAS.RotationSegment.prototype.compile = function() {
-  var fromAxisAngle = new THREE.Vector4(
-    this.transition.axis.x,
-    this.transition.axis.y,
-    this.transition.axis.z,
-    this.transition.from
-  );
+THREE.BAS.Timeline.register('rotate', {
+  compiler: function(segment) {
+    var fromAxisAngle = new THREE.Vector4(
+      segment.transition.axis.x,
+      segment.transition.axis.y,
+      segment.transition.axis.z,
+      segment.transition.from
+    );
 
-  var toAxisAngle = new THREE.Vector4(
-    this.transition.axis.x,
-    this.transition.axis.y,
-    this.transition.axis.z,
-    this.transition.to
-  );
+    var toAxisAngle = new THREE.Vector4(
+      segment.transition.axis.x,
+      segment.transition.axis.y,
+      segment.transition.axis.z,
+      segment.transition.to
+    );
 
-  return [
-    THREE.BAS.TimelineChunks.delayDuration(this),
-    THREE.BAS.TimelineChunks.vec4('cRotationFrom' + this.key, fromAxisAngle, 8),
-    THREE.BAS.TimelineChunks.vec4('cRotationTo' + this.key, toAxisAngle, 8),
+    return [
+      THREE.BAS.TimelineChunks.delayDuration(segment),
+      THREE.BAS.TimelineChunks.vec4('cRotationFrom' + segment.key, fromAxisAngle, 8),
+      THREE.BAS.TimelineChunks.vec4('cRotationTo' + segment.key, toAxisAngle, 8),
 
-    'void applyTransform' + this.key + '(float time, inout vec3 v) {',
+      'void applyTransform' + segment.key + '(float time, inout vec3 v) {',
 
-    THREE.BAS.TimelineChunks.renderCheck(this),
-    THREE.BAS.TimelineChunks.progress(this),
+      THREE.BAS.TimelineChunks.renderCheck(segment),
+      THREE.BAS.TimelineChunks.progress(segment),
 
-    'vec4 q = quatFromAxisAngle(cRotationFrom' + this.key + '.xyz' + ', mix(cRotationFrom' + this.key + '.w, cRotationTo' + this.key + '.w, progress));',
-    'v = rotateVector(q, v);',
-    '}'
-  ].join('\n');
-};
-Object.defineProperty(THREE.BAS.RotationSegment.prototype, 'end', {
-  get: function() {
-    return this.start + this.duration;
-  }
+      'vec4 q = quatFromAxisAngle(cRotationFrom' + segment.key + '.xyz' + ', mix(cRotationFrom' + segment.key + '.w, cRotationTo' + segment.key + '.w, progress));',
+      'v = rotateVector(q, v);',
+      '}'
+    ].join('\n');
+  },
+  defaultFrom: 0
 });
-THREE.BAS.ScaleSegment = function(key, start, duration, transition) {
-  this.key = key;
-  this.start = start;
-  this.duration = duration;
-  this.transition = transition;
-  this.trail = 0;
-};
-THREE.BAS.ScaleSegment.prototype.compile = function() {
-  return [
-    THREE.BAS.TimelineChunks.delayDuration(this),
-    THREE.BAS.TimelineChunks.vec3('cScaleFrom' + this.key, this.transition.from, 2),
-    THREE.BAS.TimelineChunks.vec3('cScaleTo' + this.key, this.transition.to, 2),
 
-    'void applyTransform' + this.key + '(float time, inout vec3 v) {',
+THREE.BAS.Timeline.register('scale', {
+  compiler: function(segment) {
+    return [
+      THREE.BAS.TimelineChunks.delayDuration(segment),
+      THREE.BAS.TimelineChunks.vec3('cScaleFrom' + segment.key, segment.transition.from, 2),
+      THREE.BAS.TimelineChunks.vec3('cScaleTo' + segment.key, segment.transition.to, 2),
 
-    THREE.BAS.TimelineChunks.renderCheck(this),
-    THREE.BAS.TimelineChunks.progress(this),
+      'void applyTransform' + segment.key + '(float time, inout vec3 v) {',
 
-    'v *= mix(cScaleFrom' + this.key + ', cScaleTo' + this.key + ', progress);',
-    '}'
-  ].join('\n');
-};
-Object.defineProperty(THREE.BAS.ScaleSegment.prototype, 'end', {
-  get: function() {
-    return this.start + this.duration;
-  }
+      THREE.BAS.TimelineChunks.renderCheck(segment),
+      THREE.BAS.TimelineChunks.progress(segment),
+
+      'v *= mix(cScaleFrom' + segment.key + ', cScaleTo' + segment.key + ', progress);',
+      '}'
+    ].join('\n');
+  },
+  defaultFrom: new THREE.Vector3(1, 1, 1)
 });
-THREE.BAS.Timeline = function() {
-  this.totalDuration = 0;
-  this.__key = 0;
-
-  this.scaleSegments = [];
-  this.rotationSegments = [];
-  this.translationSegments = [];
-};
-
-THREE.BAS.Timeline.prototype.add = function(duration, params, positionOffset) {
-  var start = this.totalDuration;
-
-  if (positionOffset !== undefined) {
-    if (typeof positionOffset === 'number') {
-      start = positionOffset;
-    }
-    else if (typeof positionOffset === 'string') {
-      eval('start' + positionOffset);
-    }
-
-    this.totalDuration = Math.max(this.totalDuration, start + duration);
-  }
-  else {
-    this.totalDuration += duration;
-  }
-
-  if (params.scale) {
-    this._processScale(start, duration, params);
-  }
-
-  if (params.rotate) {
-    this._processRotation(start, duration, params);
-  }
-
-  if (params.translate) {
-    this._processTranslation(start, duration, params);
-  }
-};
-THREE.BAS.Timeline.prototype._processScale = function(start, duration, params) {
-  if (!params.scale.from) {
-    if (this.scaleSegments.length === 0) {
-      params.scale.from = new THREE.Vector3(1.0, 1.0, 1.0);
-    }
-    else {
-      params.scale.from = this.scaleSegments[this.scaleSegments.length - 1].transition.to;
-    }
-  }
-
-  this.scaleSegments.push(new THREE.BAS.ScaleSegment(this._getKey(), start, duration, params.scale));
-};
-THREE.BAS.Timeline.prototype._processRotation = function(start, duration, params) {
-  if (!params.rotate.from) {
-    if (this.rotationSegments.length === 0) {
-      params.rotate.from = 0;
-    }
-    else {
-      params.rotate.from = this.rotationSegments[this.rotationSegments.length - 1].transition.to;
-    }
-  }
-
-  this.rotationSegments.push(new THREE.BAS.RotationSegment(this._getKey(), start, duration, params.rotate));
-};
-THREE.BAS.Timeline.prototype._processTranslation = function(start, duration, params) {
-  if (!params.translate.from) {
-    if (this.translationSegments.length === 0) {
-      params.translate.from = new THREE.Vector3(0.0, 0.0, 0.0);
-    }
-    else {
-      params.translate.from = this.translationSegments[this.translationSegments.length - 1].transition.to;
-    }
-  }
-
-  this.translationSegments.push(new THREE.BAS.TranslationSegment(this._getKey(), start, duration, params.translate));
-};
-THREE.BAS.Timeline.prototype._getKey = function() {
-  return (this.__key++).toString();
-};
-
-THREE.BAS.Timeline.prototype.compile = function() {
-  var c = [];
-
-  this._pad(this.scaleSegments);
-  this._pad(this.rotationSegments);
-  this._pad(this.translationSegments);
-
-  this.scaleSegments.forEach(function(s) {
-    c.push(s.compile());
-  });
-
-  this.rotationSegments.forEach(function(s) {
-    c.push(s.compile());
-  });
-
-  this.translationSegments.forEach(function(s) {
-    c.push(s.compile());
-  });
-
-  return c;
-};
-THREE.BAS.Timeline.prototype._pad = function(segments) {
-  if (segments.length === 0) return;
-
-  var s0, s1;
-
-  for (var i = 0; i < segments.length - 1; i++) {
-    s0 = segments[i];
-    s1 = segments[i + 1];
-
-    s0.trail = s1.start - s0.end;
-  }
-
-  // pad last segment until end of timeline
-  s0 = segments[segments.length - 1];
-  s0.trail = this.totalDuration - s0.end;
-};
-
-THREE.BAS.Timeline.prototype.getScaleCalls = function() {
-  return this.scaleSegments.map(function(s) {
-    return 'applyTransform' + s.key + '(tTime, transformed);';
-  }).join('\n');
-};
-THREE.BAS.Timeline.prototype.getRotateCalls = function() {
-  return this.rotationSegments.map(function(s) {
-    return 'applyTransform' + s.key + '(tTime, transformed);';
-  }).join('\n');
-};
-THREE.BAS.Timeline.prototype.getTranslateCalls = function() {
-  return this.translationSegments.map(function(s) {
-    return 'applyTransform' + s.key + '(tTime, transformed);';
-  }).join('\n');
-};
 
 THREE.BAS.TimelineChunks = {
   vec3: function(n, v, p) {
@@ -1553,30 +1507,41 @@ THREE.BAS.TimelineChunks = {
   }
 };
 
-THREE.BAS.TranslationSegment = function(key, start, duration, transition) {
+THREE.BAS.TimelineSegment = function(key, start, duration, transition, compiler) {
   this.key = key;
   this.start = start;
   this.duration = duration;
   this.transition = transition;
+  this.compiler = compiler;
+
   this.trail = 0;
 };
-THREE.BAS.TranslationSegment.prototype.compile = function() {
-  return [
-    THREE.BAS.TimelineChunks.delayDuration(this),
-    THREE.BAS.TimelineChunks.vec3('cTranslateFrom' + this.key, this.transition.from, 2),
-    THREE.BAS.TimelineChunks.vec3('cTranslateTo' + this.key, this.transition.to, 2),
 
-    'void applyTransform' + this.key + '(float time, inout vec3 v) {',
-
-    THREE.BAS.TimelineChunks.renderCheck(this),
-    THREE.BAS.TimelineChunks.progress(this),
-
-    'v += mix(cTranslateFrom' + this.key + ', cTranslateTo' + this.key + ', progress);',
-    '}'
-  ].join('\n');
+THREE.BAS.TimelineSegment.prototype.compile = function() {
+  return this.compiler(this);
 };
-Object.defineProperty(THREE.BAS.TranslationSegment.prototype, 'end', {
+
+Object.defineProperty(THREE.BAS.TimelineSegment.prototype, 'end', {
   get: function() {
     return this.start + this.duration;
   }
+});
+
+THREE.BAS.Timeline.register('translate', {
+  compiler: function(segment) {
+    return [
+      THREE.BAS.TimelineChunks.delayDuration(segment),
+      THREE.BAS.TimelineChunks.vec3('cTranslateFrom' + segment.key, segment.transition.from, 2),
+      THREE.BAS.TimelineChunks.vec3('cTranslateTo' + segment.key, segment.transition.to, 2),
+
+      'void applyTransform' + segment.key + '(float time, inout vec3 v) {',
+
+      THREE.BAS.TimelineChunks.renderCheck(segment),
+      THREE.BAS.TimelineChunks.progress(segment),
+
+      'v += mix(cTranslateFrom' + segment.key + ', cTranslateTo' + segment.key + ', progress);',
+      '}'
+    ].join('\n');
+  },
+  defaultFrom: new THREE.Vector3(0, 0, 0)
 });

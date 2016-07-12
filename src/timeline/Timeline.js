@@ -1,14 +1,20 @@
 THREE.BAS.Timeline = function() {
-  this.totalDuration = 0;
-  this.__key = 0;
+  this.duration = 0;
+  this.segments = {};
+  this.timeKey = 'tTime';
 
-  this.scaleSegments = [];
-  this.rotationSegments = [];
-  this.translationSegments = [];
+  this.__key = 0;
 };
 
-THREE.BAS.Timeline.prototype.add = function(duration, params, positionOffset) {
-  var start = this.totalDuration;
+Object.assign(THREE.BAS.Timeline, {
+  segmentDefinitions: {},
+  register: function(key, definition) {
+    THREE.BAS.Timeline.segmentDefinitions[key] = definition;
+  }
+});
+
+THREE.BAS.Timeline.prototype.add = function(duration, transitions, positionOffset) {
+  var start = this.duration;
 
   if (positionOffset !== undefined) {
     if (typeof positionOffset === 'number') {
@@ -18,82 +24,54 @@ THREE.BAS.Timeline.prototype.add = function(duration, params, positionOffset) {
       eval('start' + positionOffset);
     }
 
-    this.totalDuration = Math.max(this.totalDuration, start + duration);
+    this.duration = Math.max(this.duration, start + duration);
   }
   else {
-    this.totalDuration += duration;
+    this.duration += duration;
   }
 
-  if (params.scale) {
-    this._processScale(start, duration, params);
-  }
+  var keys = Object.keys(transitions), key;
 
-  if (params.rotate) {
-    this._processRotation(start, duration, params);
-  }
+  for (var i = 0; i < keys.length; i++) {
+    key = keys[i];
 
-  if (params.translate) {
-    this._processTranslation(start, duration, params);
+    this._processTransition(key, transitions[key], start, duration);
   }
 };
-THREE.BAS.Timeline.prototype._processScale = function(start, duration, params) {
-  if (!params.scale.from) {
-    if (this.scaleSegments.length === 0) {
-      params.scale.from = new THREE.Vector3(1.0, 1.0, 1.0);
+
+THREE.BAS.Timeline.prototype._processTransition = function(key, transition, start, duration) {
+  var definition = THREE.BAS.Timeline.segmentDefinitions[key];
+
+  var segments = this.segments[key];
+  if (!segments) segments = this.segments[key] = [];
+
+  if (!transition.from) {
+    if (segments.length === 0) {
+      transition.from = definition.defaultFrom;
     }
     else {
-      params.scale.from = this.scaleSegments[this.scaleSegments.length - 1].transition.to;
+      transition.from = segments[segments.length - 1].transition.to;
     }
   }
 
-  this.scaleSegments.push(new THREE.BAS.ScaleSegment(this._getKey(), start, duration, params.scale));
-};
-THREE.BAS.Timeline.prototype._processRotation = function(start, duration, params) {
-  if (!params.rotate.from) {
-    if (this.rotationSegments.length === 0) {
-      params.rotate.from = 0;
-    }
-    else {
-      params.rotate.from = this.rotationSegments[this.rotationSegments.length - 1].transition.to;
-    }
-  }
-
-  this.rotationSegments.push(new THREE.BAS.RotationSegment(this._getKey(), start, duration, params.rotate));
-};
-THREE.BAS.Timeline.prototype._processTranslation = function(start, duration, params) {
-  if (!params.translate.from) {
-    if (this.translationSegments.length === 0) {
-      params.translate.from = new THREE.Vector3(0.0, 0.0, 0.0);
-    }
-    else {
-      params.translate.from = this.translationSegments[this.translationSegments.length - 1].transition.to;
-    }
-  }
-
-  this.translationSegments.push(new THREE.BAS.TranslationSegment(this._getKey(), start, duration, params.translate));
-};
-THREE.BAS.Timeline.prototype._getKey = function() {
-  return (this.__key++).toString();
+  segments.push(new THREE.BAS.TimelineSegment((this.__key++).toString(), start, duration, transition, definition.compiler));
 };
 
 THREE.BAS.Timeline.prototype.compile = function() {
   var c = [];
 
-  this._pad(this.scaleSegments);
-  this._pad(this.rotationSegments);
-  this._pad(this.translationSegments);
+  var keys = Object.keys(this.segments);
+  var segments;
 
-  this.scaleSegments.forEach(function(s) {
-    c.push(s.compile());
-  });
+  for (var i = 0; i < keys.length; i++) {
+    segments = this.segments[keys[i]];
 
-  this.rotationSegments.forEach(function(s) {
-    c.push(s.compile());
-  });
+    this._pad(segments);
 
-  this.translationSegments.forEach(function(s) {
-    c.push(s.compile());
-  });
+    segments.forEach(function(s) {
+      c.push(s.compile());
+    });
+  }
 
   return c;
 };
@@ -111,21 +89,13 @@ THREE.BAS.Timeline.prototype._pad = function(segments) {
 
   // pad last segment until end of timeline
   s0 = segments[segments.length - 1];
-  s0.trail = this.totalDuration - s0.end;
+  s0.trail = this.duration - s0.end;
 };
 
-THREE.BAS.Timeline.prototype.getScaleCalls = function() {
-  return this.scaleSegments.map(function(s) {
-    return 'applyTransform' + s.key + '(tTime, transformed);';
-  }).join('\n');
-};
-THREE.BAS.Timeline.prototype.getRotateCalls = function() {
-  return this.rotationSegments.map(function(s) {
-    return 'applyTransform' + s.key + '(tTime, transformed);';
-  }).join('\n');
-};
-THREE.BAS.Timeline.prototype.getTranslateCalls = function() {
-  return this.translationSegments.map(function(s) {
-    return 'applyTransform' + s.key + '(tTime, transformed);';
+THREE.BAS.Timeline.prototype.getTransformCalls = function(key) {
+  var t = this.timeKey;
+
+  return this.segments[key].map(function(s) {
+    return 'applyTransform' + s.key + '(' + t + ', transformed);';
   }).join('\n');
 };
