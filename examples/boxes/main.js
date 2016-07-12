@@ -151,16 +151,16 @@ function Animation(gridSize) {
   for (var i = 0; i < gridSize; i++) {
     for (var j = 0; j < gridSize; j++) {
       var x = THREE.Math.mapLinear(i, 0, gridSize, -gridSize * 0.5, gridSize * 0.5) + 0.5;
-      var y = THREE.Math.mapLinear(j, 0, gridSize, -gridSize * 0.5, gridSize * 0.5) + 0.5;
+      var z = THREE.Math.mapLinear(j, 0, gridSize, -gridSize * 0.5, gridSize * 0.5) + 0.5;
 
       // position
       dataArray[0] = x;
       dataArray[1] = 0;
-      dataArray[2] = y;
+      dataArray[2] = z;
       geometry.setPrefabData(aPosition, index, dataArray);
 
       // animation
-      dataArray[0] = maxDelay * Math.sqrt(x * x + y * y) / gridSize;
+      dataArray[0] = maxDelay * Math.sqrt(x * x + z * z) / gridSize;
       dataArray[1] = timeline.duration;
       geometry.setPrefabData(aDelayDuration, index, dataArray);
 
