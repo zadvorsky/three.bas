@@ -86,48 +86,49 @@ function Animation(gridSize) {
   //// scale down
   timeline.add(1.0, {
     scale: {
-      to: new THREE.Vector3(1.4, 0.4, 1.4)
-    },
-    ease: 'easeCubicOut'
+      to: new THREE.Vector3(1.4, 0.4, 1.4),
+      ease: 'easeCubicOut'
+    }
   });
   // scale up
   timeline.add(0.5, {
     scale: {
-      to: new THREE.Vector3(0.4, 3.0, 0.4)
-    },
-    ease: 'easeCubicIn'
+      to: new THREE.Vector3(0.4, 3.0, 0.4),
+      ease: 'easeCubicIn'
+    }
   });
   // move up + rotate
   timeline.add(1.0, {
     translate: {
-      to: new THREE.Vector3(0.0, 6.0, 0.0)
+      to: new THREE.Vector3(0.0, 6.0, 0.0),
+      ease: 'easeCubicOut'
     },
     rotate: {
       axis: new THREE.Vector3(0, 1, 0),
-      to: Math.PI
-    },
-    ease: 'easeCubicOut'
+      to: Math.PI,
+      ease: 'easeCubicIn'
+    }
   });
   // move down
   timeline.add(0.5, {
     translate: {
-      to: new THREE.Vector3(0.0, 0.0, 0.0)
-    },
-    ease: 'easeCubicIn'
+      to: new THREE.Vector3(0.0, 0.0, 0.0),
+      ease: 'easeCubicIn'
+    }
   });
   // land + squish
   timeline.add(0.5, {
     scale: {
-      to: new THREE.Vector3(1.4, 0.4, 1.4)
-    },
-    ease: 'easeCubicOut'
+      to: new THREE.Vector3(1.4, 0.4, 1.4),
+      ease: 'easeCubicOut'
+    }
   });
   // un-squish
   timeline.add(1.5, {
     scale: {
-      to: new THREE.Vector3(1.0, 1.0, 1.0)
-    },
-    ease: 'easeBackOut'
+      to: new THREE.Vector3(1.0, 1.0, 1.0),
+      ease: 'easeBackOut'
+    }
   });
 
   // setup prefab

@@ -1325,38 +1325,37 @@ THREE.BAS.StandardAnimationMaterial.prototype._concatFragmentShader = function (
   ].join( "\n" )
 };
 
-THREE.BAS.RotationSegment = function(key, start, duration, ease, rotation) {
+THREE.BAS.RotationSegment = function(key, start, duration, transition) {
   this.key = key;
   this.start = start;
   this.duration = duration;
-  this.ease = ease;
-  this.rotation = rotation;
+  this.transition = transition;
   this.trail = 0;
 };
 THREE.BAS.RotationSegment.prototype.compile = function() {
   var fromAxisAngle = new THREE.Vector4(
-    this.rotation.axis.x,
-    this.rotation.axis.y,
-    this.rotation.axis.z,
-    this.rotation.from
+    this.transition.axis.x,
+    this.transition.axis.y,
+    this.transition.axis.z,
+    this.transition.from
   );
 
   var toAxisAngle = new THREE.Vector4(
-    this.rotation.axis.x,
-    this.rotation.axis.y,
-    this.rotation.axis.z,
-    this.rotation.to
+    this.transition.axis.x,
+    this.transition.axis.y,
+    this.transition.axis.z,
+    this.transition.to
   );
 
   return [
-    THREE.BAS.TimelineChunks.delayDuration(this.key, this.start, this.duration),
+    THREE.BAS.TimelineChunks.delayDuration(this),
     THREE.BAS.TimelineChunks.vec4('cRotationFrom' + this.key, fromAxisAngle, 8),
     THREE.BAS.TimelineChunks.vec4('cRotationTo' + this.key, toAxisAngle, 8),
 
-    'void applyRotation' + this.key + '(float time, inout vec3 v) {',
+    'void applyTransform' + this.key + '(float time, inout vec3 v) {',
 
     THREE.BAS.TimelineChunks.renderCheck(this),
-    THREE.BAS.TimelineChunks.progress(this.key, this.ease),
+    THREE.BAS.TimelineChunks.progress(this),
 
     'vec4 q = quatFromAxisAngle(cRotationFrom' + this.key + '.xyz' + ', mix(cRotationFrom' + this.key + '.w, cRotationTo' + this.key + '.w, progress));',
     'v = rotateVector(q, v);',
@@ -1368,24 +1367,23 @@ Object.defineProperty(THREE.BAS.RotationSegment.prototype, 'end', {
     return this.start + this.duration;
   }
 });
-THREE.BAS.ScaleSegment = function(key, start, duration, ease, scale) {
+THREE.BAS.ScaleSegment = function(key, start, duration, transition) {
   this.key = key;
   this.start = start;
   this.duration = duration;
-  this.ease = ease;
-  this.scale = scale;
+  this.transition = transition;
   this.trail = 0;
 };
 THREE.BAS.ScaleSegment.prototype.compile = function() {
   return [
-    THREE.BAS.TimelineChunks.delayDuration(this.key, this.start, this.duration),
-    THREE.BAS.TimelineChunks.vec3('cScaleFrom' + this.key, this.scale.from, 2),
-    THREE.BAS.TimelineChunks.vec3('cScaleTo' + this.key, this.scale.to, 2),
+    THREE.BAS.TimelineChunks.delayDuration(this),
+    THREE.BAS.TimelineChunks.vec3('cScaleFrom' + this.key, this.transition.from, 2),
+    THREE.BAS.TimelineChunks.vec3('cScaleTo' + this.key, this.transition.to, 2),
 
-    'void applyScale' + this.key + '(float time, inout vec3 v) {',
+    'void applyTransform' + this.key + '(float time, inout vec3 v) {',
 
     THREE.BAS.TimelineChunks.renderCheck(this),
-    THREE.BAS.TimelineChunks.progress(this.key, this.ease),
+    THREE.BAS.TimelineChunks.progress(this),
 
     'v *= mix(cScaleFrom' + this.key + ', cScaleTo' + this.key + ', progress);',
     '}'
@@ -1440,17 +1438,11 @@ THREE.BAS.Timeline.prototype._processScale = function(start, duration, params) {
       params.scale.from = new THREE.Vector3(1.0, 1.0, 1.0);
     }
     else {
-      params.scale.from = this.scaleSegments[this.scaleSegments.length - 1].scale.to;
+      params.scale.from = this.scaleSegments[this.scaleSegments.length - 1].transition.to;
     }
   }
 
-  this.scaleSegments.push(new THREE.BAS.ScaleSegment(
-    this._getKey(),
-    start,
-    duration,
-    params.ease,
-    params.scale
-  ));
+  this.scaleSegments.push(new THREE.BAS.ScaleSegment(this._getKey(), start, duration, params.scale));
 };
 THREE.BAS.Timeline.prototype._processRotation = function(start, duration, params) {
   if (!params.rotate.from) {
@@ -1458,17 +1450,11 @@ THREE.BAS.Timeline.prototype._processRotation = function(start, duration, params
       params.rotate.from = 0;
     }
     else {
-      params.rotate.from = this.rotationSegments[this.rotationSegments.length - 1].rotate.to;
+      params.rotate.from = this.rotationSegments[this.rotationSegments.length - 1].transition.to;
     }
   }
 
-  this.rotationSegments.push(new THREE.BAS.RotationSegment(
-    this._getKey(),
-    start,
-    duration,
-    params.ease,
-    params.rotate
-  ));
+  this.rotationSegments.push(new THREE.BAS.RotationSegment(this._getKey(), start, duration, params.rotate));
 };
 THREE.BAS.Timeline.prototype._processTranslation = function(start, duration, params) {
   if (!params.translate.from) {
@@ -1476,17 +1462,11 @@ THREE.BAS.Timeline.prototype._processTranslation = function(start, duration, par
       params.translate.from = new THREE.Vector3(0.0, 0.0, 0.0);
     }
     else {
-      params.translate.from = this.translationSegments[this.translationSegments.length - 1].translation.to;
+      params.translate.from = this.translationSegments[this.translationSegments.length - 1].transition.to;
     }
   }
 
-  this.translationSegments.push(new THREE.BAS.TranslationSegment(
-    this._getKey(),
-    start,
-    duration,
-    params.ease,
-    params.translate
-  ));
+  this.translationSegments.push(new THREE.BAS.TranslationSegment(this._getKey(), start, duration, params.translate));
 };
 THREE.BAS.Timeline.prototype._getKey = function() {
   return (this.__key++).toString();
@@ -1532,17 +1512,17 @@ THREE.BAS.Timeline.prototype._pad = function(segments) {
 
 THREE.BAS.Timeline.prototype.getScaleCalls = function() {
   return this.scaleSegments.map(function(s) {
-    return 'applyScale' + s.key + '(tTime, transformed);';
+    return 'applyTransform' + s.key + '(tTime, transformed);';
   }).join('\n');
 };
 THREE.BAS.Timeline.prototype.getRotateCalls = function() {
   return this.rotationSegments.map(function(s) {
-    return 'applyRotation' + s.key + '(tTime, transformed);';
+    return 'applyTransform' + s.key + '(tTime, transformed);';
   }).join('\n');
 };
 THREE.BAS.Timeline.prototype.getTranslateCalls = function() {
   return this.translationSegments.map(function(s) {
-    return 'applyTranslation' + s.key + '(tTime, transformed);';
+    return 'applyTransform' + s.key + '(tTime, transformed);';
   }).join('\n');
 };
 
@@ -1553,16 +1533,16 @@ THREE.BAS.TimelineChunks = {
   vec4: function(n, v, p) {
     return 'vec4 ' + n + ' = vec4(' + v.x.toPrecision(p) + ',' + v.y.toPrecision(p) + ',' + v.z.toPrecision(p) + ',' + v.w.toPrecision(p) + ');';
   },
-  delayDuration: function(key, delay, duration) {
+  delayDuration: function(segment) {
     return [
-      'float cDelay' + key + ' = ' + delay.toPrecision(4) + ';',
-      'float cDuration' + key + ' = ' + duration.toPrecision(4) + ';'
+      'float cDelay' + segment.key + ' = ' + segment.start.toPrecision(4) + ';',
+      'float cDuration' + segment.key + ' = ' + segment.duration.toPrecision(4) + ';'
     ].join('\n');
   },
-  progress: function(key, ease) {
+  progress: function(segment) {
     return [
-      'float progress = clamp(time - cDelay' + key + ', 0.0, cDuration' + key + ') / cDuration' + key + ';',
-      'progress = ' + ease + '(progress);'
+      'float progress = clamp(time - cDelay' + segment.key + ', 0.0, cDuration' + segment.key + ') / cDuration' + segment.key + ';',
+      segment.transition.ease ? ('progress = ' + segment.transition.ease + '(progress);') : ''
     ].join('\n');
   },
   renderCheck: function(segment) {
@@ -1573,24 +1553,23 @@ THREE.BAS.TimelineChunks = {
   }
 };
 
-THREE.BAS.TranslationSegment = function(key, start, duration, ease, translation) {
+THREE.BAS.TranslationSegment = function(key, start, duration, transition) {
   this.key = key;
   this.start = start;
   this.duration = duration;
-  this.ease = ease;
-  this.translation = translation;
+  this.transition = transition;
   this.trail = 0;
 };
 THREE.BAS.TranslationSegment.prototype.compile = function() {
   return [
-    THREE.BAS.TimelineChunks.delayDuration(this.key, this.start, this.duration),
-    THREE.BAS.TimelineChunks.vec3('cTranslateFrom' + this.key, this.translation.from, 2),
-    THREE.BAS.TimelineChunks.vec3('cTranslateTo' + this.key, this.translation.to, 2),
+    THREE.BAS.TimelineChunks.delayDuration(this),
+    THREE.BAS.TimelineChunks.vec3('cTranslateFrom' + this.key, this.transition.from, 2),
+    THREE.BAS.TimelineChunks.vec3('cTranslateTo' + this.key, this.transition.to, 2),
 
-    'void applyTranslation' + this.key + '(float time, inout vec3 v) {',
+    'void applyTransform' + this.key + '(float time, inout vec3 v) {',
 
     THREE.BAS.TimelineChunks.renderCheck(this),
-    THREE.BAS.TimelineChunks.progress(this.key, this.ease),
+    THREE.BAS.TimelineChunks.progress(this),
 
     'v += mix(cTranslateFrom' + this.key + ', cTranslateTo' + this.key + ', progress);',
     '}'

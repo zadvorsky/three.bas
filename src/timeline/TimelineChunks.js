@@ -5,16 +5,16 @@ THREE.BAS.TimelineChunks = {
   vec4: function(n, v, p) {
     return 'vec4 ' + n + ' = vec4(' + v.x.toPrecision(p) + ',' + v.y.toPrecision(p) + ',' + v.z.toPrecision(p) + ',' + v.w.toPrecision(p) + ');';
   },
-  delayDuration: function(key, delay, duration) {
+  delayDuration: function(segment) {
     return [
-      'float cDelay' + key + ' = ' + delay.toPrecision(4) + ';',
-      'float cDuration' + key + ' = ' + duration.toPrecision(4) + ';'
+      'float cDelay' + segment.key + ' = ' + segment.start.toPrecision(4) + ';',
+      'float cDuration' + segment.key + ' = ' + segment.duration.toPrecision(4) + ';'
     ].join('\n');
   },
-  progress: function(key, ease) {
+  progress: function(segment) {
     return [
-      'float progress = clamp(time - cDelay' + key + ', 0.0, cDuration' + key + ') / cDuration' + key + ';',
-      'progress = ' + ease + '(progress);'
+      'float progress = clamp(time - cDelay' + segment.key + ', 0.0, cDuration' + segment.key + ') / cDuration' + segment.key + ';',
+      segment.transition.ease ? ('progress = ' + segment.transition.ease + '(progress);') : ''
     ].join('\n');
   },
   renderCheck: function(segment) {
