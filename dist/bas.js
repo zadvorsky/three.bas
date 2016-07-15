@@ -137,11 +137,8 @@ THREE.BAS.Timeline.register = function(key, definition) {
 /**
  * Add a transition to the timeline.
  * @param {number} duration Duration in seconds
- * @param {object} transitions An object containing one or several transitions. The keys should match transform definitions. By default 'scale', 'rotate' and 'translate' are supported.
+ * @param {object} transitions An object containing one or several transitions. The keys should match transform definitions.
  * The transition object for each key will be passed to the matching definition's compiler. It can have arbitrary properties, but the Timeline expects at least a 'to', 'from' and an optional 'ease'.
- * @param {*} transitions.t.to The value to transition to. The type depends on the transition definition.
- * @param {*} [transitions.t.from] The value to transition from. If no value is provided the definition's defaultFrom will be used for the first transition. Subsequent transitions will use the previous transition's to value.
- * @param {string} [transitions.t.ease] Name of the ease function to use. If none is provided, the progress will be interpolated linearly.
  * @param {number|string} [positionOffset] Position in the timeline. Defaults to the end of the timeline. If a number is provided, the transition will be inserted at that time in seconds. Strings ('+=x' or '-=x') can be used for a value relative to the end of timeline.
  */
 THREE.BAS.Timeline.prototype.add = function(duration, transitions, positionOffset) {
@@ -166,17 +163,17 @@ THREE.BAS.Timeline.prototype.add = function(duration, transitions, positionOffse
   for (var i = 0; i < keys.length; i++) {
     key = keys[i];
 
-    this._processTransition(key, transitions[key], start, duration);
+    this.processTransition(key, transitions[key], start, duration);
   }
 };
 
-THREE.BAS.Timeline.prototype._processTransition = function(key, transition, start, duration) {
+THREE.BAS.Timeline.prototype.processTransition = function(key, transition, start, duration) {
   var definition = THREE.BAS.Timeline.segmentDefinitions[key];
 
   var segments = this.segments[key];
   if (!segments) segments = this.segments[key] = [];
 
-  if (!transition.from) {
+  if (transition.from === undefined) {
     if (segments.length === 0) {
       transition.from = definition.defaultFrom;
     }
@@ -201,7 +198,7 @@ THREE.BAS.Timeline.prototype.compile = function() {
   for (var i = 0; i < keys.length; i++) {
     segments = this.segments[keys[i]];
 
-    this._pad(segments);
+    this.fillGaps(segments);
 
     segments.forEach(function(s) {
       c.push(s.compile());
@@ -210,7 +207,7 @@ THREE.BAS.Timeline.prototype.compile = function() {
 
   return c;
 };
-THREE.BAS.Timeline.prototype._pad = function(segments) {
+THREE.BAS.Timeline.prototype.fillGaps = function(segments) {
   if (segments.length === 0) return;
 
   var s0, s1;
@@ -230,15 +227,15 @@ THREE.BAS.Timeline.prototype._pad = function(segments) {
 /**
  * Get a compiled glsl string with calls to transform functions for a given key.
  * The order in which these transitions are applied matters because they all operate on the same value.
- * @param {string} key A key matching a transform definition. The default keys are 'scale', 'rotate' and 'transition'.
+ * @param {string} key A key matching a transform definition.
  * @returns {string}
  */
 THREE.BAS.Timeline.prototype.getTransformCalls = function(key) {
   var t = this.timeKey;
 
-  return this.segments[key].map(function(s) {
+  return this.segments[key] ?  this.segments[key].map(function(s) {
     return 'applyTransform' + s.key + '(' + t + ', transformed);';
-  }).join('\n');
+  }).join('\n') : '';
 };
 
 THREE.BAS.ShaderChunk = {};
@@ -1485,18 +1482,26 @@ THREE.BAS.Timeline.register('rotate', {
       segment.transition.to
     );
 
+    var pivot = segment.transition.pivot;
+
     return [
       THREE.BAS.TimelineChunks.delayDuration(segment),
       THREE.BAS.TimelineChunks.vec4('cRotationFrom' + segment.key, fromAxisAngle, 8),
       THREE.BAS.TimelineChunks.vec4('cRotationTo' + segment.key, toAxisAngle, 8),
+      (pivot && THREE.BAS.TimelineChunks.vec3('cPivot' + segment.key, pivot, 2)),
 
       'void applyTransform' + segment.key + '(float time, inout vec3 v) {',
 
       THREE.BAS.TimelineChunks.renderCheck(segment),
       THREE.BAS.TimelineChunks.progress(segment),
 
+      (pivot && 'v -= cPivot' + segment.key + ';'),
+
       'vec4 q = quatFromAxisAngle(cRotationFrom' + segment.key + '.xyz' + ', mix(cRotationFrom' + segment.key + '.w, cRotationTo' + segment.key + '.w, progress));',
       'v = rotateVector(q, v);',
+
+      (pivot && 'v += cPivot' + segment.key + ';'),
+
       '}'
     ].join('\n');
   },
@@ -1524,10 +1529,19 @@ THREE.BAS.Timeline.register('scale', {
 
 THREE.BAS.TimelineChunks = {
   vec3: function(n, v, p) {
-    return 'vec3 ' + n + ' = vec3(' + v.x.toPrecision(p) + ',' + v.y.toPrecision(p) + ',' + v.z.toPrecision(p) + ');';
+    var x = (v.x || 0).toPrecision(p);
+    var y = (v.y || 0).toPrecision(p);
+    var z = (v.z || 0).toPrecision(p);
+
+    return 'vec3 ' + n + ' = vec3(' + x + ',' + y + ',' + z + ');';
   },
   vec4: function(n, v, p) {
-    return 'vec4 ' + n + ' = vec4(' + v.x.toPrecision(p) + ',' + v.y.toPrecision(p) + ',' + v.z.toPrecision(p) + ',' + v.w.toPrecision(p) + ');';
+    var x = (v.x || 0).toPrecision(p);
+    var y = (v.y || 0).toPrecision(p);
+    var z = (v.z || 0).toPrecision(p);
+    var w = (v.w || 0).toPrecision(p);
+
+    return 'vec4 ' + n + ' = vec4(' + x + ',' + y + ',' + z + ',' + w + ');';
   },
   delayDuration: function(segment) {
     return [
@@ -1536,10 +1550,16 @@ THREE.BAS.TimelineChunks = {
     ].join('\n');
   },
   progress: function(segment) {
-    return [
-      'float progress = clamp(time - cDelay' + segment.key + ', 0.0, cDuration' + segment.key + ') / cDuration' + segment.key + ';',
-      segment.transition.ease ? ('progress = ' + segment.transition.ease + '(progress);') : ''
-    ].join('\n');
+    // zero duration segments should always render complete
+    if (segment.duration === 0) {
+      return 'float progress = 1.0;'
+    }
+    else {
+      return [
+        'float progress = clamp(time - cDelay' + segment.key + ', 0.0, cDuration' + segment.key + ') / cDuration' + segment.key + ';',
+        segment.transition.ease ? ('progress = ' + segment.transition.ease + '(progress);') : ''
+      ].join('\n');
+    }
   },
   renderCheck: function(segment) {
     var startTime = segment.start.toPrecision(4);
