@@ -58,7 +58,7 @@ function init() {
     animation.position.y = 0.25;
     root.add(animation);
 
-    tween = animation.animate({repeat:-1, repeatDelay: 0.0, ease:Power0.easeNone}).timeScale(2.0);
+    tween = animation.animate({repeat:-1, repeatDelay: 2.0, ease:Power0.easeNone}).timeScale(2.0);
   }
 
   elBtnLeft.addEventListener('click', function() {
@@ -83,47 +83,30 @@ function Animation(gridSize) {
   // the timeline generates shader chunks where an animation step is baked into.
   // each prefab will execute the same animation, with in offset position and time (delay).
   var timeline = new THREE.BAS.Timeline();
-
-
-  //for (var i = 0; i < 10; i++) {
-  //  timeline.add(0.0, {
-  //    translate: {
-  //      to: {x: 0.5 * (i), y: 0, z: 0}
-  //    }
-  //  });
-  //  timeline.add(1.0, {
-  //    rotate: {
-  //      axis: new THREE.Vector3(0, 0, -1),
-  //      from: 0,
-  //      to: Math.PI * 0.5,
-  //      pivot: {x:0.25, y:-0.25},
-  //      ease: 'easeBounceOut'
-  //    }
-  //  });
-  //}
-
-
+  
+  // roll right
   timeline.add(1.0, {
     rotate: {
       axis: new THREE.Vector3(0, 0, -1),
       from: 0,
       to: Math.PI * 0.5,
-      pivot: {x:0.25, y:-0.25},
+      origin: {x:0.25, y:-0.25},
       ease: 'easeCubicIn'
     }
   });
+  // zero duration transitions act like a 'set'
   timeline.add(0.0, {
     translate: {
       to: {x: 0.5, y: 0, z: 0}
     }
   });
-
+  // roll down
   timeline.add(1.0, {
     rotate: {
       axis: new THREE.Vector3(1, 0, 0),
       from: 0,
       to: Math.PI * 0.5,
-      pivot: {y:-0.25, z:0.25},
+      origin: {y:-0.25, z:0.25},
       ease: 'easeCubicIn'
     }
   });
@@ -132,13 +115,13 @@ function Animation(gridSize) {
       to: {x: 0.5, y: 0, z: 0.5}
     }
   });
-
+  // roll left
   timeline.add(1.0, {
     rotate: {
       axis: new THREE.Vector3(0, 0, 1),
       from: 0,
       to: Math.PI * 0.5,
-      pivot: {x:-0.25, y:-0.25},
+      origin: {x:-0.25, y:-0.25},
       ease: 'easeCubicIn'
     }
   });
@@ -147,13 +130,13 @@ function Animation(gridSize) {
       to: {x: 0, y: 0, z: 0.5}
     }
   });
-
+  // roll up
   timeline.add(1.0, {
     rotate: {
       axis: new THREE.Vector3(-1, 0, 0),
       from: 0,
       to: Math.PI * 0.5,
-      pivot: {y:-0.25, z:-0.25},
+      origin: {y:-0.25, z:-0.25},
       ease: 'easeCubicIn'
     }
   });
@@ -162,8 +145,7 @@ function Animation(gridSize) {
       to: {x: 0, y: 0, z: 0}
     }
   });
-
-
+  
   // setup prefab
   var prefabSize = 0.5;
   var prefab = new THREE.BoxGeometry(prefabSize, prefabSize, prefabSize);

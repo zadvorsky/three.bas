@@ -1482,25 +1482,25 @@ THREE.BAS.Timeline.register('rotate', {
       segment.transition.to
     );
 
-    var pivot = segment.transition.pivot;
+    var origin = segment.transition.origin;
 
     return [
       THREE.BAS.TimelineChunks.delayDuration(segment),
       THREE.BAS.TimelineChunks.vec4('cRotationFrom' + segment.key, fromAxisAngle, 8),
       THREE.BAS.TimelineChunks.vec4('cRotationTo' + segment.key, toAxisAngle, 8),
-      (pivot && THREE.BAS.TimelineChunks.vec3('cPivot' + segment.key, pivot, 2)),
+      (origin && THREE.BAS.TimelineChunks.vec3('cOrigin' + segment.key, origin, 2)),
 
       'void applyTransform' + segment.key + '(float time, inout vec3 v) {',
 
       THREE.BAS.TimelineChunks.renderCheck(segment),
       THREE.BAS.TimelineChunks.progress(segment),
 
-      (pivot && 'v -= cPivot' + segment.key + ';'),
+      (origin && 'v -= cOrigin' + segment.key + ';'),
 
       'vec4 q = quatFromAxisAngle(cRotationFrom' + segment.key + '.xyz' + ', mix(cRotationFrom' + segment.key + '.w, cRotationTo' + segment.key + '.w, progress));',
       'v = rotateVector(q, v);',
 
-      (pivot && 'v += cPivot' + segment.key + ';'),
+      (origin && 'v += cOrigin' + segment.key + ';'),
 
       '}'
     ].join('\n');
@@ -1510,17 +1510,22 @@ THREE.BAS.Timeline.register('rotate', {
 
 THREE.BAS.Timeline.register('scale', {
   compiler: function(segment) {
+    var origin = segment.transition.origin;
+    
     return [
       THREE.BAS.TimelineChunks.delayDuration(segment),
       THREE.BAS.TimelineChunks.vec3('cScaleFrom' + segment.key, segment.transition.from, 2),
       THREE.BAS.TimelineChunks.vec3('cScaleTo' + segment.key, segment.transition.to, 2),
+      (origin && THREE.BAS.TimelineChunks.vec3('cOrigin' + segment.key, origin, 2)),
 
       'void applyTransform' + segment.key + '(float time, inout vec3 v) {',
 
       THREE.BAS.TimelineChunks.renderCheck(segment),
       THREE.BAS.TimelineChunks.progress(segment),
-
+      
+      (origin && 'v -= cOrigin' + segment.key + ';'),
       'v *= mix(cScaleFrom' + segment.key + ', cScaleTo' + segment.key + ', progress);',
+      (origin && 'v += cOrigin' + segment.key + ';'),
       '}'
     ].join('\n');
   },
