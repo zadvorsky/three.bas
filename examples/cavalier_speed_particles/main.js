@@ -56,6 +56,7 @@ function init() {
   gui.add(controller, 'count', 100, 500000).step(100);
   gui.add(controller, 'size', 0.001, 0.1).step(0.001);
   gui.add(controller, 'create').name('> update');
+  gui.close();
 
   controller.create();
 

@@ -3,64 +3,140 @@ window.onload = init;
 function init() {
   var root = new THREERoot();
   root.renderer.setClearColor(0x000000);
-  root.camera.position.set(0, 2, 8);
+  root.camera.position.set(0, 0.25, -1).multiplyScalar(4);
   
-  root.add(new THREE.AxisHelper(10));
-  
-  var animation = new Animation(1000, 0.01);
-  root.add(animation);
-  
-  setInterval(function() {
-    animation.play();
-  }, 2000);
-  
-  animation.play();
+  // create a ground for reference
+  var ground = new THREE.Mesh(
+    new THREE.PlaneBufferGeometry(10, 10, 9, 9),
+    new THREE.MeshBasicMaterial({
+      wireframe: true,
+      color: 0x222222
+    })
+  );
+  ground.rotateX(-Math.PI * 0.5);
+  root.add(ground);
+
+  // the particles in the animation will each for a bezier curve
+  // running from start (always 0, 0, 0) through cp0 and cp2, to end
+  // the points will be randomly selected inside the bounds below
+  var bounds = {
+    cp0: new THREE.Box3(
+      new THREE.Vector3(-1, 0, 0),
+      new THREE.Vector3(1, 2, 2)
+    ),
+    cp1: new THREE.Box3(
+      new THREE.Vector3(-8, 0, 0),
+      new THREE.Vector3(8, 4, 4)
+    ),
+    end: new THREE.Box3(
+      new THREE.Vector3(-6, 2, -2),
+      new THREE.Vector3(6, 8, 6)
+    )
+  };
+
+  // add some box helpers for visualization
+  var boundsHelpers = new THREE.Group();
+  boundsHelpers.add(new THREE.BoxHelper(bounds.cp0, 0xff0000));
+  boundsHelpers.add(new THREE.BoxHelper(bounds.cp1, 0x00ff00));
+  boundsHelpers.add(new THREE.BoxHelper(bounds.end, 0x0000ff));
+  boundsHelpers.visible = false;
+  root.add(boundsHelpers);
+
+  // animation
+  var animation;
+
+  // gui
+  var gui = new dat.GUI();
+  var controller = {
+    timeScale: 0.5,
+    count: 1000,
+    size: 0.05,
+    create: function() {
+      if (animation) {
+        root.remove(animation);
+        animation.geometry.dispose();
+        animation.material.dispose();
+        animation.tween.kill();
+      }
+
+      animation = new Animation(controller.count, controller.size, bounds);
+      animation.tween.timeScale(controller.timeScale);
+      animation.addEventListener('tween_complete', function() {
+        animation.play();
+      });
+      root.add(animation);
+
+      animation.play();
+    },
+    replay: function() {
+      animation.play();
+    }
+  };
+
+  gui.add(boundsHelpers, 'visible').name('show bounds');
+  gui.add(controller, 'timeScale', 0.01, 1.0).step(0.01).onChange(function(v) {
+    animation.tween.timeScale(v);
+  });
+  gui.add(controller, 'replay').name('> replay');
+  gui.add(controller, 'count', 100, 50000).step(100);
+  gui.add(controller, 'size', 0.001, 0.1).step(0.001);
+  gui.add(controller, 'create').name('> update');
+  gui.close();
+
+  controller.create();
 }
 
 ////////////////////
 // CLASSES
 ////////////////////
 
-function Animation(prefabCount, prefabSize) {
-  var prefab = new THREE.TetrahedronGeometry(prefabSize);
+function Animation(prefabCount, prefabSize, bounds) {
+  this.bounds = bounds;
+
+  // create a prefab
+  var prefab = new THREE.PlaneGeometry(prefabSize, prefabSize, 1, 8);
+
+  // create a geometry where the prefab is repeated 'prefabCount' times
   var geometry = new NuggetCollisionGeometry(prefab, prefabCount);
   
   // animation timing
-  
+
+  // each prefab has a start time (delay) and duration
   var aDelayDuration = geometry.createAttribute('aDelayDuration', 2);
   var delay;
   var duration;
   var minDuration = 0.25;
   var maxDuration = 1.0;
   var prefabDelay = 0.0;
-  var vertexDelay = 0.025;
-  
+  var vertexDelay = 0.01;
+
   for (var i = 0, offset = 0; i < prefabCount; i++) {
-    
     delay = prefabDelay * i;
     duration = THREE.Math.randFloat(minDuration, maxDuration);
     
     for (var j = 0; j < geometry.prefabVertexCount; j++) {
-      
-      aDelayDuration.array[offset++] = delay + vertexDelay * j;
+      // by giving EACH VERTEX in a prefab its own delay (based on index) the prefabs are stretched out
+      // as the animation plays
+      aDelayDuration.array[offset++] = delay + vertexDelay * duration * j;
       aDelayDuration.array[offset++] = duration;
     }
   }
   
   this.totalDuration = maxDuration + prefabDelay * prefabCount + vertexDelay * geometry.prefabVertexCount;
-  
+
   // position
-  
+
+  // start position is always (0, 0, 0)
+  // this attribute could be removed, but I've kept it around for consistency
   geometry.createAttribute('aStartPosition', 3);
+  // control positions and end position are filled inside the 'bufferPoints' method below
   geometry.createAttribute('aControlPosition0', 3);
   geometry.createAttribute('aControlPosition1', 3);
-  geometry.createAttribute('aEndPosition', 3, function(data) {
-    data[0] = THREE.Math.randFloat(-6, 6);
-    data[1] = THREE.Math.randFloat(2, 8);
-    data[2] = THREE.Math.randFloat(-2, 6);
-  });
+  geometry.createAttribute('aEndPosition', 3);
+
   // color
-  
+
+  // each prefab will have a tint of the gold-ish color #d7d2bf
   var colorObj = new THREE.Color('#d7d2bf');
   var colorHSL = colorObj.getHSL();
   var h, s, l;
@@ -79,21 +155,16 @@ function Animation(prefabCount, prefabSize) {
   var axis = new THREE.Vector3();
   
   geometry.createAttribute('aAxisAngle', 4, function(data) {
-    THREE.BAS.Utils.randomAxis(axis);
-    
-    axis.toArray(data);
-    data[3] = Math.PI * THREE.Math.randInt(8, 16);
+    THREE.BAS.Utils.randomAxis(axis).toArray(data);
+    data[3] = Math.PI * THREE.Math.randFloat(8, 16);
   });
   
   var material = new THREE.BAS.BasicAnimationMaterial({
-    shading: THREE.FlatShading,
     side: THREE.DoubleSide,
     vertexColors: THREE.VertexColors,
+    transparent: true,
     uniforms: {
       uTime: {value: 0.0}
-    },
-    uniformValues: {
-      diffuse: new THREE.Color(0xf1f1f1)
     },
     vertexFunctions: [
       THREE.BAS.ShaderChunk['quaternion_rotation'],
@@ -111,17 +182,18 @@ function Animation(prefabCount, prefabSize) {
       'attribute vec4 aAxisAngle;'
     ],
     vertexPosition: [
-      'float tDelay = aDelayDuration.x;',
-      'float tDuration = aDelayDuration.y;',
-      'float tTime = clamp(uTime - tDelay, 0.0, tDuration);',
-      'float tProgress = easeCubicOut(tTime, 0.0, 1.0, tDuration);',
-  
-      'float angle = aAxisAngle.w * tProgress;',
-      'vec4 tQuat = quatFromAxisAngle(aAxisAngle.xyz, angle);',
-  
+      'float tProgress = clamp(uTime - aDelayDuration.x, 0.0, aDelayDuration.y) / aDelayDuration.y;',
+      'tProgress = easeCubicOut(tProgress);',
+
+      // rotate
+      'vec4 tQuat = quatFromAxisAngle(aAxisAngle.xyz, aAxisAngle.w * tProgress);',
       'transformed = rotateVector(tQuat, transformed);',
+
+      // scale (0.0 at start, 1.0 halfway, 0.0 at end of progress)
       'float scl = tProgress * 2.0 - 1.0;',
       'transformed *= (1.0 - scl * scl);',
+
+      // translate
       'transformed += cubicBezier(aStartPosition, aControlPosition0, aControlPosition1, aEndPosition, tProgress);'
     ]
   });
@@ -129,36 +201,41 @@ function Animation(prefabCount, prefabSize) {
   THREE.Mesh.call(this, geometry, material);
   this.frustumCulled = false;
   
-  this.animation = TweenMax.fromTo(this.material.uniforms['uTime'], 1.0,
-    {value:0},
-    {value:this.totalDuration, ease:Power0.easeOut}
-  );
-  this.animation.pause();
+  this.tween = TweenMax.fromTo(this.material.uniforms['uTime'], 1.0, {value: 0}, {
+    value:this.totalDuration,
+    ease:Power0.easeOut,
+    onCompleteScope: this,
+    onComplete: function() {
+      this.dispatchEvent({type: 'tween_complete'});
+    }
+  });
+  this.tween.pause();
 }
 Animation.prototype = Object.create(THREE.Mesh.prototype);
 Animation.prototype.constructor = Animation;
 
 Animation.prototype.play = function() {
-  this.bufferControlPoints();
-  this.animation.play(0);
+  this.bufferPoints();
+  this.tween.play(0);
 };
-Animation.prototype.bufferControlPoints = function() {
+Animation.prototype.bufferPoints = function() {
   var aControlPosition0 = this.geometry.attributes['aControlPosition0'];
   var aControlPosition1 = this.geometry.attributes['aControlPosition1'];
+  var aEndPosition = this.geometry.attributes['aEndPosition'];
   var data = [];
-  
+  var v = new THREE.Vector3();
+
   for (var i = 0; i < this.geometry.prefabCount; i++) {
-    data[0] = THREE.Math.randFloat(-1, 1);
-    data[1] = THREE.Math.randFloat(0, 4);
-    data[2] = THREE.Math.randFloat(0, 4);
+    THREE.BAS.Utils.randomInBox(this.bounds.cp0, v).toArray(data);
     this.geometry.setPrefabData(aControlPosition0, i, data);
-  
-    data[0] = THREE.Math.randFloat(-8, 8);
-    data[1] = THREE.Math.randFloat(0, 4);
-    data[2] = THREE.Math.randFloat(0, 4);
-    this.geometry.setPrefabData(aControlPosition0, i, data);
+
+    THREE.BAS.Utils.randomInBox(this.bounds.cp1, v).toArray(data);
+    this.geometry.setPrefabData(aControlPosition1, i, data);
+
+    THREE.BAS.Utils.randomInBox(this.bounds.end, v).toArray(data);
+    this.geometry.setPrefabData(aEndPosition, i, data);
   }
-  
+
   aControlPosition0.needsUpdate = true;
   aControlPosition1.needsUpdate = true;
 };
