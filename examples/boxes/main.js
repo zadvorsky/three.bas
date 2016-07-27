@@ -104,8 +104,13 @@ function Animation(gridSize) {
       ease: 'easeCubicOut'
     },
     rotate: {
-      axis: new THREE.Vector3(0, 1, 0),
-      to: Math.PI,
+      from: {
+        axis: new THREE.Vector3(0, 1, 0),
+        angle: 0,
+      },
+      to: {
+        angle: Math.PI
+      },
       ease: 'easeCubicIn'
     }
   });
