@@ -16,7 +16,8 @@ var glslDestDir = './src';
 
 var jsSources = [
   './src/BufferAnimationSystem.js',
-  './src/Materials/BaseAnimationMaterial',
+  './src/materials/BaseAnimationMaterial.js',
+  './src/timeline/Timeline.js',
   './src/**/*.js'
 ];
 

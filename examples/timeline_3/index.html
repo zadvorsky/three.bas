@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>THREE.js BufferAnimationSystem</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: monospace;
+      background: #000;
+    }
+
+    #three-container {
+      cursor: move;
+    }
+
+    .controls {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 12px;
+      text-align: center;
+      color: white;
+      font-size: 48px;
+    }
+    .btn {
+      cursor: pointer;
+      font-weight: bolder;
+      transition: color .15s;
+    }
+    .btn:hover {
+      color: #aaa;
+    }
+    .btn.disabled {
+      pointer-events: none;
+      color: #666;
+    }
+    .count {
+      display: inline-block;
+      width: 200px;
+      padding: 0 60px;
+      user-select: none;
+      -moz-user-select: none;
+      -webkit-user-select: none;
+      -ms-user-select: none;
+      pointer-events: none;
+    }
+
+  </style>
+</head>
+<body>
+<div id="three-container"></div>
+
+<div class="controls">
+  <span class="btn left disabled"><</span><span class="count"></span><span class="btn right">></span>
+</div>
+
+<script src="../_lib/TweenMax.min.js"></script>
+<script src="../_lib/dat.gui.min.js"></script>
+<script src="../../bower_components/three.js/build/three.js"></script>
+<script src="../../bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
+<script src="../../dist/bas.js"></script>
+<script src="../_js/root.js"></script>
+
+<script src="main.js"></script>
+</body>
+</html>

@@ -81,49 +81,59 @@ function Animation(gridSize) {
 
   // the timeline generates shader chunks where an animation step is baked into.
   // each prefab will execute the same animation, with in offset position and time (delay).
-  var timeline = new Timeline();
+  var timeline = new THREE.BAS.Timeline();
 
-  // scale down
-  timeline.append(1.0, {
+  //// scale down
+  timeline.add(1.0, {
     scale: {
-      to: new THREE.Vector3(1.4, 0.4, 1.4)
-    },
-    ease: 'easeCubicOut'
+      to: new THREE.Vector3(1.4, 0.4, 1.4),
+      ease: 'easeCubicOut'
+    }
   });
   // scale up
-  timeline.append(0.5, {
+  timeline.add(0.5, {
     scale: {
-      to: new THREE.Vector3(0.4, 3.0, 0.4)
-    },
-    ease: 'easeCubicIn'
+      to: new THREE.Vector3(0.4, 3.0, 0.4),
+      ease: 'easeCubicIn'
+    }
   });
-  // move up
-  timeline.append(1.0, {
+  // move up + rotate
+  timeline.add(1.0, {
     translate: {
-      to: new THREE.Vector3(0.0, 6.0, 0.0)
+      to: new THREE.Vector3(0.0, 6.0, 0.0),
+      ease: 'easeCubicOut'
     },
-    ease: 'easeCubicOut'
+    rotate: {
+      from: {
+        axis: new THREE.Vector3(0, 1, 0),
+        angle: 0,
+      },
+      to: {
+        angle: Math.PI
+      },
+      ease: 'easeCubicIn'
+    }
   });
   // move down
-  timeline.append(0.5, {
+  timeline.add(0.5, {
     translate: {
-      to: new THREE.Vector3(0.0, 0.0, 0.0)
-    },
-    ease: 'easeCubicIn'
+      to: new THREE.Vector3(0.0, 0.0, 0.0),
+      ease: 'easeCubicIn'
+    }
   });
   // land + squish
-  timeline.append(0.5, {
+  timeline.add(0.5, {
     scale: {
-      to: new THREE.Vector3(1.4, 0.4, 1.4)
-    },
-    ease: 'easeCubicOut'
+      to: new THREE.Vector3(1.4, 0.4, 1.4),
+      ease: 'easeCubicOut'
+    }
   });
   // un-squish
-  timeline.append(1.5, {
+  timeline.add(1.5, {
     scale: {
-      to: new THREE.Vector3(1.0, 1.0, 1.0)
-    },
-    ease: 'easeBackOut'
+      to: new THREE.Vector3(1.0, 1.0, 1.0),
+      ease: 'easeBackOut'
+    }
   });
 
   // setup prefab
@@ -139,24 +149,24 @@ function Animation(gridSize) {
   var aDelayDuration = geometry.createAttribute('aDelayDuration', 2);
   var index = 0;
   var dataArray = [];
-  var maxDelay = 4.0;
+  var maxDelay = gridSize === 1 ? 0 : 4.0;
 
-  this.totalDuration = timeline.totalDuration + maxDelay;
+  this.totalDuration = timeline.duration + maxDelay;
 
   for (var i = 0; i < gridSize; i++) {
     for (var j = 0; j < gridSize; j++) {
       var x = THREE.Math.mapLinear(i, 0, gridSize, -gridSize * 0.5, gridSize * 0.5) + 0.5;
-      var y = THREE.Math.mapLinear(j, 0, gridSize, -gridSize * 0.5, gridSize * 0.5) + 0.5;
+      var z = THREE.Math.mapLinear(j, 0, gridSize, -gridSize * 0.5, gridSize * 0.5) + 0.5;
 
       // position
       dataArray[0] = x;
       dataArray[1] = 0;
-      dataArray[2] = y;
+      dataArray[2] = z;
       geometry.setPrefabData(aPosition, index, dataArray);
 
       // animation
-      dataArray[0] = maxDelay * Math.sqrt(x * x + y * y) / gridSize;
-      dataArray[1] = timeline.totalDuration;
+      dataArray[0] = maxDelay * Math.sqrt(x * x + z * z) / gridSize;
+      dataArray[1] = timeline.duration;
       geometry.setPrefabData(aDelayDuration, index, dataArray);
 
       index++;
@@ -179,8 +189,9 @@ function Animation(gridSize) {
       THREE.BAS.ShaderChunk['ease_cubic_out'],
       THREE.BAS.ShaderChunk['ease_cubic_in_out'],
       THREE.BAS.ShaderChunk['ease_back_out'],
+      THREE.BAS.ShaderChunk['quaternion_rotation'],
       // getChunks outputs the shader chunks where the animation is baked into
-    ].concat(timeline.getChunks()),
+    ].concat(timeline.compile()),
     vertexParameters: [
       'uniform float uTime;',
 
@@ -192,8 +203,9 @@ function Animation(gridSize) {
       'float tTime = clamp(uTime - aDelayDuration.x, 0.0, aDelayDuration.y);',
 
       // apply timeline transformations based on 'tTime'
-      timeline.getScaleCalls(),
-      timeline.getTranslateCalls(),
+      timeline.getTransformCalls('scale'),
+      timeline.getTransformCalls('rotate'),
+      timeline.getTransformCalls('translate'),
 
       // translate the vertex by prefab position
       'transformed += aPosition;'
@@ -222,131 +234,3 @@ Animation.prototype.animate = function (options) {
 
   return TweenMax.fromTo(this, this.totalDuration, {time: 0.0}, options);
 };
-
-function Timeline() {
-  this.totalDuration = 0;
-  this.segments = [];
-}
-
-Timeline.prototype.append = function(duration, params) {
-  var key = this.segments.length.toString();
-  var delay = this.totalDuration;
-
-  this.totalDuration += duration;
-
-  // post-fill scale
-
-  params.scale = params.scale || {};
-
-  if (!params.scale.from) {
-    if (this.segments.length === 0) {
-      params.scale.from = new THREE.Vector3(1.0, 1.0, 1.0);
-    }
-    else {
-      params.scale.from = this.segments[this.segments.length - 1].scale.to;
-    }
-  }
-
-  if (!params.scale.to) {
-    if (this.segments.length === 0) {
-      params.scale.to = new THREE.Vector3(1.0, 1.0, 1.0);
-    }
-    else {
-      params.scale.to = this.segments[this.segments.length - 1].scale.to;
-    }
-  }
-
-  // post-fill translation
-
-  params.translate = params.translate || {};
-
-  if (!params.translate.from) {
-    if (this.segments.length === 0) {
-      params.translate.from = new THREE.Vector3(0.0, 0.0, 0.0);
-    }
-    else {
-      params.translate.from = this.segments[this.segments.length - 1].translate.to;
-    }
-  }
-
-  if (!params.translate.to) {
-    if (this.segments.length === 0) {
-      params.translate.to = new THREE.Vector3(0.0, 0.0, 0.0);
-    }
-    else {
-      params.translate.to = this.segments[this.segments.length - 1].translate.to;
-    }
-  }
-
-  var segment = new Segment(
-    key,
-    delay,
-    duration,
-    params.ease,
-    params.translate,
-    params.scale
-  );
-
-  this.segments.push(segment);
-};
-Timeline.prototype.getChunks = function() {
-  return this.segments.map(function(s) {
-    return s.chunk;
-  })
-};
-Timeline.prototype.getScaleCalls = function() {
-  return this.segments.map(function(s) {
-    return 'applyScale' + s.key + '(tTime, transformed);';
-  }).join('\n');
-};
-Timeline.prototype.getTranslateCalls = function() {
-  return this.segments.map(function(s) {
-    return 'applyTranslation' + s.key + '(tTime, transformed);';
-  }).join('\n');
-};
-
-function Segment(key, delay, duration, ease, translate, scale) {
-  this.key = key;
-  this.delay = delay;
-  this.duration = duration;
-  this.ease = ease;
-  this.translate = translate;
-  this.scale = scale;
-
-  function vecToString(v, p) {
-    return v.x.toPrecision(p) + ',' + v.y.toPrecision(p) + ',' + v.z.toPrecision(p);
-  }
-
-  var tf = 'vec3(' + vecToString(translate.from, 2) + ')';
-  var tt = 'vec3(' + vecToString(translate.to, 2) + ')';
-  var sf = 'vec3(' + vecToString(scale.from, 2) + ')';
-  var st = 'vec3(' + vecToString(scale.to, 2) + ')';
-
-  // this is where the magic happens, but the magic still needs a lot of work
-  this.chunk = [
-    'float cDelay' + key + ' = ' + delay.toPrecision(2) + ';',
-    'float cDuration' + key + ' = ' + duration.toPrecision(2) + ';',
-    'vec3 cTranslateFrom' + key + ' = ' + tf + ';',
-    'vec3 cTranslateTo' + key + ' = ' + tt + ';',
-    'vec3 cScaleFrom' + key + ' = ' + sf + ';',
-    'vec3 cScaleTo' + key + ' = ' + st + ';',
-
-    'void applyScale' + key + '(float time, inout vec3 v) {',
-      'if (time < cDelay' + key + ' || time > (cDelay' + key + ' + cDuration' + key + ')) return;',
-
-      'float progress = clamp(time - cDelay' + key + ', 0.0, cDuration' + key + ') / cDuration' + key + ';',
-      'progress = ' + ease + '(progress);',
-
-      'v *= mix(cScaleFrom' + key + ', cScaleTo' + key + ', progress);',
-    '}',
-
-    'void applyTranslation' + key + '(float time, inout vec3 v) {',
-      'if (time < cDelay' + key + ' || time > (cDelay' + key + ' + cDuration' + key + ')) return;',
-
-      'float progress = clamp(time - cDelay' + key + ', 0.0, cDuration' + key + ') / cDuration' + key + ';',
-      'progress = ' + ease + '(progress);',
-
-      'v += mix(cTranslateFrom' + key + ', cTranslateTo' + key + ', progress);',
-    '}'
-  ].join('\n');
-}
