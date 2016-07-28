@@ -28,7 +28,7 @@ THREE.BAS.TimelineChunks = {
     else {
       return [
         'float progress = clamp(time - cDelay' + segment.key + ', 0.0, cDuration' + segment.key + ') / cDuration' + segment.key + ';',
-        segment.transition.ease ? ('progress = ' + segment.transition.ease + '(progress);') : ''
+        segment.transition.ease ? 'progress = ' + segment.transition.ease + '(progress' + (segment.transition.easeParams ? ',' + segment.transition.easeParams.map(function(v){return v.toPrecision(4)}).join(',') : '') + ');' : ''
       ].join('\n');
     }
   },
