@@ -1,17 +1,18 @@
 THREE.BAS.Timeline.register('rotate', {
   compiler: function(segment) {
     var fromAxisAngle = new THREE.Vector4(
-      segment.transition.axis.x,
-      segment.transition.axis.y,
-      segment.transition.axis.z,
-      segment.transition.from
+      segment.transition.from.axis.x,
+      segment.transition.from.axis.y,
+      segment.transition.from.axis.z,
+      segment.transition.from.angle
     );
 
+    var toAxis = segment.transition.to.axis || segment.transition.from.axis;
     var toAxisAngle = new THREE.Vector4(
-      segment.transition.axis.x,
-      segment.transition.axis.y,
-      segment.transition.axis.z,
-      segment.transition.to
+      toAxis.x,
+      toAxis.y,
+      toAxis.z,
+      segment.transition.to.angle
     );
 
     var origin = segment.transition.origin;
@@ -29,7 +30,9 @@ THREE.BAS.Timeline.register('rotate', {
 
       (origin && 'v -= cOrigin' + segment.key + ';'),
 
-      'vec4 q = quatFromAxisAngle(cRotationFrom' + segment.key + '.xyz' + ', mix(cRotationFrom' + segment.key + '.w, cRotationTo' + segment.key + '.w, progress));',
+      'vec3 axis = normalize(mix(cRotationFrom' + segment.key + '.xyz, cRotationTo' + segment.key + '.xyz, progress));',
+      'float angle = mix(cRotationFrom' + segment.key + '.w, cRotationTo' + segment.key + '.w, progress);',
+      'vec4 q = quatFromAxisAngle(axis, angle);',
       'v = rotateVector(q, v);',
 
       (origin && 'v += cOrigin' + segment.key + ';'),
@@ -37,5 +40,5 @@ THREE.BAS.Timeline.register('rotate', {
       '}'
     ].join('\n');
   },
-  defaultFrom: 0
+  defaultFrom: {axis: new THREE.Vector3(), angle: 0}
 });

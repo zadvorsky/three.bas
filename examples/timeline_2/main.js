@@ -58,7 +58,7 @@ function init() {
     animation.position.y = 0.25;
     root.add(animation);
 
-    tween = animation.animate({repeat:-1, repeatDelay: 2.0, ease:Power0.easeNone}).timeScale(2.0);
+    tween = animation.animate({repeat:-1, repeatDelay: 2.0, ease:Power0.easeNone}).timeScale(0.5);
   }
 
   elBtnLeft.addEventListener('click', function() {
@@ -87,9 +87,16 @@ function Animation(gridSize) {
   // roll right
   timeline.add(1.0, {
     rotate: {
-      axis: new THREE.Vector3(0, 0, -1),
-      from: 0,
-      to: Math.PI * 0.5,
+      // rotation is defined as an axis and an angle
+      from: {
+        axis: new THREE.Vector3(0, 0, -1),
+        angle: 0
+      },
+      // if to.axis is not specified, from.axis will be used
+      to: {
+        angle: Math.PI * 0.5
+      },
+      // origin is a point relative to the center around which the rotation will occur
       origin: {x:0.25, y:-0.25},
       ease: 'easeCubicIn'
     }
@@ -103,9 +110,13 @@ function Animation(gridSize) {
   // roll down
   timeline.add(1.0, {
     rotate: {
-      axis: new THREE.Vector3(1, 0, 0),
-      from: 0,
-      to: Math.PI * 0.5,
+      from: {
+        axis: new THREE.Vector3(1, 0, 0),
+        angle: 0
+      },
+      to: {
+        angle: Math.PI * 0.5
+      },
       origin: {y:-0.25, z:0.25},
       ease: 'easeCubicIn'
     }
@@ -118,9 +129,13 @@ function Animation(gridSize) {
   // roll left
   timeline.add(1.0, {
     rotate: {
-      axis: new THREE.Vector3(0, 0, 1),
-      from: 0,
-      to: Math.PI * 0.5,
+      from: {
+        axis: new THREE.Vector3(0, 0, 1),
+        angle: 0
+      },
+      to: {
+        angle: Math.PI * 0.5
+      },
       origin: {x:-0.25, y:-0.25},
       ease: 'easeCubicIn'
     }
@@ -133,9 +148,13 @@ function Animation(gridSize) {
   // roll up
   timeline.add(1.0, {
     rotate: {
-      axis: new THREE.Vector3(-1, 0, 0),
-      from: 0,
-      to: Math.PI * 0.5,
+      from: {
+        axis: new THREE.Vector3(-1, 0, 0),
+        angle: 0
+      },
+      to: {
+        angle: Math.PI * 0.5
+      },
       origin: {y:-0.25, z:-0.25},
       ease: 'easeCubicIn'
     }
