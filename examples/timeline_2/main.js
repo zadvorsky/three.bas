@@ -58,7 +58,7 @@ function init() {
     animation.position.y = 0.25;
     root.add(animation);
 
-    tween = animation.animate({repeat:-1, repeatDelay: 2.0, ease:Power0.easeNone}).timeScale(0.5);
+    tween = animation.animate({repeat:-1, repeatDelay: 2.0, ease:Power0.easeNone}).timeScale(2.0);
   }
 
   elBtnLeft.addEventListener('click', function() {
