@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>THREE.js BufferAnimationSystem</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: monospace;
+      background: #000;
+    }
+
+    #three-container {
+      cursor: move;
+    }
+  </style>
+</head>
+<body>
+
+<script id="ctPosition" type="x-shader/x-fragment">
+  void main() {
+    vec2 uv = gl_FragCoord.xy / resolution.xy;
+
+    vec3 pos = texture2D(ctPosition, uv).xyz;
+    vec3 vel = texture2D(ctVelocity, uv).xyz;
+
+    gl_FragColor = vec4(pos + vel, 1.0);
+  }
+</script>
+
+<script id="ctVelocity" type="x-shader/x-fragment">
+
+  highp float random(vec2 co) {
+    highp float a = 12.9898;
+    highp float b = 78.233;
+    highp float c = 43758.5453;
+    highp float dt= dot(co.xy ,vec2(a,b));
+    highp float sn= mod(dt,3.14);
+    return fract(sin(sn) * c);
+  }
+
+  void main() {
+    vec2 uv = gl_FragCoord.xy / resolution.xy;
+
+    vec3 pos = texture2D(ctPosition, uv).xyz;
+    vec3 vel = texture2D(ctVelocity, uv).xyz;
+
+    gl_FragColor = vec4(vec3(random(uv) * 2.0 - 1.0, 0.0, 0.0) * 0.01, 1.0);
+  }
+</script>
+
+
+
+<div id="three-container"></div>
+
+<script src="../_lib/TweenMax.min.js"></script>
+<script src="../../bower_components/three.js/build/three.js"></script>
+<script src="../../bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
+<script src="../../bower_components/three.js/examples/js/GPUComputationRenderer.js"></script>
+<script src="../../dist/bas.js"></script>
+<script src="../_js/root.js"></script>
+
+<script src="main.js"></script>
+</body>
+</html>
