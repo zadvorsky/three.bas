@@ -623,6 +623,76 @@ THREE.BAS.ModelBufferGeometry.prototype.setFaceData = function(attribute, faceIn
 };
 
 /**
+ * A THREE.BufferGeometry consists of points.
+ * @param {Number} count The number of points.
+ * @constructor
+ */
+THREE.BAS.PointBufferGeometry = function(count) {
+  THREE.BufferGeometry.call(this);
+
+  /**
+   * Number of points.
+   * @type {Number}
+   */
+  this.pointCount = count;
+
+  this.bufferIndices();
+  this.bufferPositions();
+};
+THREE.BAS.PointBufferGeometry.prototype = Object.create(THREE.BufferGeometry.prototype);
+THREE.BAS.PointBufferGeometry.prototype.constructor = THREE.BAS.PointBufferGeometry;
+
+THREE.BAS.PointBufferGeometry.prototype.bufferIndices = function() {
+  var pointCount = this.pointCount;
+  var indexBuffer = new Uint32Array(pointCount);
+
+  this.setIndex(new THREE.BufferAttribute(indexBuffer, 1));
+
+  for (var i = 0; i < pointCount; i++) {
+    indexBuffer[i] = i;
+  }
+};
+
+THREE.BAS.PointBufferGeometry.prototype.bufferPositions = function() {
+  var positionBuffer = this.createAttribute('position', 3);
+};
+
+/**
+ * Creates a THREE.BufferAttribute on this geometry instance.
+ *
+ * @param {String} name Name of the attribute.
+ * @param {Number} itemSize Number of floats per vertex (typically 1, 2, 3 or 4).
+ * @param {function=} factory Function that will be called for each point upon creation. Accepts 3 arguments: data[], index and prefabCount. Calls setPrefabData.
+ *
+ * @returns {THREE.BufferAttribute}
+ */
+THREE.BAS.PointBufferGeometry.prototype.createAttribute = function(name, itemSize, factory) {
+  var buffer = new Float32Array(this.pointCount * itemSize);
+  var attribute = new THREE.BufferAttribute(buffer, itemSize);
+
+  this.addAttribute(name, attribute);
+
+  if (factory) {
+    var data = [];
+    for (var i = 0; i < this.pointCount; i++) {
+      factory(data, i, this.pointCount);
+      this.setPointData(attribute, i, data);
+    }
+  }
+
+  return attribute;
+};
+
+THREE.BAS.PointBufferGeometry.prototype.setPointData = function(attribute, pointIndex, data) {
+  attribute = (typeof attribute === 'string') ? this.attributes[attribute] : attribute;
+
+  var offset = pointIndex * attribute.itemSize;
+
+  for (var j = 0; j < attribute.itemSize; j++) {
+    attribute.array[offset++] = data[j];
+  }
+};
+/**
  * A THREE.BufferGeometry where a 'prefab' geometry is repeated a number of times.
  *
  * @param {THREE.Geometry} prefab The THREE.Geometry instance to repeat.
@@ -766,6 +836,166 @@ THREE.BAS.PrefabBufferGeometry.prototype.setPrefabData = function(attribute, pre
     }
   }
 };
+
+THREE.BAS.Timeline.register('rotate', {
+  compiler: function(segment) {
+    var fromAxisAngle = new THREE.Vector4(
+      segment.transition.from.axis.x,
+      segment.transition.from.axis.y,
+      segment.transition.from.axis.z,
+      segment.transition.from.angle
+    );
+
+    var toAxis = segment.transition.to.axis || segment.transition.from.axis;
+    var toAxisAngle = new THREE.Vector4(
+      toAxis.x,
+      toAxis.y,
+      toAxis.z,
+      segment.transition.to.angle
+    );
+
+    var origin = segment.transition.origin;
+
+    return [
+      THREE.BAS.TimelineChunks.delayDuration(segment),
+      THREE.BAS.TimelineChunks.vec4('cRotationFrom' + segment.key, fromAxisAngle, 8),
+      THREE.BAS.TimelineChunks.vec4('cRotationTo' + segment.key, toAxisAngle, 8),
+      (origin && THREE.BAS.TimelineChunks.vec3('cOrigin' + segment.key, origin, 2)),
+
+      'void applyTransform' + segment.key + '(float time, inout vec3 v) {',
+
+      THREE.BAS.TimelineChunks.renderCheck(segment),
+      THREE.BAS.TimelineChunks.progress(segment),
+
+      (origin && 'v -= cOrigin' + segment.key + ';'),
+
+      'vec3 axis = normalize(mix(cRotationFrom' + segment.key + '.xyz, cRotationTo' + segment.key + '.xyz, progress));',
+      'float angle = mix(cRotationFrom' + segment.key + '.w, cRotationTo' + segment.key + '.w, progress);',
+      'vec4 q = quatFromAxisAngle(axis, angle);',
+      'v = rotateVector(q, v);',
+
+      (origin && 'v += cOrigin' + segment.key + ';'),
+
+      '}'
+    ].join('\n');
+  },
+  defaultFrom: {axis: new THREE.Vector3(), angle: 0}
+});
+
+THREE.BAS.Timeline.register('scale', {
+  compiler: function(segment) {
+    var origin = segment.transition.origin;
+    
+    return [
+      THREE.BAS.TimelineChunks.delayDuration(segment),
+      THREE.BAS.TimelineChunks.vec3('cScaleFrom' + segment.key, segment.transition.from, 2),
+      THREE.BAS.TimelineChunks.vec3('cScaleTo' + segment.key, segment.transition.to, 2),
+      (origin && THREE.BAS.TimelineChunks.vec3('cOrigin' + segment.key, origin, 2)),
+
+      'void applyTransform' + segment.key + '(float time, inout vec3 v) {',
+
+      THREE.BAS.TimelineChunks.renderCheck(segment),
+      THREE.BAS.TimelineChunks.progress(segment),
+      
+      (origin && 'v -= cOrigin' + segment.key + ';'),
+      'v *= mix(cScaleFrom' + segment.key + ', cScaleTo' + segment.key + ', progress);',
+      (origin && 'v += cOrigin' + segment.key + ';'),
+      '}'
+    ].join('\n');
+  },
+  defaultFrom: new THREE.Vector3(1, 1, 1)
+});
+
+THREE.BAS.TimelineChunks = {
+  vec3: function(n, v, p) {
+    var x = (v.x || 0).toPrecision(p);
+    var y = (v.y || 0).toPrecision(p);
+    var z = (v.z || 0).toPrecision(p);
+
+    return 'vec3 ' + n + ' = vec3(' + x + ',' + y + ',' + z + ');';
+  },
+  vec4: function(n, v, p) {
+    var x = (v.x || 0).toPrecision(p);
+    var y = (v.y || 0).toPrecision(p);
+    var z = (v.z || 0).toPrecision(p);
+    var w = (v.w || 0).toPrecision(p);
+
+    return 'vec4 ' + n + ' = vec4(' + x + ',' + y + ',' + z + ',' + w + ');';
+  },
+  delayDuration: function(segment) {
+    return [
+      'float cDelay' + segment.key + ' = ' + segment.start.toPrecision(4) + ';',
+      'float cDuration' + segment.key + ' = ' + segment.duration.toPrecision(4) + ';'
+    ].join('\n');
+  },
+  progress: function(segment) {
+    // zero duration segments should always render complete
+    if (segment.duration === 0) {
+      return 'float progress = 1.0;'
+    }
+    else {
+      return [
+        'float progress = clamp(time - cDelay' + segment.key + ', 0.0, cDuration' + segment.key + ') / cDuration' + segment.key + ';',
+        segment.transition.ease ? 'progress = ' + segment.transition.ease + '(progress' + (segment.transition.easeParams ? ',' + segment.transition.easeParams.map(function(v){return v.toPrecision(4)}).join(',') : '') + ');' : ''
+      ].join('\n');
+    }
+  },
+  renderCheck: function(segment) {
+    var startTime = segment.start.toPrecision(4);
+    var endTime = (segment.end + segment.trail).toPrecision(4);
+
+    return 'if (time < ' + startTime + ' || time > ' + endTime + ') return;';
+  }
+};
+
+/**
+ * A timeline transition segment. An instance of this class is created internally when calling {@link THREE.BAS.Timeline.add}, so you should not use this class directly.
+ * The instance is also passed the the compiler function if you register a transition through {@link THREE.BAS.Timeline.register}. There you can use the public properties of the segment to compile the glsl string.
+ * @param {string} key A string key generated by the timeline to which this segment belongs. Keys are unique.
+ * @param {number} start Start time of this segment in a timeline in seconds.
+ * @param {number} duration Duration of this segment in seconds.
+ * @param {object} transition Object describing the transition.
+ * @param {function} compiler A reference to the compiler function from a transition definition.
+ * @constructor
+ */
+THREE.BAS.TimelineSegment = function(key, start, duration, transition, compiler) {
+  this.key = key;
+  this.start = start;
+  this.duration = duration;
+  this.transition = transition;
+  this.compiler = compiler;
+
+  this.trail = 0;
+};
+
+THREE.BAS.TimelineSegment.prototype.compile = function() {
+  return this.compiler(this);
+};
+
+Object.defineProperty(THREE.BAS.TimelineSegment.prototype, 'end', {
+  get: function() {
+    return this.start + this.duration;
+  }
+});
+
+THREE.BAS.Timeline.register('translate', {
+  compiler: function(segment) {
+    return [
+      THREE.BAS.TimelineChunks.delayDuration(segment),
+      THREE.BAS.TimelineChunks.vec3('cTranslateFrom' + segment.key, segment.transition.from, 2),
+      THREE.BAS.TimelineChunks.vec3('cTranslateTo' + segment.key, segment.transition.to, 2),
+
+      'void applyTransform' + segment.key + '(float time, inout vec3 v) {',
+
+      THREE.BAS.TimelineChunks.renderCheck(segment),
+      THREE.BAS.TimelineChunks.progress(segment),
+
+      'v += mix(cTranslateFrom' + segment.key + ', cTranslateTo' + segment.key + ', progress);',
+      '}'
+    ].join('\n');
+  },
+  defaultFrom: new THREE.Vector3(0, 0, 0)
+});
 
 /**
  * Extends THREE.MeshBasicMaterial with custom shader chunks.
@@ -1243,6 +1473,129 @@ THREE.BAS.PhongAnimationMaterial.prototype._concatFragmentShader = function () {
 };
 
 /**
+ * Extends THREE.PointsMaterial with custom shader chunks.
+ *
+ * @param {Object} parameters Object containing material properties and custom shader chunks.
+ * @constructor
+ */
+THREE.BAS.PointsAnimationMaterial = function (parameters) {
+  this.varyingParameters = [];
+
+  this.vertexFunctions = [];
+  this.vertexParameters = [];
+  this.vertexInit = [];
+  this.vertexNormal = [];
+  this.vertexPosition = [];
+  this.vertexColor = [];
+
+  this.fragmentFunctions = [];
+  this.fragmentParameters = [];
+  this.fragmentInit = [];
+  this.fragmentMap = [];
+  this.fragmentDiffuse = [];
+  // use fragment shader to shape to point, reference: https://thebookofshaders.com/07/
+  this.fragmentShape = [];
+
+  var pointsShader = THREE.ShaderLib['points'];
+
+  THREE.BAS.BaseAnimationMaterial.call(this, parameters, pointsShader.uniforms);
+
+  this.vertexShader = this._concatVertexShader();
+  this.fragmentShader = this._concatFragmentShader();
+};
+
+THREE.BAS.PointsAnimationMaterial.prototype = Object.create(THREE.BAS.BaseAnimationMaterial.prototype);
+THREE.BAS.PointsAnimationMaterial.prototype.constructor = THREE.BAS.PointsAnimationMaterial;
+
+THREE.BAS.PointsAnimationMaterial.prototype._concatVertexShader = function () {
+  // based on THREE.ShaderLib.points
+  return [
+    `
+    uniform float size;
+    uniform float scale;
+    #include <common>
+    #include <color_pars_vertex>
+    #include <shadowmap_pars_vertex>
+    #include <logdepthbuf_pars_vertex>
+    #include <clipping_planes_pars_vertex>
+    `,
+    this._stringifyChunk('vertexFunctions'),
+    this._stringifyChunk('vertexParameters'),
+    this._stringifyChunk('varyingParameters'),
+    `void main() {
+    `,
+    this._stringifyChunk('vertexInit'),
+    `
+        #include <color_vertex>
+        #include <begin_vertex>
+    `,
+    this._stringifyChunk('vertexPosition'),
+    this._stringifyChunk('vertexColor'),
+    `
+        #include <project_vertex>
+        #ifdef USE_SIZEATTENUATION
+            gl_PointSize = size * ( scale / - mvPosition.z );
+        #else
+            gl_PointSize = size;
+        #endif
+        #include <logdepthbuf_vertex>
+        #include <clipping_planes_vertex>
+        #include <worldpos_vertex>
+        #include <shadowmap_vertex>
+    }
+    `
+  ].join("\n");
+};
+
+THREE.BAS.PointsAnimationMaterial.prototype._concatFragmentShader = function () {
+  return [
+    `
+    uniform vec3 diffuse;
+    uniform float opacity;
+    `,
+    this._stringifyChunk('fragmentFunctions'),
+    this._stringifyChunk('fragmentParameters'),
+    this._stringifyChunk('varyingParameters'),
+    `
+    #include <common>
+    #include <packing>
+    #include <color_pars_fragment>
+    #include <map_particle_pars_fragment>
+    #include <fog_pars_fragment>
+    #include <shadowmap_pars_fragment>
+    #include <logdepthbuf_pars_fragment>
+    #include <clipping_planes_pars_fragment>
+    void main() {
+        #include <clipping_planes_fragment>
+    `,
+    this._stringifyChunk('fragmentInit'),
+    `
+        vec3 outgoingLight = vec3( 0.0 );
+        vec4 diffuseColor = vec4( diffuse, opacity );
+    `,
+    this._stringifyChunk('fragmentDiffuse'),
+    `
+        #include <logdepthbuf_fragment>
+    `,
+    (this._stringifyChunk('fragmentMap') || '#include <map_fragment>'),
+    `   #include <map_particle_fragment>
+        #include <color_fragment>
+        #include <alphatest_fragment>
+        outgoingLight = diffuseColor.rgb;
+        gl_FragColor = vec4( outgoingLight, diffuseColor.a );
+    `,
+    this._stringifyChunk('fragmentShape'),
+    `
+        #include <premultiplied_alpha_fragment>
+        #include <tonemapping_fragment>
+        #include <encodings_fragment>
+        #include <fog_fragment>
+    }
+    `
+  ].join("\n")
+};
+
+/**
  * Extends THREE.MeshStandardMaterial with custom shader chunks.
  *
  * @see http://three-bas-examples.surge.sh/examples/materials_standard/
@@ -1465,163 +1818,3 @@ THREE.BAS.StandardAnimationMaterial.prototype._concatFragmentShader = function (
 
   ].join( "\n" )
 };
-
-THREE.BAS.Timeline.register('rotate', {
-  compiler: function(segment) {
-    var fromAxisAngle = new THREE.Vector4(
-      segment.transition.from.axis.x,
-      segment.transition.from.axis.y,
-      segment.transition.from.axis.z,
-      segment.transition.from.angle
-    );
-
-    var toAxis = segment.transition.to.axis || segment.transition.from.axis;
-    var toAxisAngle = new THREE.Vector4(
-      toAxis.x,
-      toAxis.y,
-      toAxis.z,
-      segment.transition.to.angle
-    );
-
-    var origin = segment.transition.origin;
-
-    return [
-      THREE.BAS.TimelineChunks.delayDuration(segment),
-      THREE.BAS.TimelineChunks.vec4('cRotationFrom' + segment.key, fromAxisAngle, 8),
-      THREE.BAS.TimelineChunks.vec4('cRotationTo' + segment.key, toAxisAngle, 8),
-      (origin && THREE.BAS.TimelineChunks.vec3('cOrigin' + segment.key, origin, 2)),
-
-      'void applyTransform' + segment.key + '(float time, inout vec3 v) {',
-
-      THREE.BAS.TimelineChunks.renderCheck(segment),
-      THREE.BAS.TimelineChunks.progress(segment),
-
-      (origin && 'v -= cOrigin' + segment.key + ';'),
-
-      'vec3 axis = normalize(mix(cRotationFrom' + segment.key + '.xyz, cRotationTo' + segment.key + '.xyz, progress));',
-      'float angle = mix(cRotationFrom' + segment.key + '.w, cRotationTo' + segment.key + '.w, progress);',
-      'vec4 q = quatFromAxisAngle(axis, angle);',
-      'v = rotateVector(q, v);',
-
-      (origin && 'v += cOrigin' + segment.key + ';'),
-
-      '}'
-    ].join('\n');
-  },
-  defaultFrom: {axis: new THREE.Vector3(), angle: 0}
-});
-
-THREE.BAS.Timeline.register('scale', {
-  compiler: function(segment) {
-    var origin = segment.transition.origin;
-    
-    return [
-      THREE.BAS.TimelineChunks.delayDuration(segment),
-      THREE.BAS.TimelineChunks.vec3('cScaleFrom' + segment.key, segment.transition.from, 2),
-      THREE.BAS.TimelineChunks.vec3('cScaleTo' + segment.key, segment.transition.to, 2),
-      (origin && THREE.BAS.TimelineChunks.vec3('cOrigin' + segment.key, origin, 2)),
-
-      'void applyTransform' + segment.key + '(float time, inout vec3 v) {',
-
-      THREE.BAS.TimelineChunks.renderCheck(segment),
-      THREE.BAS.TimelineChunks.progress(segment),
-      
-      (origin && 'v -= cOrigin' + segment.key + ';'),
-      'v *= mix(cScaleFrom' + segment.key + ', cScaleTo' + segment.key + ', progress);',
-      (origin && 'v += cOrigin' + segment.key + ';'),
-      '}'
-    ].join('\n');
-  },
-  defaultFrom: new THREE.Vector3(1, 1, 1)
-});
-
-THREE.BAS.TimelineChunks = {
-  vec3: function(n, v, p) {
-    var x = (v.x || 0).toPrecision(p);
-    var y = (v.y || 0).toPrecision(p);
-    var z = (v.z || 0).toPrecision(p);
-
-    return 'vec3 ' + n + ' = vec3(' + x + ',' + y + ',' + z + ');';
-  },
-  vec4: function(n, v, p) {
-    var x = (v.x || 0).toPrecision(p);
-    var y = (v.y || 0).toPrecision(p);
-    var z = (v.z || 0).toPrecision(p);
-    var w = (v.w || 0).toPrecision(p);
-
-    return 'vec4 ' + n + ' = vec4(' + x + ',' + y + ',' + z + ',' + w + ');';
-  },
-  delayDuration: function(segment) {
-    return [
-      'float cDelay' + segment.key + ' = ' + segment.start.toPrecision(4) + ';',
-      'float cDuration' + segment.key + ' = ' + segment.duration.toPrecision(4) + ';'
-    ].join('\n');
-  },
-  progress: function(segment) {
-    // zero duration segments should always render complete
-    if (segment.duration === 0) {
-      return 'float progress = 1.0;'
-    }
-    else {
-      return [
-        'float progress = clamp(time - cDelay' + segment.key + ', 0.0, cDuration' + segment.key + ') / cDuration' + segment.key + ';',
-        segment.transition.ease ? 'progress = ' + segment.transition.ease + '(progress' + (segment.transition.easeParams ? ',' + segment.transition.easeParams.map(function(v){return v.toPrecision(4)}).join(',') : '') + ');' : ''
-      ].join('\n');
-    }
-  },
-  renderCheck: function(segment) {
-    var startTime = segment.start.toPrecision(4);
-    var endTime = (segment.end + segment.trail).toPrecision(4);
-
-    return 'if (time < ' + startTime + ' || time > ' + endTime + ') return;';
-  }
-};
-
-/**
- * A timeline transition segment. An instance of this class is created internally when calling {@link THREE.BAS.Timeline.add}, so you should not use this class directly.
- * The instance is also passed the the compiler function if you register a transition through {@link THREE.BAS.Timeline.register}. There you can use the public properties of the segment to compile the glsl string.
- * @param {string} key A string key generated by the timeline to which this segment belongs. Keys are unique.
- * @param {number} start Start time of this segment in a timeline in seconds.
- * @param {number} duration Duration of this segment in seconds.
- * @param {object} transition Object describing the transition.
- * @param {function} compiler A reference to the compiler function from a transition definition.
- * @constructor
- */
-THREE.BAS.TimelineSegment = function(key, start, duration, transition, compiler) {
-  this.key = key;
-  this.start = start;
-  this.duration = duration;
-  this.transition = transition;
-  this.compiler = compiler;
-
-  this.trail = 0;
-};
-
-THREE.BAS.TimelineSegment.prototype.compile = function() {
-  return this.compiler(this);
-};
-
-Object.defineProperty(THREE.BAS.TimelineSegment.prototype, 'end', {
-  get: function() {
-    return this.start + this.duration;
-  }
-});
-
-THREE.BAS.Timeline.register('translate', {
-  compiler: function(segment) {
-    return [
-      THREE.BAS.TimelineChunks.delayDuration(segment),
-      THREE.BAS.TimelineChunks.vec3('cTranslateFrom' + segment.key, segment.transition.from, 2),
-      THREE.BAS.TimelineChunks.vec3('cTranslateTo' + segment.key, segment.transition.to, 2),
-
-      'void applyTransform' + segment.key + '(float time, inout vec3 v) {',
-
-      THREE.BAS.TimelineChunks.renderCheck(segment),
-      THREE.BAS.TimelineChunks.progress(segment),
-
-      'v += mix(cTranslateFrom' + segment.key + ', cTranslateTo' + segment.key + ', progress);',
-      '}'
-    ].join('\n');
-  },
-  defaultFrom: new THREE.Vector3(0, 0, 0)
-});
