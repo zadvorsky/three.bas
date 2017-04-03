@@ -1368,12 +1368,10 @@ THREE.BAS.StandardAnimationMaterial.prototype._concatFragmentShader = function (
       'uniform float clearCoatRoughness;',
     '#endif',
 
-    "uniform float envMapIntensity;",
-
     'varying vec3 vViewPosition;',
 
     '#ifndef FLAT_SHADED',
-    'varying vec3 vNormal;',
+      'varying vec3 vNormal;',
     '#endif',
 
     this._stringifyChunk('fragmentFunctions'),
