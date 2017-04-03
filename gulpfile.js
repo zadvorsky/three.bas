@@ -38,7 +38,7 @@ gulp.task('build-glsl', function () {
 gulp.task('build-minify', ['build-glsl'], function() {
   return gulp.src(jsSources)
     .pipe(concat('bas.js'))
-    .pipe(uglify())
+    .pipe(uglify().on('error', console.log))
     .pipe(rename('bas.min.js'))
     .pipe(gulp.dest('./dist'));
 });

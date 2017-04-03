@@ -10,7 +10,7 @@ While this approach is more cumbersome to work with, it provides a significant p
 See [examples](http://three-bas-examples.surge.sh/), [documentation](http://three-bas-examples.surge.sh/docs/gen/) and the wiki for more information.
 
 ## Compatibility
-Tested with THREE.js r82. Will likely fail with older versions (r74 and down).
+Tested with THREE.js r84. Will likely fail with older versions (r74 and down).
 
 ## Usage
 Include `dist/bas.js` or `dist/bas.min.js` in your project. A bower package is also available:
