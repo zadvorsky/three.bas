@@ -109,7 +109,7 @@ function Animation(width, height, depth, prefabCount, prefabSize) {
     geometry.setPrefabData(aEndPosition, i, data);
   }
 
-  var material = new THREE.BAS.BasicAnimationMaterial({
+  var material = new BAS.BasicAnimationMaterial({
     side: THREE.DoubleSide,
     uniforms: {
       uTime: {value: 0.0},
@@ -152,12 +152,12 @@ Animation.prototype.setScale = function(scale) {
 };
 
 function SpeedParticleGeometry(prefab, count) {
-  THREE.BAS.PrefabBufferGeometry.call(this, prefab, count);
+  BAS.PrefabBufferGeometry.call(this, prefab, count);
 }
-SpeedParticleGeometry.prototype = Object.create(THREE.BAS.PrefabBufferGeometry.prototype);
+SpeedParticleGeometry.prototype = Object.create(BAS.PrefabBufferGeometry.prototype);
 SpeedParticleGeometry.prototype.constructor = SpeedParticleGeometry;
 
-// override THREE.BAS.PrefabBufferGeometry.bufferPosition
+// override BAS.PrefabBufferGeometry.bufferPosition
 // instead of simply copying the prefab, a random scale and rotation is applied
 SpeedParticleGeometry.prototype.bufferPositions = function() {
   var positionBuffer = this.createAttribute('position', 3).array;
@@ -174,7 +174,7 @@ SpeedParticleGeometry.prototype.bufferPositions = function() {
     scaleMatrix.identity().makeScale(Math.random(), Math.random(), Math.random());
 
     // random axis rotation
-    THREE.BAS.Utils.randomAxis(axis);
+    BAS.Utils.randomAxis(axis);
     rotationMatrix.identity().makeRotationAxis(axis, Math.random() * Math.PI * 2);
 
     // mush the two matrices together

@@ -39,8 +39,8 @@ function init() {
 
   debug.add(new PointHelper(0xff0000, 4.0, startPosition));
   debug.add(new PointHelper(0xff0000, 4.0, control0RangeCenter));
-  debug.add(new THREE.BoxHelper(control0Range, 0xff0000));
-  debug.add(new THREE.BoxHelper(control1Range, 0x00ff00));
+  debug.add(new THREE.Box3Helper(control0Range, 0xff0000));
+  debug.add(new THREE.Box3Helper(control1Range, 0x00ff00));
   debug.add(new PointHelper(0x00ff00, 4.0, endPosition));
   debug.add(new PointHelper(0x00ff00, 4.0, control1RangeCenter));
 
@@ -88,7 +88,7 @@ function Animation(startPosition, control0Range, control1Range, endPosition) {
   var prefabCount = 100000;
 
   // create the buffer geometry with all the prefabs
-  var geometry = new THREE.BAS.PrefabBufferGeometry(prefabGeometry, prefabCount);
+  var geometry = new BAS.PrefabBufferGeometry(prefabGeometry, prefabCount);
 
   // ANIMATION
 
@@ -133,12 +133,12 @@ function Animation(startPosition, control0Range, control1Range, endPosition) {
 
   geometry.createAttribute('aControl0', 3, function(data) {
     // pick a random point inside the given range for the first control point
-    THREE.BAS.Utils.randomInBox(control0Range, point).toArray(data);
+    BAS.Utils.randomInBox(control0Range, point).toArray(data);
   });
 
   geometry.createAttribute('aControl1', 3, function(data) {
     // pick a random point inside the given range for the second control point
-    THREE.BAS.Utils.randomInBox(control1Range, point).toArray(data);
+    BAS.Utils.randomInBox(control1Range, point).toArray(data);
   });
 
   // ROTATION
@@ -179,8 +179,8 @@ function Animation(startPosition, control0Range, control1Range, endPosition) {
     color.toArray(data);
   });
 
-  var material = new THREE.BAS.PhongAnimationMaterial({
-    shading: THREE.FlatShading,
+  var material = new BAS.PhongAnimationMaterial({
+    flatShading: true,
     vertexColors: THREE.VertexColors,
     side: THREE.DoubleSide,
     uniforms: {
@@ -192,8 +192,8 @@ function Animation(startPosition, control0Range, control1Range, endPosition) {
     },
     vertexFunctions: [
       // cubic_bezier defines the cubicBezier function used in the vertexPosition chunk
-      THREE.BAS.ShaderChunk['cubic_bezier'],
-      THREE.BAS.ShaderChunk['quaternion_rotation']
+      BAS.ShaderChunk['cubic_bezier'],
+      BAS.ShaderChunk['quaternion_rotation']
     ],
     // note we do not have to define 'color' as a uniform because THREE.js will do this for us
     // trying to define it here will throw a duplicate declaration error

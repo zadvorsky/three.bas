@@ -1,16 +1,30 @@
-THREE.BAS.BaseAnimationMaterial = function (parameters, uniforms) {
-  THREE.ShaderMaterial.call(this);
+import {
+  ShaderMaterial,
+  UniformsUtils,
+  CubeReflectionMapping,
+  CubeRefractionMapping,
+  CubeUVReflectionMapping,
+  CubeUVRefractionMapping,
+  EquirectangularReflectionMapping,
+  EquirectangularRefractionMapping,
+  SphericalReflectionMapping,
+  MixOperation,
+  AddOperation,
+  MultiplyOperation
+} from 'three';
 
-  var uniformValues = parameters.uniformValues;
-
+function BaseAnimationMaterial(parameters, uniforms) {
+  ShaderMaterial.call(this);
+  
+  const uniformValues = parameters.uniformValues;
   delete parameters.uniformValues;
-
+  
   this.setValues(parameters);
-
-  this.uniforms = THREE.UniformsUtils.merge([uniforms, this.uniforms]);
-
+  
+  this.uniforms = UniformsUtils.merge([uniforms, this.uniforms]);
+  
   this.setUniformValues(uniformValues);
-
+  
   if (uniformValues) {
     uniformValues.map && (this.defines['USE_MAP'] = '');
     uniformValues.normalMap && (this.defines['USE_NORMALMAP'] = '');
@@ -25,72 +39,87 @@ THREE.BAS.BaseAnimationMaterial = function (parameters, uniforms) {
     uniformValues.roughnessMap && (this.defines['USE_DISPLACEMENTMAP'] = '');
     uniformValues.roughnessMap && (this.defines['USE_ROUGHNESSMAP'] = '');
     uniformValues.metalnessMap && (this.defines['USE_METALNESSMAP'] = '');
-
+  
     if (uniformValues.envMap) {
       this.defines['USE_ENVMAP'] = '';
-
-      var envMapTypeDefine = 'ENVMAP_TYPE_CUBE';
-      var envMapModeDefine = 'ENVMAP_MODE_REFLECTION';
-      var envMapBlendingDefine = 'ENVMAP_BLENDING_MULTIPLY';
-
+    
+      let envMapTypeDefine = 'ENVMAP_TYPE_CUBE';
+      let envMapModeDefine = 'ENVMAP_MODE_REFLECTION';
+      let envMapBlendingDefine = 'ENVMAP_BLENDING_MULTIPLY';
+    
       switch (uniformValues.envMap.mapping) {
-        case THREE.CubeReflectionMapping:
-        case THREE.CubeRefractionMapping:
+        case CubeReflectionMapping:
+        case CubeRefractionMapping:
           envMapTypeDefine = 'ENVMAP_TYPE_CUBE';
           break;
-        case THREE.CubeUVReflectionMapping:
-        case THREE.CubeUVRefractionMapping:
+        case CubeUVReflectionMapping:
+        case CubeUVRefractionMapping:
           envMapTypeDefine = 'ENVMAP_TYPE_CUBE_UV';
           break;
-        case THREE.EquirectangularReflectionMapping:
-        case THREE.EquirectangularRefractionMapping:
+        case EquirectangularReflectionMapping:
+        case EquirectangularRefractionMapping:
           envMapTypeDefine = 'ENVMAP_TYPE_EQUIREC';
           break;
-        case THREE.SphericalReflectionMapping:
+        case SphericalReflectionMapping:
           envMapTypeDefine = 'ENVMAP_TYPE_SPHERE';
           break;
       }
-
+    
       switch (uniformValues.envMap.mapping) {
-        case THREE.CubeRefractionMapping:
-        case THREE.EquirectangularRefractionMapping:
+        case CubeRefractionMapping:
+        case EquirectangularRefractionMapping:
           envMapModeDefine = 'ENVMAP_MODE_REFRACTION';
           break;
       }
-
+    
       switch (uniformValues.combine) {
-        case THREE.MixOperation:
+        case MixOperation:
           envMapBlendingDefine = 'ENVMAP_BLENDING_MIX';
           break;
-        case THREE.AddOperation:
+        case AddOperation:
           envMapBlendingDefine = 'ENVMAP_BLENDING_ADD';
           break;
-        case THREE.MultiplyOperation:
+        case MultiplyOperation:
         default:
           envMapBlendingDefine = 'ENVMAP_BLENDING_MULTIPLY';
           break;
       }
-
+    
       this.defines[envMapTypeDefine] = '';
       this.defines[envMapBlendingDefine] = '';
       this.defines[envMapModeDefine] = '';
     }
   }
-};
-THREE.BAS.BaseAnimationMaterial.prototype = Object.create(THREE.ShaderMaterial.prototype);
-THREE.BAS.BaseAnimationMaterial.prototype.constructor = THREE.BAS.BaseAnimationMaterial;
+}
 
-THREE.BAS.BaseAnimationMaterial.prototype.setUniformValues = function (values) {
-  for (var key in values) {
-    if (key in this.uniforms) {
-      var uniform = this.uniforms[key];
-      var value = values[key];
-
-      uniform.value = value;
+BaseAnimationMaterial.prototype = Object.assign(Object.create(ShaderMaterial.prototype), {
+  constructor: BaseAnimationMaterial,
+  
+  setUniformValues(values) {
+    if (!values) return;
+    
+    const keys = Object.keys(values);
+    
+    keys.forEach((key) => {
+      key in this.uniforms && (this.uniforms[key].value = values[key]);
+    });
+  },
+  
+  stringifyChunk(name) {
+    let value;
+    
+    if (!this[name]) {
+      value = '';
     }
+    else if (typeof this[name] ===  'string') {
+      value = this[name];
+    }
+    else {
+      value = this[name].join('\n');
+    }
+    
+    return value;
   }
-};
+});
 
-THREE.BAS.BaseAnimationMaterial.prototype._stringifyChunk = function(name) {
-  return this[name] ? (this[name].join('\n')) : '';
-};
+export default BaseAnimationMaterial;

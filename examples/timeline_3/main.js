@@ -98,7 +98,7 @@ function Animation(prefabCount, settings) {
 
   // the timeline generates shader chunks where an animation step is baked into.
   // each prefab will execute the same animation, with in offset position and time (delay).
-  var timeline = new THREE.BAS.Timeline();
+  var timeline = new BAS.Timeline();
 
   timeline.add(4.0, {
     rotate: {
@@ -150,7 +150,7 @@ function Animation(prefabCount, settings) {
   prefab.translate(0, prefabSize * 0.5, 0);
 
   // setup prefab geometry
-  var geometry = new THREE.BAS.PrefabBufferGeometry(prefab, prefabCount);
+  var geometry = new BAS.PrefabBufferGeometry(prefab, prefabCount);
 
   var aPosition = geometry.createAttribute('aPosition', 3);
   var aDelayDuration = geometry.createAttribute('aDelayDuration', 3);
@@ -186,8 +186,8 @@ function Animation(prefabCount, settings) {
     geometry.setPrefabData(aQuaternion, i, dataArray);
   }
 
-  var material = new THREE.BAS.PhongAnimationMaterial({
-    shading: THREE.FlatShading,
+  var material = new BAS.PhongAnimationMaterial({
+    flatShading: true,
     side: THREE.DoubleSide,
     uniforms: {
       uTime: {value: 0}
@@ -197,9 +197,9 @@ function Animation(prefabCount, settings) {
     },
     vertexFunctions: [
       // the eases used by the timeline defined above
-      THREE.BAS.ShaderChunk['ease_back_in'],
-      THREE.BAS.ShaderChunk['ease_elastic_out'],
-      THREE.BAS.ShaderChunk['quaternion_rotation']
+      BAS.ShaderChunk['ease_back_in'],
+      BAS.ShaderChunk['ease_elastic_out'],
+      BAS.ShaderChunk['quaternion_rotation']
       // getChunks outputs the shader chunks where the animation is baked into
     ].concat(timeline.compile()),
     vertexParameters: [

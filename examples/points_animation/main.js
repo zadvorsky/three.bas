@@ -124,7 +124,7 @@ function Animation() {
   var count = 15000;
   var radius = 680;
   var offset = radius;
-  var geometry = new THREE.BAS.PointBufferGeometry(count);
+  var geometry = new BAS.PointBufferGeometry(count);
 
   // in start state, all points form a ball 
   geometry.createAttribute('aStartPos', 3, (data, index, num) => {
@@ -196,7 +196,7 @@ function Animation() {
     }
   });
 
-  var material = new THREE.BAS.PointsAnimationMaterial({
+  var material = new BAS.PointsAnimationMaterial({
     transparent: true,
     blending: THREE.AdditiveBlending,
     vertexColors: THREE.VertexColors,
@@ -211,7 +211,7 @@ function Animation() {
       // diffuse: new THREE.Vector3(0xffffff),
     },
     vertexFunctions: [
-      THREE.BAS.ShaderChunk['ease_expo_in_out'],
+      BAS.ShaderChunk['ease_expo_in_out'],
     ],
     vertexParameters: [
       'uniform float uTime;',

@@ -8,7 +8,7 @@
  * @param {function} compiler A reference to the compiler function from a transition definition.
  * @constructor
  */
-THREE.BAS.TimelineSegment = function(key, start, duration, transition, compiler) {
+function TimelineSegment(key, start, duration, transition, compiler) {
   this.key = key;
   this.start = start;
   this.duration = duration;
@@ -16,14 +16,16 @@ THREE.BAS.TimelineSegment = function(key, start, duration, transition, compiler)
   this.compiler = compiler;
 
   this.trail = 0;
-};
+}
 
-THREE.BAS.TimelineSegment.prototype.compile = function() {
+TimelineSegment.prototype.compile = function() {
   return this.compiler(this);
 };
 
-Object.defineProperty(THREE.BAS.TimelineSegment.prototype, 'end', {
+Object.defineProperty(TimelineSegment.prototype, 'end', {
   get: function() {
     return this.start + this.duration;
   }
 });
+
+export { TimelineSegment };

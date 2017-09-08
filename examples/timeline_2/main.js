@@ -82,7 +82,7 @@ function Animation(gridSize) {
 
   // the timeline generates shader chunks where an animation step is baked into.
   // each prefab will execute the same animation, with in offset position and time (delay).
-  var timeline = new THREE.BAS.Timeline();
+  var timeline = new BAS.Timeline();
   
   // roll right
   timeline.add(1.0, {
@@ -172,7 +172,7 @@ function Animation(gridSize) {
 
   // setup prefab geometry
   var prefabCount = gridSize * gridSize;
-  var geometry = new THREE.BAS.PrefabBufferGeometry(prefab, prefabCount);
+  var geometry = new BAS.PrefabBufferGeometry(prefab, prefabCount);
 
   var aPosition = geometry.createAttribute('aPosition', 3);
   var aDelayDuration = geometry.createAttribute('aDelayDuration', 3);
@@ -203,8 +203,8 @@ function Animation(gridSize) {
     }
   }
 
-  var material = new THREE.BAS.StandardAnimationMaterial({
-    shading: THREE.FlatShading,
+  var material = new BAS.StandardAnimationMaterial({
+    flatShading: true,
     uniforms: {
       uTime: {value: 0}
     },
@@ -215,12 +215,12 @@ function Animation(gridSize) {
     },
     vertexFunctions: [
       // the eases used by the timeline defined above
-      THREE.BAS.ShaderChunk['ease_cubic_in'],
-      THREE.BAS.ShaderChunk['ease_cubic_out'],
-      THREE.BAS.ShaderChunk['ease_cubic_in_out'],
-      THREE.BAS.ShaderChunk['ease_back_out'],
-      THREE.BAS.ShaderChunk['ease_bounce_out'],
-      THREE.BAS.ShaderChunk['quaternion_rotation'],
+      BAS.ShaderChunk['ease_cubic_in'],
+      BAS.ShaderChunk['ease_cubic_out'],
+      BAS.ShaderChunk['ease_cubic_in_out'],
+      BAS.ShaderChunk['ease_back_out'],
+      BAS.ShaderChunk['ease_bounce_out'],
+      BAS.ShaderChunk['quaternion_rotation'],
       // getChunks outputs the shader chunks where the animation is baked into
     ].concat(timeline.compile()),
     vertexParameters: [

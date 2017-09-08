@@ -30,7 +30,7 @@ function EaseSystem() {
   var size = rangeY / prefabCount;
 
   var prefabGeometry = new THREE.PlaneGeometry(size * 2, size);
-  var geometry = new THREE.BAS.PrefabBufferGeometry(prefabGeometry, prefabCount);
+  var geometry = new BAS.PrefabBufferGeometry(prefabGeometry, prefabCount);
 
   var i, j, offset;
 
@@ -82,8 +82,8 @@ function EaseSystem() {
     }
   }
 
-  var material = new THREE.BAS.BasicAnimationMaterial({
-    shading: THREE.FlatShading,
+  var material = new BAS.BasicAnimationMaterial({
+    flatShading: true,
     transparent: true,
     side: THREE.DoubleSide,
     uniforms: {
@@ -92,7 +92,7 @@ function EaseSystem() {
       uBezierCurve: {type: 'v4', value: new THREE.Vector4(0.0, 1.5, 1.0, -1.5)}
     },
     vertexFunctions: [
-      THREE.BAS.ShaderChunk['ease_bezier']
+      BAS.ShaderChunk['ease_bezier']
     ],
     vertexParameters: [
       'uniform float uTime;',

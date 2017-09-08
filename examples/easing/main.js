@@ -109,7 +109,7 @@ function EaseSystem(ease) {
   var size = rangeY / prefabCount;
 
   var prefabGeometry = new THREE.PlaneGeometry(size * 2, size);
-  var geometry = new THREE.BAS.PrefabBufferGeometry(prefabGeometry, prefabCount);
+  var geometry = new BAS.PrefabBufferGeometry(prefabGeometry, prefabCount);
 
   var i, j, offset;
 
@@ -176,7 +176,7 @@ function EaseSystem(ease) {
     return str.replace(/_([a-z])/g, function (g) {return g[1].toUpperCase();});
   }
 
-  var material = new THREE.BAS.BasicAnimationMaterial({
+  var material = new BAS.BasicAnimationMaterial({
     side: THREE.DoubleSide,
     // uniforms for the material
     uniforms: {
@@ -185,7 +185,7 @@ function EaseSystem(ease) {
     // functions for the vertex shader
     vertexFunctions: [
       // get the easing function definition
-      THREE.BAS.ShaderChunk[ease]
+      BAS.ShaderChunk[ease]
     ],
     // uniform names must correspond to material.uniforms keys
     // attribute names must correspond to geometry.attribute names

@@ -47,18 +47,18 @@ function init() {
 ////////////////////
 
 function Slide(width, height, animationPhase) {
-  // create a geometry that will be used by THREE.BAS.ModelBufferGeometry
+  // create a geometry that will be used by BAS.ModelBufferGeometry
   // its a plane with a bunch of segments
   var plane = new THREE.PlaneGeometry(width, height, width * 2, height * 2);
 
   // duplicate some vertices so that each face becomes a separate triangle.
   // this is the same as the THREE.ExplodeModifier
-  THREE.BAS.Utils.separateFaces(plane);
+  BAS.Utils.separateFaces(plane);
 
   // create a ModelBufferGeometry based on the geometry created above
   // ModelBufferGeometry makes it easier to create animations based on faces of a geometry
   // it is similar to the PrefabBufferGeometry where the prefab is a face (triangle)
-  var geometry = new THREE.BAS.ModelBufferGeometry(plane, {
+  var geometry = new BAS.ModelBufferGeometry(plane, {
     // setting this to true will store the vertex positions relative to the face they are in
     // this way it's easier to rotate and scale faces around their own center
     localizeFaces: true,
@@ -163,8 +163,8 @@ function Slide(width, height, animationPhase) {
   var texture = new THREE.Texture();
   texture.minFilter = THREE.NearestFilter;
 
-  var material = new THREE.BAS.BasicAnimationMaterial({
-    shading: THREE.FlatShading,
+  var material = new BAS.BasicAnimationMaterial({
+    flatShading: true,
     side: THREE.DoubleSide,
     uniforms: {
       uTime: {value: 0}
@@ -173,9 +173,9 @@ function Slide(width, height, animationPhase) {
       map: texture
     },
     vertexFunctions: [
-      THREE.BAS.ShaderChunk['cubic_bezier'],
-      THREE.BAS.ShaderChunk['ease_cubic_in_out'],
-      THREE.BAS.ShaderChunk['quaternion_rotation']
+      BAS.ShaderChunk['cubic_bezier'],
+      BAS.ShaderChunk['ease_cubic_in_out'],
+      BAS.ShaderChunk['quaternion_rotation']
     ],
     vertexParameters: [
       'uniform float uTime;',

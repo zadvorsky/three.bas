@@ -240,7 +240,7 @@ function SmearMesh(geometry, settings) {
     smearVelocityThreshold: 0,
     createDepthMaterial: false,
     createDistanceMaterial: false,
-    Material: THREE.BAS.PhongAnimationMaterial,
+    Material: BAS.PhongAnimationMaterial,
     materialParams: {}
   }, settings);
 
@@ -249,7 +249,7 @@ function SmearMesh(geometry, settings) {
 
   // GEOMETRY
 
-  var bufferGeometry = new THREE.BAS.ModelBufferGeometry(geometry);
+  var bufferGeometry = new BAS.ModelBufferGeometry(geometry);
   // store smear factor per vertex to create a per vertex offset / smear
   bufferGeometry.createAttribute('aSmearFactor', 1, function(data) {
     data[0] = settings.smearFactor + THREE.Math.randFloatSpread(settings.smearFactorVariance);
@@ -279,18 +279,18 @@ function SmearMesh(geometry, settings) {
   }, settings.materialParams));
 
   // normals for smooth shading
-  if (material.shading === THREE.SmoothShading) {
+  if (material.flatShading === false) {
     bufferGeometry.computeVertexNormals();
   }
 
   // for point light shadows
   if (settings.createDistanceMaterial) {
-    this.customDistanceMaterial = THREE.BAS.Utils.createDistanceAnimationMaterial(material);
+    this.customDistanceMaterial = BAS.Utils.createDistanceAnimationMaterial(material);
   }
 
   // for dir & spot light shadows
   if (settings.createDepthMaterial) {
-    this.customDepthMaterial = THREE.BAS.Utils.createDepthAnimationMaterial(material);
+    this.customDepthMaterial = BAS.Utils.createDepthAnimationMaterial(material);
   }
 
   THREE.Mesh.call(this, bufferGeometry, material);

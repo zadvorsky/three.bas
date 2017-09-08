@@ -1,18 +1,14 @@
-(function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('three')) :
-	typeof define === 'function' && define.amd ? define(['exports', 'three'], factory) :
-	(factory((global.BAS = {}),global.THREE));
-}(this, (function (exports,three) { 'use strict';
+import { AddOperation, BufferAttribute, BufferGeometry, CubeReflectionMapping, CubeRefractionMapping, CubeUVReflectionMapping, CubeUVRefractionMapping, EquirectangularReflectionMapping, EquirectangularRefractionMapping, Math as Math$1, MixOperation, MultiplyOperation, RGBADepthPacking, ShaderLib, ShaderMaterial, SphericalReflectionMapping, UniformsUtils, Vector3, Vector4 } from 'three';
 
 function BaseAnimationMaterial(parameters, uniforms) {
-  three.ShaderMaterial.call(this);
+  ShaderMaterial.call(this);
 
   var uniformValues = parameters.uniformValues;
   delete parameters.uniformValues;
 
   this.setValues(parameters);
 
-  this.uniforms = three.UniformsUtils.merge([uniforms, this.uniforms]);
+  this.uniforms = UniformsUtils.merge([uniforms, this.uniforms]);
 
   this.setUniformValues(uniformValues);
 
@@ -39,38 +35,38 @@ function BaseAnimationMaterial(parameters, uniforms) {
       var envMapBlendingDefine = 'ENVMAP_BLENDING_MULTIPLY';
 
       switch (uniformValues.envMap.mapping) {
-        case three.CubeReflectionMapping:
-        case three.CubeRefractionMapping:
+        case CubeReflectionMapping:
+        case CubeRefractionMapping:
           envMapTypeDefine = 'ENVMAP_TYPE_CUBE';
           break;
-        case three.CubeUVReflectionMapping:
-        case three.CubeUVRefractionMapping:
+        case CubeUVReflectionMapping:
+        case CubeUVRefractionMapping:
           envMapTypeDefine = 'ENVMAP_TYPE_CUBE_UV';
           break;
-        case three.EquirectangularReflectionMapping:
-        case three.EquirectangularRefractionMapping:
+        case EquirectangularReflectionMapping:
+        case EquirectangularRefractionMapping:
           envMapTypeDefine = 'ENVMAP_TYPE_EQUIREC';
           break;
-        case three.SphericalReflectionMapping:
+        case SphericalReflectionMapping:
           envMapTypeDefine = 'ENVMAP_TYPE_SPHERE';
           break;
       }
 
       switch (uniformValues.envMap.mapping) {
-        case three.CubeRefractionMapping:
-        case three.EquirectangularRefractionMapping:
+        case CubeRefractionMapping:
+        case EquirectangularRefractionMapping:
           envMapModeDefine = 'ENVMAP_MODE_REFRACTION';
           break;
       }
 
       switch (uniformValues.combine) {
-        case three.MixOperation:
+        case MixOperation:
           envMapBlendingDefine = 'ENVMAP_BLENDING_MIX';
           break;
-        case three.AddOperation:
+        case AddOperation:
           envMapBlendingDefine = 'ENVMAP_BLENDING_ADD';
           break;
-        case three.MultiplyOperation:
+        case MultiplyOperation:
         default:
           envMapBlendingDefine = 'ENVMAP_BLENDING_MULTIPLY';
           break;
@@ -83,7 +79,7 @@ function BaseAnimationMaterial(parameters, uniforms) {
   }
 }
 
-BaseAnimationMaterial.prototype = Object.assign(Object.create(three.ShaderMaterial.prototype), {
+BaseAnimationMaterial.prototype = Object.assign(Object.create(ShaderMaterial.prototype), {
   constructor: BaseAnimationMaterial,
 
   setUniformValues: function setUniformValues(values) {
@@ -136,7 +132,7 @@ function BasicAnimationMaterial(parameters) {
   this.fragmentMap = [];
   this.fragmentDiffuse = [];
 
-  BaseAnimationMaterial.call(this, parameters, three.ShaderLib['basic'].uniforms);
+  BaseAnimationMaterial.call(this, parameters, ShaderLib['basic'].uniforms);
 
   this.lights = false;
   this.vertexShader = this.concatVertexShader();
@@ -179,7 +175,7 @@ function PhongAnimationMaterial(parameters) {
   this.fragmentEmissive = [];
   this.fragmentSpecular = [];
 
-  BaseAnimationMaterial.call(this, parameters, three.ShaderLib['phong'].uniforms);
+  BaseAnimationMaterial.call(this, parameters, ShaderLib['phong'].uniforms);
 
   this.lights = true;
   this.vertexShader = this.concatVertexShader();
@@ -223,7 +219,7 @@ function StandardAnimationMaterial(parameters) {
   this.fragmentMetalness = [];
   this.fragmentEmissive = [];
 
-  BaseAnimationMaterial.call(this, parameters, three.ShaderLib['standard'].uniforms);
+  BaseAnimationMaterial.call(this, parameters, ShaderLib['standard'].uniforms);
 
   this.lights = true;
   this.vertexShader = this.concatVertexShader();
@@ -263,7 +259,7 @@ function PointsAnimationMaterial(parameters) {
   // use fragment shader to shape to point, reference: https://thebookofshaders.com/07/
   this.fragmentShape = [];
 
-  BaseAnimationMaterial.call(this, parameters, three.ShaderLib['points'].uniforms);
+  BaseAnimationMaterial.call(this, parameters, ShaderLib['points'].uniforms);
 
   this.vertexShader = this.concatVertexShader();
   this.fragmentShader = this.concatFragmentShader();
@@ -281,7 +277,7 @@ PointsAnimationMaterial.prototype.concatFragmentShader = function () {
 };
 
 function DepthAnimationMaterial(parameters) {
-  this.depthPacking = three.RGBADepthPacking;
+  this.depthPacking = RGBADepthPacking;
   this.clipping = true;
 
   this.vertexFunctions = [];
@@ -291,9 +287,9 @@ function DepthAnimationMaterial(parameters) {
 
   BaseAnimationMaterial.call(this, parameters);
 
-  this.uniforms = three.UniformsUtils.merge([three.ShaderLib['depth'].uniforms, this.uniforms]);
+  this.uniforms = UniformsUtils.merge([ShaderLib['depth'].uniforms, this.uniforms]);
   this.vertexShader = this.concatVertexShader();
-  this.fragmentShader = three.ShaderLib['depth'].fragmentShader;
+  this.fragmentShader = ShaderLib['depth'].fragmentShader;
 }
 DepthAnimationMaterial.prototype = Object.create(BaseAnimationMaterial.prototype);
 DepthAnimationMaterial.prototype.constructor = DepthAnimationMaterial;
@@ -304,7 +300,7 @@ DepthAnimationMaterial.prototype.concatVertexShader = function () {
 };
 
 function DistanceAnimationMaterial(parameters) {
-  this.depthPacking = three.RGBADepthPacking;
+  this.depthPacking = RGBADepthPacking;
   this.clipping = true;
 
   this.vertexFunctions = [];
@@ -314,9 +310,9 @@ function DistanceAnimationMaterial(parameters) {
 
   BaseAnimationMaterial.call(this, parameters);
 
-  this.uniforms = three.UniformsUtils.merge([three.ShaderLib['distanceRGBA'].uniforms, this.uniforms]);
+  this.uniforms = UniformsUtils.merge([ShaderLib['distanceRGBA'].uniforms, this.uniforms]);
   this.vertexShader = this.concatVertexShader();
-  this.fragmentShader = three.ShaderLib['distanceRGBA'].fragmentShader;
+  this.fragmentShader = ShaderLib['distanceRGBA'].fragmentShader;
 }
 DistanceAnimationMaterial.prototype = Object.create(BaseAnimationMaterial.prototype);
 DistanceAnimationMaterial.prototype.constructor = DistanceAnimationMaterial;
@@ -333,7 +329,7 @@ DistanceAnimationMaterial.prototype.concatVertexShader = function () {
  * @constructor
  */
 function PrefabBufferGeometry(prefab, count) {
-  three.BufferGeometry.call(this);
+  BufferGeometry.call(this);
 
   /**
    * A reference to the prefab geometry used to create this instance.
@@ -356,7 +352,7 @@ function PrefabBufferGeometry(prefab, count) {
   this.bufferIndices();
   this.bufferPositions();
 }
-PrefabBufferGeometry.prototype = Object.create(three.BufferGeometry.prototype);
+PrefabBufferGeometry.prototype = Object.create(BufferGeometry.prototype);
 PrefabBufferGeometry.prototype.constructor = PrefabBufferGeometry;
 
 PrefabBufferGeometry.prototype.bufferIndices = function () {
@@ -371,7 +367,7 @@ PrefabBufferGeometry.prototype.bufferIndices = function () {
 
   var indexBuffer = new Uint32Array(this.prefabCount * prefabIndexCount);
 
-  this.setIndex(new three.BufferAttribute(indexBuffer, 1));
+  this.setIndex(new BufferAttribute(indexBuffer, 1));
 
   for (var i = 0; i < this.prefabCount; i++) {
     for (var k = 0; k < prefabIndexCount; k++) {
@@ -434,7 +430,7 @@ PrefabBufferGeometry.prototype.bufferUvs = function () {
  */
 PrefabBufferGeometry.prototype.createAttribute = function (name, itemSize, factory) {
   var buffer = new Float32Array(this.prefabCount * this.prefabVertexCount * itemSize);
-  var attribute = new three.BufferAttribute(buffer, itemSize);
+  var attribute = new BufferAttribute(buffer, itemSize);
 
   this.addAttribute(name, attribute);
 
@@ -538,11 +534,11 @@ var Utils = {
    * @returns {THREE.Vector3}
    */
   randomInBox: function randomInBox(box, v) {
-    v = v || new three.Vector3();
+    v = v || new Vector3();
 
-    v.x = three.Math.randFloat(box.min.x, box.max.x);
-    v.y = three.Math.randFloat(box.min.y, box.max.y);
-    v.z = three.Math.randFloat(box.min.z, box.max.z);
+    v.x = Math$1.randFloat(box.min.x, box.max.x);
+    v.y = Math$1.randFloat(box.min.y, box.max.y);
+    v.z = Math$1.randFloat(box.min.z, box.max.z);
 
     return v;
   },
@@ -554,11 +550,11 @@ var Utils = {
    * @returns {THREE.Vector3}
    */
   randomAxis: function randomAxis(v) {
-    v = v || new three.Vector3();
+    v = v || new Vector3();
 
-    v.x = three.Math.randFloatSpread(2.0);
-    v.y = three.Math.randFloatSpread(2.0);
-    v.z = three.Math.randFloatSpread(2.0);
+    v.x = Math$1.randFloatSpread(2.0);
+    v.y = Math$1.randFloatSpread(2.0);
+    v.z = Math$1.randFloatSpread(2.0);
     v.normalize();
 
     return v;
@@ -613,7 +609,7 @@ var Utils = {
  * @constructor
  */
 function ModelBufferGeometry(model, options) {
-  three.BufferGeometry.call(this);
+  BufferGeometry.call(this);
 
   /**
    * A reference to the geometry used to create this instance.
@@ -639,7 +635,7 @@ function ModelBufferGeometry(model, options) {
   this.bufferIndices();
   this.bufferPositions(options.localizeFaces);
 }
-ModelBufferGeometry.prototype = Object.create(three.BufferGeometry.prototype);
+ModelBufferGeometry.prototype = Object.create(BufferGeometry.prototype);
 ModelBufferGeometry.prototype.constructor = ModelBufferGeometry;
 
 /**
@@ -661,7 +657,7 @@ ModelBufferGeometry.prototype.computeCentroids = function () {
 ModelBufferGeometry.prototype.bufferIndices = function () {
   var indexBuffer = new Uint32Array(this.faceCount * 3);
 
-  this.setIndex(new three.BufferAttribute(indexBuffer, 1));
+  this.setIndex(new BufferAttribute(indexBuffer, 1));
 
   for (var i = 0, offset = 0; i < this.faceCount; i++, offset += 3) {
     var face = this.modelGeometry.faces[i];
@@ -787,7 +783,7 @@ ModelBufferGeometry.prototype.setFaceData = function (attribute, faceIndex, data
  * @constructor
  */
 function PointBufferGeometry(count) {
-  three.BufferGeometry.call(this);
+  BufferGeometry.call(this);
 
   /**
    * Number of points.
@@ -797,7 +793,7 @@ function PointBufferGeometry(count) {
 
   this.bufferPositions();
 }
-PointBufferGeometry.prototype = Object.create(three.BufferGeometry.prototype);
+PointBufferGeometry.prototype = Object.create(BufferGeometry.prototype);
 PointBufferGeometry.prototype.constructor = PointBufferGeometry;
 
 PointBufferGeometry.prototype.bufferPositions = function () {
@@ -815,7 +811,7 @@ PointBufferGeometry.prototype.bufferPositions = function () {
  */
 PointBufferGeometry.prototype.createAttribute = function (name, itemSize, factory) {
   var buffer = new Float32Array(this.pointCount * itemSize);
-  var attribute = new three.BufferAttribute(buffer, itemSize);
+  var attribute = new BufferAttribute(buffer, itemSize);
 
   this.addAttribute(name, attribute);
 
@@ -1167,7 +1163,7 @@ var TranslationSegment = {
   compiler: function compiler(segment) {
     return '\n    ' + TimelineChunks.delayDuration(segment) + '\n    ' + TimelineChunks.vec3('cTranslateFrom' + segment.key, segment.transition.from, 2) + '\n    ' + TimelineChunks.vec3('cTranslateTo' + segment.key, segment.transition.to, 2) + '\n    \n    void applyTransform' + segment.key + '(float time, inout vec3 v) {\n    \n      ' + TimelineChunks.renderCheck(segment) + '\n      ' + TimelineChunks.progress(segment) + '\n    \n      v += mix(cTranslateFrom' + segment.key + ', cTranslateTo' + segment.key + ', progress);\n    }\n    ';
   },
-  defaultFrom: new three.Vector3(0, 0, 0)
+  defaultFrom: new Vector3(0, 0, 0)
 };
 
 Timeline.register('translate', TranslationSegment);
@@ -1178,46 +1174,26 @@ var ScaleSegment = {
 
     return '\n    ' + TimelineChunks.delayDuration(segment) + '\n    ' + TimelineChunks.vec3('cScaleFrom' + segment.key, segment.transition.from, 2) + '\n    ' + TimelineChunks.vec3('cScaleTo' + segment.key, segment.transition.to, 2) + '\n    ' + (origin ? TimelineChunks.vec3('cOrigin' + segment.key, origin, 2) : '') + '\n    \n    void applyTransform' + segment.key + '(float time, inout vec3 v) {\n    \n      ' + TimelineChunks.renderCheck(segment) + '\n      ' + TimelineChunks.progress(segment) + '\n    \n      ' + (origin ? 'v -= cOrigin' + segment.key + ';' : '') + '\n      v *= mix(cScaleFrom' + segment.key + ', cScaleTo' + segment.key + ', progress);\n      ' + (origin ? 'v += cOrigin' + segment.key + ';' : '') + '\n    }\n    ';
   },
-  defaultFrom: new three.Vector3(1, 1, 1)
+  defaultFrom: new Vector3(1, 1, 1)
 };
 
 Timeline.register('scale', ScaleSegment);
 
 var RotationSegment = {
   compiler: function compiler(segment) {
-    var fromAxisAngle = new three.Vector4(segment.transition.from.axis.x, segment.transition.from.axis.y, segment.transition.from.axis.z, segment.transition.from.angle);
+    var fromAxisAngle = new Vector4(segment.transition.from.axis.x, segment.transition.from.axis.y, segment.transition.from.axis.z, segment.transition.from.angle);
 
     var toAxis = segment.transition.to.axis || segment.transition.from.axis;
-    var toAxisAngle = new three.Vector4(toAxis.x, toAxis.y, toAxis.z, segment.transition.to.angle);
+    var toAxisAngle = new Vector4(toAxis.x, toAxis.y, toAxis.z, segment.transition.to.angle);
 
     var origin = segment.transition.origin;
 
     return '\n    ' + TimelineChunks.delayDuration(segment) + '\n    ' + TimelineChunks.vec4('cRotationFrom' + segment.key, fromAxisAngle, 8) + '\n    ' + TimelineChunks.vec4('cRotationTo' + segment.key, toAxisAngle, 8) + '\n    ' + (origin ? TimelineChunks.vec3('cOrigin' + segment.key, origin, 2) : '') + '\n    \n    void applyTransform' + segment.key + '(float time, inout vec3 v) {\n      ' + TimelineChunks.renderCheck(segment) + '\n      ' + TimelineChunks.progress(segment) + '\n\n      ' + (origin ? 'v -= cOrigin' + segment.key + ';' : '') + '\n      vec3 axis = normalize(mix(cRotationFrom' + segment.key + '.xyz, cRotationTo' + segment.key + '.xyz, progress));\n      float angle = mix(cRotationFrom' + segment.key + '.w, cRotationTo' + segment.key + '.w, progress);\n      vec4 q = quatFromAxisAngle(axis, angle);\n      v = rotateVector(q, v);\n      ' + (origin ? 'v += cOrigin' + segment.key + ';' : '') + '\n    }\n    ';
   },
 
-  defaultFrom: { axis: new three.Vector3(), angle: 0 }
+  defaultFrom: { axis: new Vector3(), angle: 0 }
 };
 
 Timeline.register('rotate', RotationSegment);
 
-exports.BasicAnimationMaterial = BasicAnimationMaterial;
-exports.PhongAnimationMaterial = PhongAnimationMaterial;
-exports.StandardAnimationMaterial = StandardAnimationMaterial;
-exports.PointsAnimationMaterial = PointsAnimationMaterial;
-exports.DepthAnimationMaterial = DepthAnimationMaterial;
-exports.DistanceAnimationMaterial = DistanceAnimationMaterial;
-exports.PrefabBufferGeometry = PrefabBufferGeometry;
-exports.ModelBufferGeometry = ModelBufferGeometry;
-exports.PointBufferGeometry = PointBufferGeometry;
-exports.ShaderChunk = ShaderChunk;
-exports.Timeline = Timeline;
-exports.TimelineSegment = TimelineSegment;
-exports.TimelineChunks = TimelineChunks;
-exports.TranslationSegment = TranslationSegment;
-exports.ScaleSegment = ScaleSegment;
-exports.RotationSegment = RotationSegment;
-exports.Utils = Utils;
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
-})));
+export { BasicAnimationMaterial, PhongAnimationMaterial, StandardAnimationMaterial, PointsAnimationMaterial, DepthAnimationMaterial, DistanceAnimationMaterial, PrefabBufferGeometry, ModelBufferGeometry, PointBufferGeometry, ShaderChunk, Timeline, TimelineSegment, TimelineChunks, TranslationSegment, ScaleSegment, RotationSegment, Utils };

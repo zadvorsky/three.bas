@@ -168,7 +168,7 @@ function init() {
 function Animation(path) {
   var prefabGeometry = new THREE.PlaneGeometry(4, 1.0, 1, 8);
   var prefabCount = 10000;
-  var geometry = new THREE.BAS.PrefabBufferGeometry(prefabGeometry, prefabCount);
+  var geometry = new BAS.PrefabBufferGeometry(prefabGeometry, prefabCount);
 
   // ANIMATION
 
@@ -212,8 +212,8 @@ function Animation(path) {
     data[1] = Math.random(); // metalness
   });
 
-  var material = new THREE.BAS.StandardAnimationMaterial({
-    shading: THREE.FlatShading,
+  var material = new BAS.StandardAnimationMaterial({
+    flatShading: true,
     vertexColors: THREE.VertexColors,
     side: THREE.DoubleSide,
     //transparent: true,
@@ -233,8 +233,8 @@ function Animation(path) {
       metalness: 0
     },
     vertexFunctions: [
-      THREE.BAS.ShaderChunk['catmull_rom_spline'],
-      THREE.BAS.ShaderChunk['quaternion_rotation']
+      BAS.ShaderChunk['catmull_rom_spline'],
+      BAS.ShaderChunk['quaternion_rotation']
     ],
     vertexParameters: [
       'uniform float uTime;',

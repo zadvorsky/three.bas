@@ -1,10 +1,12 @@
+import { BufferGeometry, BufferAttribute } from 'three';
+
 /**
  * A THREE.BufferGeometry consists of points.
  * @param {Number} count The number of points.
  * @constructor
  */
-THREE.BAS.PointBufferGeometry = function(count) {
-  THREE.BufferGeometry.call(this);
+function PointBufferGeometry(count) {
+  BufferGeometry.call(this);
 
   /**
    * Number of points.
@@ -12,25 +14,13 @@ THREE.BAS.PointBufferGeometry = function(count) {
    */
   this.pointCount = count;
 
-  this.bufferIndices();
   this.bufferPositions();
-};
-THREE.BAS.PointBufferGeometry.prototype = Object.create(THREE.BufferGeometry.prototype);
-THREE.BAS.PointBufferGeometry.prototype.constructor = THREE.BAS.PointBufferGeometry;
+}
+PointBufferGeometry.prototype = Object.create(BufferGeometry.prototype);
+PointBufferGeometry.prototype.constructor = PointBufferGeometry;
 
-THREE.BAS.PointBufferGeometry.prototype.bufferIndices = function() {
-  var pointCount = this.pointCount;
-  var indexBuffer = new Uint32Array(pointCount);
-
-  this.setIndex(new THREE.BufferAttribute(indexBuffer, 1));
-
-  for (var i = 0; i < pointCount; i++) {
-    indexBuffer[i] = i;
-  }
-};
-
-THREE.BAS.PointBufferGeometry.prototype.bufferPositions = function() {
-  var positionBuffer = this.createAttribute('position', 3);
+PointBufferGeometry.prototype.bufferPositions = function() {
+  this.createAttribute('position', 3);
 };
 
 /**
@@ -42,15 +32,15 @@ THREE.BAS.PointBufferGeometry.prototype.bufferPositions = function() {
  *
  * @returns {THREE.BufferAttribute}
  */
-THREE.BAS.PointBufferGeometry.prototype.createAttribute = function(name, itemSize, factory) {
-  var buffer = new Float32Array(this.pointCount * itemSize);
-  var attribute = new THREE.BufferAttribute(buffer, itemSize);
+PointBufferGeometry.prototype.createAttribute = function(name, itemSize, factory) {
+  const buffer = new Float32Array(this.pointCount * itemSize);
+  const attribute = new BufferAttribute(buffer, itemSize);
 
   this.addAttribute(name, attribute);
 
   if (factory) {
-    var data = [];
-    for (var i = 0; i < this.pointCount; i++) {
+    const data = [];
+    for (let i = 0; i < this.pointCount; i++) {
       factory(data, i, this.pointCount);
       this.setPointData(attribute, i, data);
     }
@@ -59,12 +49,14 @@ THREE.BAS.PointBufferGeometry.prototype.createAttribute = function(name, itemSiz
   return attribute;
 };
 
-THREE.BAS.PointBufferGeometry.prototype.setPointData = function(attribute, pointIndex, data) {
+PointBufferGeometry.prototype.setPointData = function(attribute, pointIndex, data) {
   attribute = (typeof attribute === 'string') ? this.attributes[attribute] : attribute;
 
-  var offset = pointIndex * attribute.itemSize;
+  let offset = pointIndex * attribute.itemSize;
 
-  for (var j = 0; j < attribute.itemSize; j++) {
+  for (let j = 0; j < attribute.itemSize; j++) {
     attribute.array[offset++] = data[j];
   }
 };
+
+export { PointBufferGeometry };

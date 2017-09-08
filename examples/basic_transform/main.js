@@ -39,9 +39,9 @@ function Animation() {
   // the number of times the prefabGeometry will be repeated
   var prefabCount = 100000;
 
-  // THREE.BAS.PrefabBufferGeometry extends THREE.BufferGeometry
+  // BAS.PrefabBufferGeometry extends THREE.BufferGeometry
   // it stores data that is used for animation calculation in addition to the actual geometry
-  var geometry = new THREE.BAS.PrefabBufferGeometry(prefabGeometry, prefabCount);
+  var geometry = new BAS.PrefabBufferGeometry(prefabGeometry, prefabCount);
 
   // temp stuff
   var i, j, offset;
@@ -94,7 +94,7 @@ function Animation() {
     endPosition.z = THREE.Math.randFloatSpread(range);
 
     // this data has to be stored per prefab as well
-    // THREE.BAS.PrefabBufferGeometry.setPrefabData is a convenience method for this
+    // BAS.PrefabBufferGeometry.setPrefabData is a convenience method for this
     // calling this (instead of the unfolded way like aDelayDuration) might be slightly slower in large geometries
     geometry.setPrefabData(aStartPosition, i, startPosition.toArray(prefabData));
     geometry.setPrefabData(aEndPosition, i, endPosition.toArray(prefabData));
@@ -128,14 +128,14 @@ function Animation() {
     data[3] = angle;
   });
 
-  // THREE.BAS.StandardAnimationMaterial uses the data in the buffer geometry to calculate the animation state
+  // BAS.StandardAnimationMaterial uses the data in the buffer geometry to calculate the animation state
   // this calculation is performed in the vertex shader
-  // THREE.BAS.StandardAnimationMaterial uses THREE.js shader chunks to duplicate the THREE.MeshStandardMaterial
+  // BAS.StandardAnimationMaterial uses THREE.js shader chunks to duplicate the THREE.MeshStandardMaterial
   // the shader is then 'extended' by injecting our own chunks at specific points
-  // THREE.BAS also extends THREE.MeshPhongMaterial and THREE.MeshBasicMaterial in the same way
-  var material = new THREE.BAS.StandardAnimationMaterial({
+  // BAS also extends THREE.MeshPhongMaterial and THREE.MeshBasicMaterial in the same way
+  var material = new BAS.StandardAnimationMaterial({
     // material parameters/flags go here
-    shading: THREE.FlatShading,
+    flatShading: true,
     // custom uniform definitions
     uniforms: {
       // uTime is updated every frame, and is used to calculate the current animation state
@@ -147,13 +147,13 @@ function Animation() {
       metalness: 0.5,
       roughness: 0.5
     },
-    // THREE.BAS has a number of functions that can be reused. They can be injected here.
+    // BAS has a number of functions that can be reused. They can be injected here.
     vertexFunctions: [
       // Penner easing functions easeCubicInOut and easeQuadOut (see the easing example for all available functions)
-      THREE.BAS.ShaderChunk['ease_cubic_in_out'],
-      THREE.BAS.ShaderChunk['ease_quad_out'],
+      BAS.ShaderChunk['ease_cubic_in_out'],
+      BAS.ShaderChunk['ease_quad_out'],
       // quatFromAxisAngle and rotateVector functions
-      THREE.BAS.ShaderChunk['quaternion_rotation']
+      BAS.ShaderChunk['quaternion_rotation']
     ],
     // parameter  must match uniforms and attributes defined above in both name and type
     // as a convention, I prefix uniforms with 'u' and attributes with 'a' (and constants with 'c', varyings with 'v', and temps with 't')

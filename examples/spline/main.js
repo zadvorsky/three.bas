@@ -77,7 +77,7 @@ function Animation(path) {
   var prefabCount = 100000;
 
   // create the buffer geometry with all the prefabs
-  var geometry = new THREE.BAS.PrefabBufferGeometry(prefabGeometry, prefabCount);
+  var geometry = new BAS.PrefabBufferGeometry(prefabGeometry, prefabCount);
 
   // ANIMATION
 
@@ -141,8 +141,8 @@ function Animation(path) {
     color.toArray(data);
   });
 
-  var material = new THREE.BAS.PhongAnimationMaterial({
-    shading: THREE.FlatShading,
+  var material = new BAS.PhongAnimationMaterial({
+    flatShading: true,
     vertexColors: THREE.VertexColors,
     side: THREE.DoubleSide,
     // defines act as static, immutable values
@@ -168,8 +168,8 @@ function Animation(path) {
     vertexFunctions: [
       // catmull_rom_spline defines the catmullRomSpline and getCatmullRomSplineIndices functions used in the vertexPosition chunk
       // it also defines getCatmullRomSplineIndicesClosed, which is not used in this example
-      THREE.BAS.ShaderChunk['catmull_rom_spline'],
-      THREE.BAS.ShaderChunk['quaternion_rotation']
+      BAS.ShaderChunk['catmull_rom_spline'],
+      BAS.ShaderChunk['quaternion_rotation']
     ],
     // note we do not have to define 'color' as a uniform because THREE.js will do this for us
     // trying to define it here will throw a duplicate declaration error

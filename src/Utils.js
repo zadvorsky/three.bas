@@ -1,8 +1,12 @@
+import { Math as tMath, Vector3 } from 'three';
+import { DepthAnimationMaterial } from './materials/DepthAnimationMaterial';
+import { DistanceAnimationMaterial } from './materials/DistanceAnimationMaterial';
+
 /**
  * Collection of utility functions.
  * @namespace
  */
-THREE.BAS.Utils = {
+const Utils = {
   /**
    * Duplicates vertices so each face becomes separate.
    * Same as THREE.ExplodeModifier.
@@ -10,19 +14,19 @@ THREE.BAS.Utils = {
    * @param {THREE.Geometry} geometry Geometry instance to modify.
    */
   separateFaces: function (geometry) {
-    var vertices = [];
+    let vertices = [];
 
-    for (var i = 0, il = geometry.faces.length; i < il; i++) {
-      var n = vertices.length;
-      var face = geometry.faces[i];
+    for (let i = 0, il = geometry.faces.length; i < il; i++) {
+      let n = vertices.length;
+      let face = geometry.faces[i];
 
-      var a = face.a;
-      var b = face.b;
-      var c = face.c;
+      let a = face.a;
+      let b = face.b;
+      let c = face.c;
 
-      var va = geometry.vertices[a];
-      var vb = geometry.vertices[b];
-      var vc = geometry.vertices[c];
+      let va = geometry.vertices[a];
+      let vb = geometry.vertices[b];
+      let vc = geometry.vertices[c];
 
       vertices.push(va.clone());
       vertices.push(vb.clone());
@@ -45,9 +49,9 @@ THREE.BAS.Utils = {
    * @returns {THREE.Vector3}
    */
   computeCentroid: function(geometry, face, v) {
-    var a = geometry.vertices[face.a];
-    var b = geometry.vertices[face.b];
-    var c = geometry.vertices[face.c];
+    let a = geometry.vertices[face.a];
+    let b = geometry.vertices[face.b];
+    let c = geometry.vertices[face.c];
 
     v = v || new THREE.Vector3();
 
@@ -66,11 +70,11 @@ THREE.BAS.Utils = {
    * @returns {THREE.Vector3}
    */
   randomInBox: function(box, v) {
-    v = v || new THREE.Vector3();
+    v = v || new Vector3();
 
-    v.x = THREE.Math.randFloat(box.min.x, box.max.x);
-    v.y = THREE.Math.randFloat(box.min.y, box.max.y);
-    v.z = THREE.Math.randFloat(box.min.z, box.max.z);
+    v.x = tMath.randFloat(box.min.x, box.max.x);
+    v.y = tMath.randFloat(box.min.y, box.max.y);
+    v.z = tMath.randFloat(box.min.z, box.max.z);
 
     return v;
   },
@@ -82,11 +86,11 @@ THREE.BAS.Utils = {
    * @returns {THREE.Vector3}
    */
   randomAxis: function(v) {
-    v = v || new THREE.Vector3();
+    v = v || new Vector3();
 
-    v.x = THREE.Math.randFloatSpread(2.0);
-    v.y = THREE.Math.randFloatSpread(2.0);
-    v.z = THREE.Math.randFloatSpread(2.0);
+    v.x = tMath.randFloatSpread(2.0);
+    v.y = tMath.randFloatSpread(2.0);
+    v.z = tMath.randFloatSpread(2.0);
     v.normalize();
 
     return v;
@@ -102,7 +106,7 @@ THREE.BAS.Utils = {
    * @returns {THREE.BAS.DepthAnimationMaterial}
    */
   createDepthAnimationMaterial: function(sourceMaterial) {
-    return new THREE.BAS.DepthAnimationMaterial({
+    return new DepthAnimationMaterial({
       uniforms: sourceMaterial.uniforms,
       vertexFunctions: sourceMaterial.vertexFunctions,
       vertexParameters: sourceMaterial.vertexParameters,
@@ -121,7 +125,7 @@ THREE.BAS.Utils = {
    * @returns {THREE.BAS.DistanceAnimationMaterial}
    */
   createDistanceAnimationMaterial: function(sourceMaterial) {
-    return new THREE.BAS.DistanceAnimationMaterial({
+    return new DistanceAnimationMaterial({
       uniforms: sourceMaterial.uniforms,
       vertexFunctions: sourceMaterial.vertexFunctions,
       vertexParameters: sourceMaterial.vertexParameters,
@@ -130,3 +134,5 @@ THREE.BAS.Utils = {
     });
   }
 };
+
+export { Utils };

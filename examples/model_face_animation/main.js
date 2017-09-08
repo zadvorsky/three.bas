@@ -28,19 +28,19 @@ function init() {
 ////////////////////
 
 function Animation() {
-  // create a geometry that will be used by THREE.BAS.ModelBufferGeometry
+  // create a geometry that will be used by BAS.ModelBufferGeometry
   var modelRadius = 10;
   var modelTube = 4;
   var model = new THREE.TorusGeometry(modelRadius, modelTube, 256, 256);
 
   // duplicate some vertices so that each face becomes a separate triangle.
   // this is the same as the THREE.ExplodeModifier
-  THREE.BAS.Utils.separateFaces(model);
+  BAS.Utils.separateFaces(model);
 
   // create a ModelBufferGeometry based on the geometry created above
   // ModelBufferGeometry makes it easier to create animations based on faces of a geometry
   // it is similar to the PrefabBufferGeometry where the prefab is a face (triangle)
-  var geometry = new THREE.BAS.ModelBufferGeometry(model, {
+  var geometry = new BAS.ModelBufferGeometry(model, {
     // setting this to true will store the vertex positions relative to the face they are in
     // this way it's easier to rotate and scale faces around their own center
     localizeFaces: true,
@@ -99,8 +99,8 @@ function Animation() {
     data[3] = Math.PI * 4;
   });
 
-  var material = new THREE.BAS.StandardAnimationMaterial({
-    shading: THREE.FlatShading,
+  var material = new BAS.StandardAnimationMaterial({
+    flatShading: true,
     side: THREE.DoubleSide,
     uniforms: {
       uTime: {value: 0},
@@ -111,8 +111,8 @@ function Animation() {
       diffuse: new THREE.Color(0x000000)
     },
     vertexFunctions: [
-      THREE.BAS.ShaderChunk['ease_cubic_in_out'],
-      THREE.BAS.ShaderChunk['quaternion_rotation']
+      BAS.ShaderChunk['ease_cubic_in_out'],
+      BAS.ShaderChunk['quaternion_rotation']
     ],
     vertexParameters: [
       'uniform float uTime;',

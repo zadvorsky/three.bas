@@ -39,7 +39,7 @@ function init() {
   //envCubeCamera.renderTarget.texture.mapping = THREE.CubeReflectionMapping;
 
   root.addUpdateCallback(function() {
-    envCubeCamera.updateCubeMap(root.renderer, root.scene);
+    envCubeCamera.update(root.renderer, root.scene);
   });
 
   var animation = new Animation(envCubeCamera.renderTarget.texture);
@@ -59,7 +59,7 @@ function Animation(envMap) {
 
   //var prefabGeometry = new THREE.TorusKnotGeometry(size * 0.25, 2.0);
   var prefabGeometry = new THREE.TorusGeometry(size * 0.25, 4.0, 32, 16);
-  var geometry = new THREE.BAS.PrefabBufferGeometry(prefabGeometry, prefabCount);
+  var geometry = new BAS.PrefabBufferGeometry(prefabGeometry, prefabCount);
 
   var i;
   var prefabDataArray = [];
@@ -111,7 +111,7 @@ function Animation(envMap) {
     geometry.setPrefabData(aAxisAngle, i, axis.toArray(prefabDataArray));
   }
 
-  var material = new THREE.BAS.PhongAnimationMaterial({
+  var material = new BAS.PhongAnimationMaterial({
     transparent: true,
     uniforms: {
       uTime: {value: 0},
@@ -127,8 +127,8 @@ function Animation(envMap) {
     },
     // functions for the vertex shader (cannot be used in the fragment shader)
     vertexFunctions: [
-      THREE.BAS.ShaderChunk['ease_bezier'],
-      THREE.BAS.ShaderChunk['quaternion_rotation']
+      BAS.ShaderChunk['ease_bezier'],
+      BAS.ShaderChunk['quaternion_rotation']
     ],
     // parameters for the vertex shader
     vertexParameters: [

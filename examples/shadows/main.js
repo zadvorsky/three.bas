@@ -56,7 +56,6 @@ function init() {
   var geometry = new THREE.BoxGeometry(40, 40, 40);
   var material = new THREE.MeshPhongMaterial({
     color: 0xa0adaf,
-    shading: THREE.SmoothShading,
     side: THREE.BackSide
   });
   var box = new THREE.Mesh(geometry, material);
@@ -76,7 +75,7 @@ function init() {
 function ParticleSystem() {
   var prefabGeometry = new THREE.TetrahedronGeometry(0.5);
   var prefabCount = 2000;
-  var geometry = new THREE.BAS.PrefabBufferGeometry(prefabGeometry, prefabCount);
+  var geometry = new BAS.PrefabBufferGeometry(prefabGeometry, prefabCount);
 
   var i, j, offset;
 
@@ -141,9 +140,9 @@ function ParticleSystem() {
     }
   }
 
-  var material = new THREE.BAS.PhongAnimationMaterial(
+  var material = new BAS.PhongAnimationMaterial(
     {
-      shading: THREE.FlatShading,
+      flatShading: true,
       transparent: true,
       uniforms: {
         uTime: {value: 0}
@@ -151,7 +150,7 @@ function ParticleSystem() {
       uniformValues: {
       },
       vertexFunctions: [
-        THREE.BAS.ShaderChunk['quaternion_rotation']
+        BAS.ShaderChunk['quaternion_rotation']
       ],
       vertexParameters: [
         'uniform float uTime;',
@@ -178,9 +177,9 @@ function ParticleSystem() {
   this.receiveShadow = true;
 
   // depth material is used for directional & spot light shadows
-  this.customDepthMaterial = THREE.BAS.Utils.createDepthAnimationMaterial(material);
+  this.customDepthMaterial = BAS.Utils.createDepthAnimationMaterial(material);
   // distance material is used for point light shadows
-  this.customDistanceMaterial = THREE.BAS.Utils.createDistanceAnimationMaterial(material);
+  this.customDistanceMaterial = BAS.Utils.createDistanceAnimationMaterial(material);
 }
 ParticleSystem.prototype = Object.create(THREE.Mesh.prototype);
 ParticleSystem.prototype.constructor = ParticleSystem;

@@ -184,7 +184,7 @@ function init() {
 ////////////////////
 
 function Animation(modelGeometry) {
-  var geometry = new THREE.BAS.ModelBufferGeometry(modelGeometry);
+  var geometry = new BAS.ModelBufferGeometry(modelGeometry);
 
   var i, j;
 
@@ -229,8 +229,8 @@ function Animation(modelGeometry) {
     }
   }
 
-  var material = new THREE.BAS.StandardAnimationMaterial({
-    shading: THREE.FlatShading,
+  var material = new BAS.StandardAnimationMaterial({
+    flatShading: true,
     vertexColors: THREE.VertexColors,
     transparent: true,
     side: THREE.DoubleSide,
@@ -246,7 +246,7 @@ function Animation(modelGeometry) {
       opacity: 0.8
     },
     vertexFunctions: [
-      THREE.BAS.ShaderChunk['ease_cubic_in_out']
+      BAS.ShaderChunk['ease_cubic_in_out']
     ],
     vertexParameters: [
       'uniform float uTime;',

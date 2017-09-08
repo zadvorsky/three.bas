@@ -1,5 +1,8 @@
-THREE.BAS.DepthAnimationMaterial = function (parameters) {
-  this.depthPacking = THREE.RGBADepthPacking;
+import { ShaderLib, UniformsUtils, RGBADepthPacking } from 'three';
+import BaseAnimationMaterial from './BaseAnimationMaterial';
+
+function DepthAnimationMaterial(parameters) {
+  this.depthPacking = RGBADepthPacking;
   this.clipping = true;
 
   this.vertexFunctions = [];
@@ -7,50 +10,56 @@ THREE.BAS.DepthAnimationMaterial = function (parameters) {
   this.vertexInit = [];
   this.vertexPosition = [];
 
-  THREE.BAS.BaseAnimationMaterial.call(this, parameters);
+  BaseAnimationMaterial.call(this, parameters);
+  
+  this.uniforms = UniformsUtils.merge([ShaderLib['depth'].uniforms, this.uniforms]);
+  this.vertexShader = this.concatVertexShader();
+  this.fragmentShader = ShaderLib['depth'].fragmentShader;
+}
+DepthAnimationMaterial.prototype = Object.create(BaseAnimationMaterial.prototype);
+DepthAnimationMaterial.prototype.constructor = DepthAnimationMaterial;
 
-  var depthShader = THREE.ShaderLib['depth'];
+DepthAnimationMaterial.prototype.concatVertexShader = function () {
+  
+  return `
+  #include <common>
+  #include <uv_pars_vertex>
+  #include <displacementmap_pars_vertex>
+  #include <morphtarget_pars_vertex>
+  #include <skinning_pars_vertex>
+  #include <logdepthbuf_pars_vertex>
+  #include <clipping_planes_pars_vertex>
+  
+  ${this.stringifyChunk('vertexParameters')}
+  ${this.stringifyChunk('vertexFunctions')}
+  
+  void main() {
+  
+    ${this.stringifyChunk('vertexInit')}
+  
+    #include <uv_vertex>
+  
+    #include <skinbase_vertex>
+  
+    #ifdef USE_DISPLACEMENTMAP
+  
+      #include <beginnormal_vertex>
+      #include <morphnormal_vertex>
+      #include <skinnormal_vertex>
+  
+    #endif
+  
+    #include <begin_vertex>
+    
+    ${this.stringifyChunk('vertexPosition')}
 
-  this.uniforms = THREE.UniformsUtils.merge([depthShader.uniforms, this.uniforms]);
-  this.vertexShader = this._concatVertexShader();
-  this.fragmentShader = depthShader.fragmentShader;
+    #include <morphtarget_vertex>
+    #include <skinning_vertex>
+    #include <displacementmap_vertex>
+    #include <project_vertex>
+    #include <logdepthbuf_vertex>
+    #include <clipping_planes_vertex>
+  }`;
 };
-THREE.BAS.DepthAnimationMaterial.prototype = Object.create(THREE.BAS.BaseAnimationMaterial.prototype);
-THREE.BAS.DepthAnimationMaterial.prototype.constructor = THREE.BAS.DepthAnimationMaterial;
 
-THREE.BAS.DepthAnimationMaterial.prototype._concatVertexShader = function () {
-  return [
-    THREE.ShaderChunk["common"],
-    THREE.ShaderChunk["uv_pars_vertex"],
-    THREE.ShaderChunk["displacementmap_pars_vertex"],
-    THREE.ShaderChunk["morphtarget_pars_vertex"],
-    THREE.ShaderChunk["skinning_pars_vertex"],
-    THREE.ShaderChunk["logdepthbuf_pars_vertex"],
-    THREE.ShaderChunk["clipping_planes_pars_vertex"],
-
-    this._stringifyChunk('vertexFunctions'),
-    this._stringifyChunk('vertexParameters'),
-
-    'void main() {',
-
-    this._stringifyChunk('vertexInit'),
-
-    THREE.ShaderChunk["uv_vertex"],
-    THREE.ShaderChunk["skinbase_vertex"],
-
-    THREE.ShaderChunk["begin_vertex"],
-
-    this._stringifyChunk('vertexPosition'),
-
-
-    THREE.ShaderChunk["displacementmap_vertex"],
-    THREE.ShaderChunk["morphtarget_vertex"],
-    THREE.ShaderChunk["skinning_vertex"],
-    THREE.ShaderChunk["project_vertex"],
-    THREE.ShaderChunk["logdepthbuf_vertex"],
-    THREE.ShaderChunk["clipping_planes_vertex"],
-
-    '}'
-
-  ].join('\n');
-};
+export { DepthAnimationMaterial };

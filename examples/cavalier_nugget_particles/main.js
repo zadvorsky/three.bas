@@ -155,11 +155,11 @@ function Animation(prefabCount, prefabSize, bounds) {
   var axis = new THREE.Vector3();
   
   geometry.createAttribute('aAxisAngle', 4, function(data) {
-    THREE.BAS.Utils.randomAxis(axis).toArray(data);
+    BAS.Utils.randomAxis(axis).toArray(data);
     data[3] = Math.PI * THREE.Math.randFloat(8, 16);
   });
   
-  var material = new THREE.BAS.BasicAnimationMaterial({
+  var material = new BAS.BasicAnimationMaterial({
     side: THREE.DoubleSide,
     vertexColors: THREE.VertexColors,
     transparent: true,
@@ -167,9 +167,9 @@ function Animation(prefabCount, prefabSize, bounds) {
       uTime: {value: 0.0}
     },
     vertexFunctions: [
-      THREE.BAS.ShaderChunk['quaternion_rotation'],
-      THREE.BAS.ShaderChunk['cubic_bezier'],
-      THREE.BAS.ShaderChunk['ease_cubic_out']
+      BAS.ShaderChunk['quaternion_rotation'],
+      BAS.ShaderChunk['cubic_bezier'],
+      BAS.ShaderChunk['ease_cubic_out']
     ],
     vertexParameters: [
       'uniform float uTime;',
@@ -226,13 +226,13 @@ Animation.prototype.bufferPoints = function() {
   var v = new THREE.Vector3();
 
   for (var i = 0; i < this.geometry.prefabCount; i++) {
-    THREE.BAS.Utils.randomInBox(this.bounds.cp0, v).toArray(data);
+    BAS.Utils.randomInBox(this.bounds.cp0, v).toArray(data);
     this.geometry.setPrefabData(aControlPosition0, i, data);
 
-    THREE.BAS.Utils.randomInBox(this.bounds.cp1, v).toArray(data);
+    BAS.Utils.randomInBox(this.bounds.cp1, v).toArray(data);
     this.geometry.setPrefabData(aControlPosition1, i, data);
 
-    THREE.BAS.Utils.randomInBox(this.bounds.end, v).toArray(data);
+    BAS.Utils.randomInBox(this.bounds.end, v).toArray(data);
     this.geometry.setPrefabData(aEndPosition, i, data);
   }
 
@@ -241,9 +241,9 @@ Animation.prototype.bufferPoints = function() {
 };
 
 function NuggetCollisionGeometry(prefab, count) {
-  THREE.BAS.PrefabBufferGeometry.call(this, prefab, count);
+  BAS.PrefabBufferGeometry.call(this, prefab, count);
 }
-NuggetCollisionGeometry.prototype = Object.create(THREE.BAS.PrefabBufferGeometry.prototype);
+NuggetCollisionGeometry.prototype = Object.create(BAS.PrefabBufferGeometry.prototype);
 NuggetCollisionGeometry.prototype.constructor = NuggetCollisionGeometry;
 NuggetCollisionGeometry.prototype.bufferPositions = function() {
   var positionBuffer = this.createAttribute('position', 3).array;

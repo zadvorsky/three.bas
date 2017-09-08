@@ -1,9 +1,11 @@
+import { TimelineSegment } from './TimelineSegment';
+
 /**
  * A utility class to create an animation timeline which can be baked into a (vertex) shader.
  * By default the timeline supports translation, scale and rotation. This can be extended or overridden.
  * @constructor
  */
-THREE.BAS.Timeline = function() {
+function Timeline() {
   /**
    * The total duration of the timeline in seconds.
    * @type {number}
@@ -18,10 +20,10 @@ THREE.BAS.Timeline = function() {
 
   this.segments = {};
   this.__key = 0;
-};
+}
 
 // static definitions map
-THREE.BAS.Timeline.segmentDefinitions = {};
+Timeline.segmentDefinitions = {};
 
 /**
  * Registers a transition definition for use with {@link THREE.BAS.Timeline.add}.
@@ -31,8 +33,10 @@ THREE.BAS.Timeline.segmentDefinitions = {};
  * @param {*} definition.defaultFrom The initial value for a transform.from. For example, the defaultFrom for a translation is THREE.Vector3(0, 0, 0).
  * @static
  */
-THREE.BAS.Timeline.register = function(key, definition) {
-  THREE.BAS.Timeline.segmentDefinitions[key] = definition;
+Timeline.register = function(key, definition) {
+  Timeline.segmentDefinitions[key] = definition;
+  
+  return definition;
 };
 
 /**
@@ -42,15 +46,18 @@ THREE.BAS.Timeline.register = function(key, definition) {
  * The transition object for each key will be passed to the matching definition's compiler. It can have arbitrary properties, but the Timeline expects at least a 'to', 'from' and an optional 'ease'.
  * @param {number|string} [positionOffset] Position in the timeline. Defaults to the end of the timeline. If a number is provided, the transition will be inserted at that time in seconds. Strings ('+=x' or '-=x') can be used for a value relative to the end of timeline.
  */
-THREE.BAS.Timeline.prototype.add = function(duration, transitions, positionOffset) {
-  var start = this.duration;
+Timeline.prototype.add = function(duration, transitions, positionOffset) {
+  // stop rollup from complaining about eval
+  const _eval = eval;
+  
+  let start = this.duration;
 
   if (positionOffset !== undefined) {
     if (typeof positionOffset === 'number') {
       start = positionOffset;
     }
     else if (typeof positionOffset === 'string') {
-      eval('start' + positionOffset);
+      _eval('start' + positionOffset);
     }
 
     this.duration = Math.max(this.duration, start + duration);
@@ -59,19 +66,19 @@ THREE.BAS.Timeline.prototype.add = function(duration, transitions, positionOffse
     this.duration += duration;
   }
 
-  var keys = Object.keys(transitions), key;
+  let keys = Object.keys(transitions), key;
 
-  for (var i = 0; i < keys.length; i++) {
+  for (let i = 0; i < keys.length; i++) {
     key = keys[i];
 
     this.processTransition(key, transitions[key], start, duration);
   }
 };
 
-THREE.BAS.Timeline.prototype.processTransition = function(key, transition, start, duration) {
-  var definition = THREE.BAS.Timeline.segmentDefinitions[key];
+Timeline.prototype.processTransition = function(key, transition, start, duration) {
+  const definition = Timeline.segmentDefinitions[key];
 
-  var segments = this.segments[key];
+  let segments = this.segments[key];
   if (!segments) segments = this.segments[key] = [];
 
   if (transition.from === undefined) {
@@ -83,20 +90,20 @@ THREE.BAS.Timeline.prototype.processTransition = function(key, transition, start
     }
   }
 
-  segments.push(new THREE.BAS.TimelineSegment((this.__key++).toString(), start, duration, transition, definition.compiler));
+  segments.push(new TimelineSegment((this.__key++).toString(), start, duration, transition, definition.compiler));
 };
 
 /**
  * Compiles the timeline into a glsl string array that can be injected into a (vertex) shader.
  * @returns {Array}
  */
-THREE.BAS.Timeline.prototype.compile = function() {
-  var c = [];
+Timeline.prototype.compile = function() {
+  const c = [];
 
-  var keys = Object.keys(this.segments);
-  var segments;
+  const keys = Object.keys(this.segments);
+  let segments;
 
-  for (var i = 0; i < keys.length; i++) {
+  for (let i = 0; i < keys.length; i++) {
     segments = this.segments[keys[i]];
 
     this.fillGaps(segments);
@@ -108,12 +115,12 @@ THREE.BAS.Timeline.prototype.compile = function() {
 
   return c;
 };
-THREE.BAS.Timeline.prototype.fillGaps = function(segments) {
+Timeline.prototype.fillGaps = function(segments) {
   if (segments.length === 0) return;
 
-  var s0, s1;
+  let s0, s1;
 
-  for (var i = 0; i < segments.length - 1; i++) {
+  for (let i = 0; i < segments.length - 1; i++) {
     s0 = segments[i];
     s1 = segments[i + 1];
 
@@ -131,10 +138,12 @@ THREE.BAS.Timeline.prototype.fillGaps = function(segments) {
  * @param {string} key A key matching a transform definition.
  * @returns {string}
  */
-THREE.BAS.Timeline.prototype.getTransformCalls = function(key) {
-  var t = this.timeKey;
+Timeline.prototype.getTransformCalls = function(key) {
+  let t = this.timeKey;
 
   return this.segments[key] ?  this.segments[key].map(function(s) {
-    return 'applyTransform' + s.key + '(' + t + ', transformed);';
+    return `applyTransform${s.key}(${t}, transformed);`;
   }).join('\n') : '';
 };
+
+export { Timeline }
