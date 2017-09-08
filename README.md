@@ -10,16 +10,14 @@ While this approach is more cumbersome to work with, it provides a significant p
 See [examples](http://three-bas-examples.surge.sh/), [documentation](http://three-bas-examples.surge.sh/docs/gen/) and the wiki for more information.
 
 ## Compatibility
-Tested with THREE.js r84. Will likely fail with older versions (r74 and down).
+Tested with THREE.js r87. May fail with older versions (r74 and down).
 
 ## Usage
-Include `dist/bas.js` or `dist/bas.min.js` in your project. A bower package is also available:
+Include `dist/bas.js` or `dist/bas.min.js` in your project. An npm package is also available:
 
-    $ bower install three-bas
+    $ npm install three-bas
 
 ## Development
-This project relies or [npm](https://www.npmjs.com/) and [gulp](http://gulpjs.com/) for building the source and running the examples.
+This project relies or [npm](https://www.npmjs.com/) and [rollup](https://rollupjs.org/) for building the source.
 
-Run `$ npm install` to install gulp dependencies and `$ gulp` to start the local server. 
-
-The gulpfile includes a task for converting .glsl files to a JavaScript object with strings joined by `\n` in case you want to build your own (reusable) shader chunks.
+Run `$ npm install` to install dependencies and `npm run dev` to start building. 
