@@ -576,6 +576,7 @@ var Utils = {
   createDepthAnimationMaterial: function createDepthAnimationMaterial(sourceMaterial) {
     return new DepthAnimationMaterial({
       uniforms: sourceMaterial.uniforms,
+      defines: sourceMaterial.defines,
       vertexFunctions: sourceMaterial.vertexFunctions,
       vertexParameters: sourceMaterial.vertexParameters,
       vertexInit: sourceMaterial.vertexInit,
@@ -595,6 +596,7 @@ var Utils = {
   createDistanceAnimationMaterial: function createDistanceAnimationMaterial(sourceMaterial) {
     return new DistanceAnimationMaterial({
       uniforms: sourceMaterial.uniforms,
+      defines: sourceMaterial.defines,
       vertexFunctions: sourceMaterial.vertexFunctions,
       vertexParameters: sourceMaterial.vertexParameters,
       vertexInit: sourceMaterial.vertexInit,
