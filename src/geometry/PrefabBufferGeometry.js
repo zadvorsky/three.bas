@@ -5,8 +5,10 @@
  * @param {Number} count The number of times to repeat the geometry.
  * @constructor
  */
-THREE.BAS.PrefabBufferGeometry = function(prefab, count) {
+THREE.BAS.PrefabBufferGeometry = function(prefab, count, isBufferGeometry) {
   THREE.BufferGeometry.call(this);
+
+	this._isBufferGeometry = isBufferGeometry;
 
   /**
    * A reference to the prefab geometry used to create this instance.
@@ -24,7 +26,11 @@ THREE.BAS.PrefabBufferGeometry = function(prefab, count) {
    * Number of vertices of the prefab.
    * @type {Number}
    */
-  this.prefabVertexCount = prefab.vertices.length;
+	if (this._isBufferGeometry) {
+		this.prefabVertexCount = prefab.attributes.position.count;
+	} else {
+		this.prefabVertexCount = prefab.vertices.length;
+	}
 
   this.bufferIndices();
   this.bufferPositions();
@@ -33,14 +39,23 @@ THREE.BAS.PrefabBufferGeometry.prototype = Object.create(THREE.BufferGeometry.pr
 THREE.BAS.PrefabBufferGeometry.prototype.constructor = THREE.BAS.PrefabBufferGeometry;
 
 THREE.BAS.PrefabBufferGeometry.prototype.bufferIndices = function() {
-  var prefabFaceCount = this.prefabGeometry.faces.length;
-  var prefabIndexCount = this.prefabGeometry.faces.length * 3;
   var prefabIndices = [];
 
-  for (var h = 0; h < prefabFaceCount; h++) {
-    var face = this.prefabGeometry.faces[h];
-    prefabIndices.push(face.a, face.b, face.c);
-  }
+	if (this._isBufferGeometry) {
+		var prefabIndexCount = this.prefabVertexCount;
+
+		for (var h = 0; h < prefabIndexCount; h++) {
+			prefabIndices.push(h);
+		}
+	} else {
+		var prefabFaceCount = this.prefabGeometry.faces.length;
+		var prefabIndexCount = this.prefabGeometry.faces.length * 3;
+
+		for (var h = 0; h < prefabFaceCount; h++) {
+			var face = this.prefabGeometry.faces[h];
+			prefabIndices.push(face.a, face.b, face.c);
+		}
+	}
 
   var indexBuffer = new Uint32Array(this.prefabCount * prefabIndexCount);
 
@@ -56,33 +71,61 @@ THREE.BAS.PrefabBufferGeometry.prototype.bufferIndices = function() {
 THREE.BAS.PrefabBufferGeometry.prototype.bufferPositions = function() {
   var positionBuffer = this.createAttribute('position', 3).array;
 
-  for (var i = 0, offset = 0; i < this.prefabCount; i++) {
-    for (var j = 0; j < this.prefabVertexCount; j++, offset += 3) {
-      var prefabVertex = this.prefabGeometry.vertices[j];
+	if (this._isBufferGeometry) {
+		var positions = this.prefabGeometry.attributes.position.array;
 
-      positionBuffer[offset    ] = prefabVertex.x;
-      positionBuffer[offset + 1] = prefabVertex.y;
-      positionBuffer[offset + 2] = prefabVertex.z;
-    }
-  }
+		for (var i = 0, offset = 0; i < this.prefabCount; i++) {
+			for (var j = 0; j < this.prefabVertexCount; j++, offset += 3) {
+				positionBuffer[offset    ] = positions[j * 3];
+				positionBuffer[offset + 1] = positions[j * 3 + 1];
+				positionBuffer[offset + 2] = positions[j * 3 + 2];
+			}
+		}
+	} else {
+		for (var i = 0, offset = 0; i < this.prefabCount; i++) {
+			for (var j = 0; j < this.prefabVertexCount; j++, offset += 3) {
+				var prefabVertex = this.prefabGeometry.vertices[j];
+
+				positionBuffer[offset    ] = prefabVertex.x;
+				positionBuffer[offset + 1] = prefabVertex.y;
+				positionBuffer[offset + 2] = prefabVertex.z;
+			}
+		}
+	}
+
 };
 
 /**
  * Creates a THREE.BufferAttribute with UV coordinates.
  */
 THREE.BAS.PrefabBufferGeometry.prototype.bufferUvs = function() {
-  var prefabFaceCount = this.prefabGeometry.faces.length;
-  var prefabVertexCount = this.prefabVertexCount = this.prefabGeometry.vertices.length;
-  var prefabUvs = [];
+	var prefabUvs = [];
 
-  for (var h = 0; h < prefabFaceCount; h++) {
-    var face = this.prefabGeometry.faces[h];
-    var uv = this.prefabGeometry.faceVertexUvs[0][h];
+	var prefabVertexCount;
 
-    prefabUvs[face.a] = uv[0];
-    prefabUvs[face.b] = uv[1];
-    prefabUvs[face.c] = uv[2];
-  }
+	if (this._isBufferGeometry) {
+		prefabVertexCount = this.prefabGeometry.attributes.position.count;
+		var uv = this.prefabGeometry.attributes.uv.array;
+		
+		for (var h = 0; h < prefabVertexCount; h++) {
+			prefabUvs.push(new THREE.Vector2(uv[h * 2], uv[h * 2 + 1]));
+		}
+	} else {
+		prefabVertexCount = this.prefabGeometry.vertices.length;
+
+		var prefabFaceCount = this.prefabGeometry.faces.length;
+
+		for (var h = 0; h < prefabFaceCount; h++) {
+			var face = this.prefabGeometry.faces[h];
+			var uv = this.prefabGeometry.faceVertexUvs[0][h];
+
+			prefabUvs[face.a] = uv[0];
+			prefabUvs[face.b] = uv[1];
+			prefabUvs[face.c] = uv[2];
+		}
+	}
+
+	this.prefabVertexCount = prefabVertexCount;
 
   var uvBuffer = this.createAttribute('uv', 2);
 
