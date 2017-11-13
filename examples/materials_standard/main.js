@@ -58,7 +58,7 @@ function Animation(envMap) {
   var size = rangeY / prefabCount;
 
   //var prefabGeometry = new THREE.TorusKnotGeometry(size * 0.25, 2.0);
-  var prefabGeometry = new THREE.TorusGeometry(size * 0.25, 4.0, 32, 16);
+  var prefabGeometry = new THREE.TorusBufferGeometry(size * 0.25, 4.0, 32, 16);
   var geometry = new BAS.PrefabBufferGeometry(prefabGeometry, prefabCount);
 
   var i;

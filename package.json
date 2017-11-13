@@ -10,6 +10,7 @@
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w -m inline",
+    "serve": "live-server --watch=dist/bas.js,examples",
     "build-min": "rollup -c && uglifyjs dist/bas.js -cm > dist/bas.min.js"
   },
   "author": "Szenia Zadvornykh",

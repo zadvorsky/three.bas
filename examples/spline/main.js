@@ -73,7 +73,7 @@ function init() {
 
 function Animation(path) {
   // each prefab is a tetrahedron
-  var prefabGeometry = new THREE.TetrahedronGeometry(2.0);
+  var prefabGeometry = new THREE.TetrahedronBufferGeometry(2.0);
   var prefabCount = 100000;
 
   // create the buffer geometry with all the prefabs

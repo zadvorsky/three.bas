@@ -383,6 +383,7 @@ function PrefabBufferGeometry(prefab, count) {
    * @type {THREE.Geometry}
    */
   this.prefabGeometry = prefab;
+  this.isPrefabBufferGeometry = prefab.isBufferGeometry;
 
   /**
    * Number of prefabs.
@@ -394,7 +395,11 @@ function PrefabBufferGeometry(prefab, count) {
    * Number of vertices of the prefab.
    * @type {Number}
    */
-  this.prefabVertexCount = prefab.vertices.length;
+  if (this.isPrefabBufferGeometry) {
+    this.prefabVertexCount = prefab.attributes.position.count;
+  } else {
+    this.prefabVertexCount = prefab.vertices.length;
+  }
 
   this.bufferIndices();
   this.bufferPositions();
@@ -403,22 +408,37 @@ PrefabBufferGeometry.prototype = Object.create(three.BufferGeometry.prototype);
 PrefabBufferGeometry.prototype.constructor = PrefabBufferGeometry;
 
 PrefabBufferGeometry.prototype.bufferIndices = function () {
-  var prefabFaceCount = this.prefabGeometry.faces.length;
-  var prefabIndexCount = this.prefabGeometry.faces.length * 3;
   var prefabIndices = [];
+  var prefabIndexCount = void 0;
 
-  for (var h = 0; h < prefabFaceCount; h++) {
-    var face = this.prefabGeometry.faces[h];
-    prefabIndices.push(face.a, face.b, face.c);
+  if (this.isPrefabBufferGeometry) {
+    if (this.prefabGeometry.index) {
+      prefabIndexCount = this.prefabGeometry.index.count;
+      prefabIndices = this.prefabGeometry.index.array;
+    } else {
+      prefabIndexCount = this.prefabVertexCount;
+
+      for (var i = 0; i < prefabIndexCount; i++) {
+        prefabIndices.push(i);
+      }
+    }
+  } else {
+    var prefabFaceCount = this.prefabGeometry.faces.length;
+    prefabIndexCount = prefabFaceCount * 3;
+
+    for (var _i = 0; _i < prefabFaceCount; _i++) {
+      var face = this.prefabGeometry.faces[_i];
+      prefabIndices.push(face.a, face.b, face.c);
+    }
   }
 
   var indexBuffer = new Uint32Array(this.prefabCount * prefabIndexCount);
 
   this.setIndex(new three.BufferAttribute(indexBuffer, 1));
 
-  for (var i = 0; i < this.prefabCount; i++) {
+  for (var _i2 = 0; _i2 < this.prefabCount; _i2++) {
     for (var k = 0; k < prefabIndexCount; k++) {
-      indexBuffer[i * prefabIndexCount + k] = prefabIndices[k] + i * this.prefabVertexCount;
+      indexBuffer[_i2 * prefabIndexCount + k] = prefabIndices[k] + _i2 * this.prefabVertexCount;
     }
   }
 };
@@ -426,13 +446,25 @@ PrefabBufferGeometry.prototype.bufferIndices = function () {
 PrefabBufferGeometry.prototype.bufferPositions = function () {
   var positionBuffer = this.createAttribute('position', 3).array;
 
-  for (var i = 0, offset = 0; i < this.prefabCount; i++) {
-    for (var j = 0; j < this.prefabVertexCount; j++, offset += 3) {
-      var prefabVertex = this.prefabGeometry.vertices[j];
+  if (this.isPrefabBufferGeometry) {
+    var positions = this.prefabGeometry.attributes.position.array;
 
-      positionBuffer[offset] = prefabVertex.x;
-      positionBuffer[offset + 1] = prefabVertex.y;
-      positionBuffer[offset + 2] = prefabVertex.z;
+    for (var i = 0, offset = 0; i < this.prefabCount; i++) {
+      for (var j = 0; j < this.prefabVertexCount; j++, offset += 3) {
+        positionBuffer[offset] = positions[j * 3];
+        positionBuffer[offset + 1] = positions[j * 3 + 1];
+        positionBuffer[offset + 2] = positions[j * 3 + 2];
+      }
+    }
+  } else {
+    for (var _i3 = 0, _offset = 0; _i3 < this.prefabCount; _i3++) {
+      for (var _j = 0; _j < this.prefabVertexCount; _j++, _offset += 3) {
+        var prefabVertex = this.prefabGeometry.vertices[_j];
+
+        positionBuffer[_offset] = prefabVertex.x;
+        positionBuffer[_offset + 1] = prefabVertex.y;
+        positionBuffer[_offset + 2] = prefabVertex.z;
+      }
     }
   }
 };
@@ -441,23 +473,31 @@ PrefabBufferGeometry.prototype.bufferPositions = function () {
  * Creates a THREE.BufferAttribute with UV coordinates.
  */
 PrefabBufferGeometry.prototype.bufferUvs = function () {
-  var prefabFaceCount = this.prefabGeometry.faces.length;
-  var prefabVertexCount = this.prefabVertexCount = this.prefabGeometry.vertices.length;
   var prefabUvs = [];
 
-  for (var h = 0; h < prefabFaceCount; h++) {
-    var face = this.prefabGeometry.faces[h];
-    var uv = this.prefabGeometry.faceVertexUvs[0][h];
+  if (this.isPrefabBufferGeometry) {
+    var uv = this.prefabGeometry.attributes.uv.array;
 
-    prefabUvs[face.a] = uv[0];
-    prefabUvs[face.b] = uv[1];
-    prefabUvs[face.c] = uv[2];
+    for (var i = 0; i < this.prefabVertexCount; i++) {
+      prefabUvs.push(new THREE.Vector2(uv[i * 2], uv[i * 2 + 1]));
+    }
+  } else {
+    var prefabFaceCount = this.prefabGeometry.faces.length;
+
+    for (var _i4 = 0; _i4 < prefabFaceCount; _i4++) {
+      var face = this.prefabGeometry.faces[_i4];
+      var _uv = this.prefabGeometry.faceVertexUvs[0][_i4];
+
+      prefabUvs[face.a] = _uv[0];
+      prefabUvs[face.b] = _uv[1];
+      prefabUvs[face.c] = _uv[2];
+    }
   }
 
   var uvBuffer = this.createAttribute('uv', 2);
 
-  for (var i = 0, offset = 0; i < this.prefabCount; i++) {
-    for (var j = 0; j < prefabVertexCount; j++, offset += 2) {
+  for (var _i5 = 0, offset = 0; _i5 < this.prefabCount; _i5++) {
+    for (var j = 0; j < this.prefabVertexCount; j++, offset += 2) {
       var prefabUv = prefabUvs[j];
 
       uvBuffer.array[offset] = prefabUv.x;
@@ -885,75 +925,75 @@ PointBufferGeometry.prototype.setPointData = function (attribute, pointIndex, da
   }
 };
 
-var catmull_rom_spline = "vec4 catmullRomSpline(vec4 p0, vec4 p1, vec4 p2, vec4 p3, float t, vec2 c) {\r\n    vec4 v0 = (p2 - p0) * c.x;\r\n    vec4 v1 = (p3 - p1) * c.y;\r\n    float t2 = t * t;\r\n    float t3 = t * t * t;\r\n\r\n    return vec4((2.0 * p1 - 2.0 * p2 + v0 + v1) * t3 + (-3.0 * p1 + 3.0 * p2 - 2.0 * v0 - v1) * t2 + v0 * t + p1);\r\n}\r\nvec4 catmullRomSpline(vec4 p0, vec4 p1, vec4 p2, vec4 p3, float t) {\r\n    return catmullRomSpline(p0, p1, p2, p3, t, vec2(0.5, 0.5));\r\n}\r\n\r\nvec3 catmullRomSpline(vec3 p0, vec3 p1, vec3 p2, vec3 p3, float t, vec2 c) {\r\n    vec3 v0 = (p2 - p0) * c.x;\r\n    vec3 v1 = (p3 - p1) * c.y;\r\n    float t2 = t * t;\r\n    float t3 = t * t * t;\r\n\r\n    return vec3((2.0 * p1 - 2.0 * p2 + v0 + v1) * t3 + (-3.0 * p1 + 3.0 * p2 - 2.0 * v0 - v1) * t2 + v0 * t + p1);\r\n}\r\nvec3 catmullRomSpline(vec3 p0, vec3 p1, vec3 p2, vec3 p3, float t) {\r\n    return catmullRomSpline(p0, p1, p2, p3, t, vec2(0.5, 0.5));\r\n}\r\n\r\nvec2 catmullRomSpline(vec2 p0, vec2 p1, vec2 p2, vec2 p3, float t, vec2 c) {\r\n    vec2 v0 = (p2 - p0) * c.x;\r\n    vec2 v1 = (p3 - p1) * c.y;\r\n    float t2 = t * t;\r\n    float t3 = t * t * t;\r\n\r\n    return vec2((2.0 * p1 - 2.0 * p2 + v0 + v1) * t3 + (-3.0 * p1 + 3.0 * p2 - 2.0 * v0 - v1) * t2 + v0 * t + p1);\r\n}\r\nvec2 catmullRomSpline(vec2 p0, vec2 p1, vec2 p2, vec2 p3, float t) {\r\n    return catmullRomSpline(p0, p1, p2, p3, t, vec2(0.5, 0.5));\r\n}\r\n\r\nfloat catmullRomSpline(float p0, float p1, float p2, float p3, float t, vec2 c) {\r\n    float v0 = (p2 - p0) * c.x;\r\n    float v1 = (p3 - p1) * c.y;\r\n    float t2 = t * t;\r\n    float t3 = t * t * t;\r\n\r\n    return float((2.0 * p1 - 2.0 * p2 + v0 + v1) * t3 + (-3.0 * p1 + 3.0 * p2 - 2.0 * v0 - v1) * t2 + v0 * t + p1);\r\n}\r\nfloat catmullRomSpline(float p0, float p1, float p2, float p3, float t) {\r\n    return catmullRomSpline(p0, p1, p2, p3, t, vec2(0.5, 0.5));\r\n}\r\n\r\nivec4 getCatmullRomSplineIndices(float l, float p) {\r\n    float index = floor(p);\r\n    int i0 = int(max(0.0, index - 1.0));\r\n    int i1 = int(index);\r\n    int i2 = int(min(index + 1.0, l));\r\n    int i3 = int(min(index + 2.0, l));\r\n\r\n    return ivec4(i0, i1, i2, i3);\r\n}\r\n\r\nivec4 getCatmullRomSplineIndicesClosed(float l, float p) {\r\n    float index = floor(p);\r\n    int i0 = int(index == 0.0 ? l : index - 1.0);\r\n    int i1 = int(index);\r\n    int i2 = int(mod(index + 1.0, l));\r\n    int i3 = int(mod(index + 2.0, l));\r\n\r\n    return ivec4(i0, i1, i2, i3);\r\n}\r\n";
+var catmull_rom_spline = "vec4 catmullRomSpline(vec4 p0, vec4 p1, vec4 p2, vec4 p3, float t, vec2 c) {\n    vec4 v0 = (p2 - p0) * c.x;\n    vec4 v1 = (p3 - p1) * c.y;\n    float t2 = t * t;\n    float t3 = t * t * t;\n    return vec4((2.0 * p1 - 2.0 * p2 + v0 + v1) * t3 + (-3.0 * p1 + 3.0 * p2 - 2.0 * v0 - v1) * t2 + v0 * t + p1);\n}\nvec4 catmullRomSpline(vec4 p0, vec4 p1, vec4 p2, vec4 p3, float t) {\n    return catmullRomSpline(p0, p1, p2, p3, t, vec2(0.5, 0.5));\n}\nvec3 catmullRomSpline(vec3 p0, vec3 p1, vec3 p2, vec3 p3, float t, vec2 c) {\n    vec3 v0 = (p2 - p0) * c.x;\n    vec3 v1 = (p3 - p1) * c.y;\n    float t2 = t * t;\n    float t3 = t * t * t;\n    return vec3((2.0 * p1 - 2.0 * p2 + v0 + v1) * t3 + (-3.0 * p1 + 3.0 * p2 - 2.0 * v0 - v1) * t2 + v0 * t + p1);\n}\nvec3 catmullRomSpline(vec3 p0, vec3 p1, vec3 p2, vec3 p3, float t) {\n    return catmullRomSpline(p0, p1, p2, p3, t, vec2(0.5, 0.5));\n}\nvec2 catmullRomSpline(vec2 p0, vec2 p1, vec2 p2, vec2 p3, float t, vec2 c) {\n    vec2 v0 = (p2 - p0) * c.x;\n    vec2 v1 = (p3 - p1) * c.y;\n    float t2 = t * t;\n    float t3 = t * t * t;\n    return vec2((2.0 * p1 - 2.0 * p2 + v0 + v1) * t3 + (-3.0 * p1 + 3.0 * p2 - 2.0 * v0 - v1) * t2 + v0 * t + p1);\n}\nvec2 catmullRomSpline(vec2 p0, vec2 p1, vec2 p2, vec2 p3, float t) {\n    return catmullRomSpline(p0, p1, p2, p3, t, vec2(0.5, 0.5));\n}\nfloat catmullRomSpline(float p0, float p1, float p2, float p3, float t, vec2 c) {\n    float v0 = (p2 - p0) * c.x;\n    float v1 = (p3 - p1) * c.y;\n    float t2 = t * t;\n    float t3 = t * t * t;\n    return float((2.0 * p1 - 2.0 * p2 + v0 + v1) * t3 + (-3.0 * p1 + 3.0 * p2 - 2.0 * v0 - v1) * t2 + v0 * t + p1);\n}\nfloat catmullRomSpline(float p0, float p1, float p2, float p3, float t) {\n    return catmullRomSpline(p0, p1, p2, p3, t, vec2(0.5, 0.5));\n}\nivec4 getCatmullRomSplineIndices(float l, float p) {\n    float index = floor(p);\n    int i0 = int(max(0.0, index - 1.0));\n    int i1 = int(index);\n    int i2 = int(min(index + 1.0, l));\n    int i3 = int(min(index + 2.0, l));\n    return ivec4(i0, i1, i2, i3);\n}\nivec4 getCatmullRomSplineIndicesClosed(float l, float p) {\n    float index = floor(p);\n    int i0 = int(index == 0.0 ? l : index - 1.0);\n    int i1 = int(index);\n    int i2 = int(mod(index + 1.0, l));\n    int i3 = int(mod(index + 2.0, l));\n    return ivec4(i0, i1, i2, i3);\n}\n";
 
-var cubic_bezier = "vec3 cubicBezier(vec3 p0, vec3 c0, vec3 c1, vec3 p1, float t) {\r\n    float tn = 1.0 - t;\r\n\r\n    return tn * tn * tn * p0 + 3.0 * tn * tn * t * c0 + 3.0 * tn * t * t * c1 + t * t * t * p1;\r\n}\r\n\r\nvec2 cubicBezier(vec2 p0, vec2 c0, vec2 c1, vec2 p1, float t) {\r\n    float tn = 1.0 - t;\r\n\r\n    return tn * tn * tn * p0 + 3.0 * tn * tn * t * c0 + 3.0 * tn * t * t * c1 + t * t * t * p1;\r\n}\r\n";
+var cubic_bezier = "vec3 cubicBezier(vec3 p0, vec3 c0, vec3 c1, vec3 p1, float t) {\n    float tn = 1.0 - t;\n    return tn * tn * tn * p0 + 3.0 * tn * tn * t * c0 + 3.0 * tn * t * t * c1 + t * t * t * p1;\n}\nvec2 cubicBezier(vec2 p0, vec2 c0, vec2 c1, vec2 p1, float t) {\n    float tn = 1.0 - t;\n    return tn * tn * tn * p0 + 3.0 * tn * tn * t * c0 + 3.0 * tn * t * t * c1 + t * t * t * p1;\n}\n";
 
-var ease_back_in = "float easeBackIn(float p, float amplitude) {\r\n    return p * p * ((amplitude + 1.0) * p - amplitude);\r\n}\r\n\r\nfloat easeBackIn(float p) {\r\n    return easeBackIn(p, 1.70158);\r\n}\r\n\r\nfloat easeBackIn(float t, float b, float c, float d, float amplitude) {\r\n    return b + easeBackIn(t / d, amplitude) * c;\r\n}\r\n\r\nfloat easeBackIn(float t, float b, float c, float d) {\r\n    return b + easeBackIn(t / d) * c;\r\n}\r\n";
+var ease_back_in = "float easeBackIn(float p, float amplitude) {\n    return p * p * ((amplitude + 1.0) * p - amplitude);\n}\nfloat easeBackIn(float p) {\n    return easeBackIn(p, 1.70158);\n}\nfloat easeBackIn(float t, float b, float c, float d, float amplitude) {\n    return b + easeBackIn(t / d, amplitude) * c;\n}\nfloat easeBackIn(float t, float b, float c, float d) {\n    return b + easeBackIn(t / d) * c;\n}\n";
 
-var ease_back_in_out = "float easeBackInOut(float p, float amplitude) {\r\n    amplitude *= 1.525;\r\n\r\n    return ((p *= 2.0) < 1.0) ? 0.5 * p * p * ((amplitude + 1.0) * p - amplitude) : 0.5 * ((p -= 2.0) * p * ((amplitude + 1.0) * p + amplitude) + 2.0);\r\n}\r\n\r\nfloat easeBackInOut(float p) {\r\n    return easeBackInOut(p, 1.70158);\r\n}\r\n\r\nfloat easeBackInOut(float t, float b, float c, float d, float amplitude) {\r\n    return b + easeBackInOut(t / d, amplitude) * c;\r\n}\r\n\r\nfloat easeBackInOut(float t, float b, float c, float d) {\r\n    return b + easeBackInOut(t / d) * c;\r\n}\r\n";
+var ease_back_in_out = "float easeBackInOut(float p, float amplitude) {\n    amplitude *= 1.525;\n    return ((p *= 2.0) < 1.0) ? 0.5 * p * p * ((amplitude + 1.0) * p - amplitude) : 0.5 * ((p -= 2.0) * p * ((amplitude + 1.0) * p + amplitude) + 2.0);\n}\nfloat easeBackInOut(float p) {\n    return easeBackInOut(p, 1.70158);\n}\nfloat easeBackInOut(float t, float b, float c, float d, float amplitude) {\n    return b + easeBackInOut(t / d, amplitude) * c;\n}\nfloat easeBackInOut(float t, float b, float c, float d) {\n    return b + easeBackInOut(t / d) * c;\n}\n";
 
-var ease_back_out = "float easeBackOut(float p, float amplitude) {\r\n    return ((p = p - 1.0) * p * ((amplitude + 1.0) * p + amplitude) + 1.0);\r\n}\r\n\r\nfloat easeBackOut(float p) {\r\n    return easeBackOut(p, 1.70158);\r\n}\r\n\r\nfloat easeBackOut(float t, float b, float c, float d, float amplitude) {\r\n    return b + easeBackOut(t / d, amplitude) * c;\r\n}\r\n\r\nfloat easeBackOut(float t, float b, float c, float d) {\r\n    return b + easeBackOut(t / d) * c;\r\n}\r\n";
+var ease_back_out = "float easeBackOut(float p, float amplitude) {\n    return ((p = p - 1.0) * p * ((amplitude + 1.0) * p + amplitude) + 1.0);\n}\nfloat easeBackOut(float p) {\n    return easeBackOut(p, 1.70158);\n}\nfloat easeBackOut(float t, float b, float c, float d, float amplitude) {\n    return b + easeBackOut(t / d, amplitude) * c;\n}\nfloat easeBackOut(float t, float b, float c, float d) {\n    return b + easeBackOut(t / d) * c;\n}\n";
 
-var ease_bezier = "float easeBezier(float p, vec4 curve) {\r\n    float ip = 1.0 - p;\r\n    return (3.0 * ip * ip * p * curve.xy + 3.0 * ip * p * p * curve.zw + p * p * p).y;\r\n}\r\n\r\nfloat easeBezier(float t, float b, float c, float d, vec4 curve) {\r\n    return b + easeBezier(t / d, curve) * c;\r\n}\r\n";
+var ease_bezier = "float easeBezier(float p, vec4 curve) {\n    float ip = 1.0 - p;\n    return (3.0 * ip * ip * p * curve.xy + 3.0 * ip * p * p * curve.zw + p * p * p).y;\n}\nfloat easeBezier(float t, float b, float c, float d, vec4 curve) {\n    return b + easeBezier(t / d, curve) * c;\n}\n";
 
-var ease_bounce_in = "float easeBounceIn(float p) {\r\n    if ((p = 1.0 - p) < 1.0 / 2.75) {\r\n        return 1.0 - (7.5625 * p * p);\r\n    } else if (p < 2.0 / 2.75) {\r\n        return 1.0 - (7.5625 * (p -= 1.5 / 2.75) * p + 0.75);\r\n    } else if (p < 2.5 / 2.75) {\r\n        return 1.0 - (7.5625 * (p -= 2.25 / 2.75) * p + 0.9375);\r\n    }\r\n    return 1.0 - (7.5625 * (p -= 2.625 / 2.75) * p + 0.984375);\r\n}\r\n\r\nfloat easeBounceIn(float t, float b, float c, float d) {\r\n    return b + easeBounceIn(t / d) * c;\r\n}\r\n";
+var ease_bounce_in = "float easeBounceIn(float p) {\n    if ((p = 1.0 - p) < 1.0 / 2.75) {\n        return 1.0 - (7.5625 * p * p);\n    } else if (p < 2.0 / 2.75) {\n        return 1.0 - (7.5625 * (p -= 1.5 / 2.75) * p + 0.75);\n    } else if (p < 2.5 / 2.75) {\n        return 1.0 - (7.5625 * (p -= 2.25 / 2.75) * p + 0.9375);\n    }\n    return 1.0 - (7.5625 * (p -= 2.625 / 2.75) * p + 0.984375);\n}\nfloat easeBounceIn(float t, float b, float c, float d) {\n    return b + easeBounceIn(t / d) * c;\n}\n";
 
-var ease_bounce_in_out = "float easeBounceInOut(float p) {\r\n    bool invert = (p < 0.5);\r\n\r\n    p = invert ? (1.0 - (p * 2.0)) : ((p * 2.0) - 1.0);\r\n\r\n    if (p < 1.0 / 2.75) {\r\n        p = 7.5625 * p * p;\r\n    } else if (p < 2.0 / 2.75) {\r\n        p = 7.5625 * (p -= 1.5 / 2.75) * p + 0.75;\r\n    } else if (p < 2.5 / 2.75) {\r\n        p = 7.5625 * (p -= 2.25 / 2.75) * p + 0.9375;\r\n    } else {\r\n        p = 7.5625 * (p -= 2.625 / 2.75) * p + 0.984375;\r\n    }\r\n\r\n    return invert ? (1.0 - p) * 0.5 : p * 0.5 + 0.5;\r\n}\r\n\r\nfloat easeBounceInOut(float t, float b, float c, float d) {\r\n    return b + easeBounceInOut(t / d) * c;\r\n}\r\n";
+var ease_bounce_in_out = "float easeBounceInOut(float p) {\n    bool invert = (p < 0.5);\n    p = invert ? (1.0 - (p * 2.0)) : ((p * 2.0) - 1.0);\n    if (p < 1.0 / 2.75) {\n        p = 7.5625 * p * p;\n    } else if (p < 2.0 / 2.75) {\n        p = 7.5625 * (p -= 1.5 / 2.75) * p + 0.75;\n    } else if (p < 2.5 / 2.75) {\n        p = 7.5625 * (p -= 2.25 / 2.75) * p + 0.9375;\n    } else {\n        p = 7.5625 * (p -= 2.625 / 2.75) * p + 0.984375;\n    }\n    return invert ? (1.0 - p) * 0.5 : p * 0.5 + 0.5;\n}\nfloat easeBounceInOut(float t, float b, float c, float d) {\n    return b + easeBounceInOut(t / d) * c;\n}\n";
 
-var ease_bounce_out = "float easeBounceOut(float p) {\r\n    if (p < 1.0 / 2.75) {\r\n        return 7.5625 * p * p;\r\n    } else if (p < 2.0 / 2.75) {\r\n        return 7.5625 * (p -= 1.5 / 2.75) * p + 0.75;\r\n    } else if (p < 2.5 / 2.75) {\r\n        return 7.5625 * (p -= 2.25 / 2.75) * p + 0.9375;\r\n    }\r\n    return 7.5625 * (p -= 2.625 / 2.75) * p + 0.984375;\r\n}\r\n\r\nfloat easeBounceOut(float t, float b, float c, float d) {\r\n    return b + easeBounceOut(t / d) * c;\r\n}\r\n";
+var ease_bounce_out = "float easeBounceOut(float p) {\n    if (p < 1.0 / 2.75) {\n        return 7.5625 * p * p;\n    } else if (p < 2.0 / 2.75) {\n        return 7.5625 * (p -= 1.5 / 2.75) * p + 0.75;\n    } else if (p < 2.5 / 2.75) {\n        return 7.5625 * (p -= 2.25 / 2.75) * p + 0.9375;\n    }\n    return 7.5625 * (p -= 2.625 / 2.75) * p + 0.984375;\n}\nfloat easeBounceOut(float t, float b, float c, float d) {\n    return b + easeBounceOut(t / d) * c;\n}\n";
 
-var ease_circ_in = "float easeCircIn(float p) {\r\n    return -(sqrt(1.0 - p * p) - 1.0);\r\n}\r\n\r\nfloat easeCircIn(float t, float b, float c, float d) {\r\n    return b + easeCircIn(t / d) * c;\r\n}\r\n";
+var ease_circ_in = "float easeCircIn(float p) {\n    return -(sqrt(1.0 - p * p) - 1.0);\n}\nfloat easeCircIn(float t, float b, float c, float d) {\n    return b + easeCircIn(t / d) * c;\n}\n";
 
-var ease_circ_in_out = "float easeCircInOut(float p) {\r\n    return ((p *= 2.0) < 1.0) ? -0.5 * (sqrt(1.0 - p * p) - 1.0) : 0.5 * (sqrt(1.0 - (p -= 2.0) * p) + 1.0);\r\n}\r\n\r\nfloat easeCircInOut(float t, float b, float c, float d) {\r\n    return b + easeCircInOut(t / d) * c;\r\n}\r\n";
+var ease_circ_in_out = "float easeCircInOut(float p) {\n    return ((p *= 2.0) < 1.0) ? -0.5 * (sqrt(1.0 - p * p) - 1.0) : 0.5 * (sqrt(1.0 - (p -= 2.0) * p) + 1.0);\n}\nfloat easeCircInOut(float t, float b, float c, float d) {\n    return b + easeCircInOut(t / d) * c;\n}\n";
 
-var ease_circ_out = "float easeCircOut(float p) {\r\n  return sqrt(1.0 - (p = p - 1.0) * p);\r\n}\r\n\r\nfloat easeCircOut(float t, float b, float c, float d) {\r\n  return b + easeCircOut(t / d) * c;\r\n}\r\n";
+var ease_circ_out = "float easeCircOut(float p) {\n  return sqrt(1.0 - (p = p - 1.0) * p);\n}\nfloat easeCircOut(float t, float b, float c, float d) {\n  return b + easeCircOut(t / d) * c;\n}\n";
 
-var ease_cubic_in = "float easeCubicIn(float t) {\r\n  return t * t * t;\r\n}\r\n\r\nfloat easeCubicIn(float t, float b, float c, float d) {\r\n  return b + easeCubicIn(t / d) * c;\r\n}\r\n";
+var ease_cubic_in = "float easeCubicIn(float t) {\n  return t * t * t;\n}\nfloat easeCubicIn(float t, float b, float c, float d) {\n  return b + easeCubicIn(t / d) * c;\n}\n";
 
-var ease_cubic_in_out = "float easeCubicInOut(float t) {\r\n  return (t /= 0.5) < 1.0 ? 0.5 * t * t * t : 0.5 * ((t-=2.0) * t * t + 2.0);\r\n}\r\n\r\nfloat easeCubicInOut(float t, float b, float c, float d) {\r\n  return b + easeCubicInOut(t / d) * c;\r\n}\r\n";
+var ease_cubic_in_out = "float easeCubicInOut(float t) {\n  return (t /= 0.5) < 1.0 ? 0.5 * t * t * t : 0.5 * ((t-=2.0) * t * t + 2.0);\n}\nfloat easeCubicInOut(float t, float b, float c, float d) {\n  return b + easeCubicInOut(t / d) * c;\n}\n";
 
-var ease_cubic_out = "float easeCubicOut(float t) {\r\n  float f = t - 1.0;\r\n  return f * f * f + 1.0;\r\n}\r\n\r\nfloat easeCubicOut(float t, float b, float c, float d) {\r\n  return b + easeCubicOut(t / d) * c;\r\n}\r\n";
+var ease_cubic_out = "float easeCubicOut(float t) {\n  float f = t - 1.0;\n  return f * f * f + 1.0;\n}\nfloat easeCubicOut(float t, float b, float c, float d) {\n  return b + easeCubicOut(t / d) * c;\n}\n";
 
-var ease_elastic_in = "float easeElasticIn(float p, float amplitude, float period) {\r\n    float p1 = max(amplitude, 1.0);\r\n    float p2 = period / min(amplitude, 1.0);\r\n    float p3 = p2 / PI2 * (asin(1.0 / p1));\r\n\r\n    return -(p1 * pow(2.0, 10.0 * (p -= 1.0)) * sin((p - p3) * PI2 / p2));\r\n}\r\n\r\nfloat easeElasticIn(float p) {\r\n    return easeElasticIn(p, 1.0, 0.3);\r\n}\r\n\r\nfloat easeElasticIn(float t, float b, float c, float d, float amplitude, float period) {\r\n    return b + easeElasticIn(t / d, amplitude, period) * c;\r\n}\r\n\r\nfloat easeElasticIn(float t, float b, float c, float d) {\r\n    return b + easeElasticIn(t / d) * c;\r\n}\r\n";
+var ease_elastic_in = "float easeElasticIn(float p, float amplitude, float period) {\n    float p1 = max(amplitude, 1.0);\n    float p2 = period / min(amplitude, 1.0);\n    float p3 = p2 / PI2 * (asin(1.0 / p1));\n    return -(p1 * pow(2.0, 10.0 * (p -= 1.0)) * sin((p - p3) * PI2 / p2));\n}\nfloat easeElasticIn(float p) {\n    return easeElasticIn(p, 1.0, 0.3);\n}\nfloat easeElasticIn(float t, float b, float c, float d, float amplitude, float period) {\n    return b + easeElasticIn(t / d, amplitude, period) * c;\n}\nfloat easeElasticIn(float t, float b, float c, float d) {\n    return b + easeElasticIn(t / d) * c;\n}\n";
 
-var ease_elastic_in_out = "float easeElasticInOut(float p, float amplitude, float period) {\r\n    float p1 = max(amplitude, 1.0);\r\n    float p2 = period / min(amplitude, 1.0);\r\n    float p3 = p2 / PI2 * (asin(1.0 / p1));\r\n\r\n    return ((p *= 2.0) < 1.0) ? -0.5 * (p1 * pow(2.0, 10.0 * (p -= 1.0)) * sin((p - p3) * PI2 / p2)) : p1 * pow(2.0, -10.0 * (p -= 1.0)) * sin((p - p3) * PI2 / p2) * 0.5 + 1.0;\r\n}\r\n\r\nfloat easeElasticInOut(float p) {\r\n    return easeElasticInOut(p, 1.0, 0.3);\r\n}\r\n\r\nfloat easeElasticInOut(float t, float b, float c, float d, float amplitude, float period) {\r\n    return b + easeElasticInOut(t / d, amplitude, period) * c;\r\n}\r\n\r\nfloat easeElasticInOut(float t, float b, float c, float d) {\r\n    return b + easeElasticInOut(t / d) * c;\r\n}\r\n";
+var ease_elastic_in_out = "float easeElasticInOut(float p, float amplitude, float period) {\n    float p1 = max(amplitude, 1.0);\n    float p2 = period / min(amplitude, 1.0);\n    float p3 = p2 / PI2 * (asin(1.0 / p1));\n    return ((p *= 2.0) < 1.0) ? -0.5 * (p1 * pow(2.0, 10.0 * (p -= 1.0)) * sin((p - p3) * PI2 / p2)) : p1 * pow(2.0, -10.0 * (p -= 1.0)) * sin((p - p3) * PI2 / p2) * 0.5 + 1.0;\n}\nfloat easeElasticInOut(float p) {\n    return easeElasticInOut(p, 1.0, 0.3);\n}\nfloat easeElasticInOut(float t, float b, float c, float d, float amplitude, float period) {\n    return b + easeElasticInOut(t / d, amplitude, period) * c;\n}\nfloat easeElasticInOut(float t, float b, float c, float d) {\n    return b + easeElasticInOut(t / d) * c;\n}\n";
 
-var ease_elastic_out = "float easeElasticOut(float p, float amplitude, float period) {\r\n    float p1 = max(amplitude, 1.0);\r\n    float p2 = period / min(amplitude, 1.0);\r\n    float p3 = p2 / PI2 * (asin(1.0 / p1));\r\n\r\n    return p1 * pow(2.0, -10.0 * p) * sin((p - p3) * PI2 / p2) + 1.0;\r\n}\r\n\r\nfloat easeElasticOut(float p) {\r\n    return easeElasticOut(p, 1.0, 0.3);\r\n}\r\n\r\nfloat easeElasticOut(float t, float b, float c, float d, float amplitude, float period) {\r\n    return b + easeElasticOut(t / d, amplitude, period) * c;\r\n}\r\n\r\nfloat easeElasticOut(float t, float b, float c, float d) {\r\n    return b + easeElasticOut(t / d) * c;\r\n}\r\n";
+var ease_elastic_out = "float easeElasticOut(float p, float amplitude, float period) {\n    float p1 = max(amplitude, 1.0);\n    float p2 = period / min(amplitude, 1.0);\n    float p3 = p2 / PI2 * (asin(1.0 / p1));\n    return p1 * pow(2.0, -10.0 * p) * sin((p - p3) * PI2 / p2) + 1.0;\n}\nfloat easeElasticOut(float p) {\n    return easeElasticOut(p, 1.0, 0.3);\n}\nfloat easeElasticOut(float t, float b, float c, float d, float amplitude, float period) {\n    return b + easeElasticOut(t / d, amplitude, period) * c;\n}\nfloat easeElasticOut(float t, float b, float c, float d) {\n    return b + easeElasticOut(t / d) * c;\n}\n";
 
-var ease_expo_in = "float easeExpoIn(float p) {\r\n    return pow(2.0, 10.0 * (p - 1.0));\r\n}\r\n\r\nfloat easeExpoIn(float t, float b, float c, float d) {\r\n    return b + easeExpoIn(t / d) * c;\r\n}\r\n";
+var ease_expo_in = "float easeExpoIn(float p) {\n    return pow(2.0, 10.0 * (p - 1.0));\n}\nfloat easeExpoIn(float t, float b, float c, float d) {\n    return b + easeExpoIn(t / d) * c;\n}\n";
 
-var ease_expo_in_out = "float easeExpoInOut(float p) {\r\n    return ((p *= 2.0) < 1.0) ? 0.5 * pow(2.0, 10.0 * (p - 1.0)) : 0.5 * (2.0 - pow(2.0, -10.0 * (p - 1.0)));\r\n}\r\n\r\nfloat easeExpoInOut(float t, float b, float c, float d) {\r\n    return b + easeExpoInOut(t / d) * c;\r\n}\r\n";
+var ease_expo_in_out = "float easeExpoInOut(float p) {\n    return ((p *= 2.0) < 1.0) ? 0.5 * pow(2.0, 10.0 * (p - 1.0)) : 0.5 * (2.0 - pow(2.0, -10.0 * (p - 1.0)));\n}\nfloat easeExpoInOut(float t, float b, float c, float d) {\n    return b + easeExpoInOut(t / d) * c;\n}\n";
 
-var ease_expo_out = "float easeExpoOut(float p) {\r\n  return 1.0 - pow(2.0, -10.0 * p);\r\n}\r\n\r\nfloat easeExpoOut(float t, float b, float c, float d) {\r\n  return b + easeExpoOut(t / d) * c;\r\n}\r\n";
+var ease_expo_out = "float easeExpoOut(float p) {\n  return 1.0 - pow(2.0, -10.0 * p);\n}\nfloat easeExpoOut(float t, float b, float c, float d) {\n  return b + easeExpoOut(t / d) * c;\n}\n";
 
-var ease_quad_in = "float easeQuadIn(float t) {\r\n    return t * t;\r\n}\r\n\r\nfloat easeQuadIn(float t, float b, float c, float d) {\r\n  return b + easeQuadIn(t / d) * c;\r\n}\r\n";
+var ease_quad_in = "float easeQuadIn(float t) {\n    return t * t;\n}\nfloat easeQuadIn(float t, float b, float c, float d) {\n  return b + easeQuadIn(t / d) * c;\n}\n";
 
-var ease_quad_in_out = "float easeQuadInOut(float t) {\r\n    float p = 2.0 * t * t;\r\n    return t < 0.5 ? p : -p + (4.0 * t) - 1.0;\r\n}\r\n\r\nfloat easeQuadInOut(float t, float b, float c, float d) {\r\n    return b + easeQuadInOut(t / d) * c;\r\n}\r\n";
+var ease_quad_in_out = "float easeQuadInOut(float t) {\n    float p = 2.0 * t * t;\n    return t < 0.5 ? p : -p + (4.0 * t) - 1.0;\n}\nfloat easeQuadInOut(float t, float b, float c, float d) {\n    return b + easeQuadInOut(t / d) * c;\n}\n";
 
-var ease_quad_out = "float easeQuadOut(float t) {\r\n  return -t * (t - 2.0);\r\n}\r\n\r\nfloat easeQuadOut(float t, float b, float c, float d) {\r\n  return b + easeQuadOut(t / d) * c;\r\n}\r\n";
+var ease_quad_out = "float easeQuadOut(float t) {\n  return -t * (t - 2.0);\n}\nfloat easeQuadOut(float t, float b, float c, float d) {\n  return b + easeQuadOut(t / d) * c;\n}\n";
 
-var ease_quart_in = "float easeQuartIn(float t) {\r\n  return t * t * t * t;\r\n}\r\n\r\nfloat easeQuartIn(float t, float b, float c, float d) {\r\n  return b + easeQuartIn(t / d) * c;\r\n}\r\n";
+var ease_quart_in = "float easeQuartIn(float t) {\n  return t * t * t * t;\n}\nfloat easeQuartIn(float t, float b, float c, float d) {\n  return b + easeQuartIn(t / d) * c;\n}\n";
 
-var ease_quart_in_out = "float easeQuartInOut(float t) {\r\n    return t < 0.5 ? 8.0 * pow(t, 4.0) : -8.0 * pow(t - 1.0, 4.0) + 1.0;\r\n}\r\n\r\nfloat easeQuartInOut(float t, float b, float c, float d) {\r\n    return b + easeQuartInOut(t / d) * c;\r\n}\r\n";
+var ease_quart_in_out = "float easeQuartInOut(float t) {\n    return t < 0.5 ? 8.0 * pow(t, 4.0) : -8.0 * pow(t - 1.0, 4.0) + 1.0;\n}\nfloat easeQuartInOut(float t, float b, float c, float d) {\n    return b + easeQuartInOut(t / d) * c;\n}\n";
 
-var ease_quart_out = "float easeQuartOut(float t) {\r\n  return 1.0 - pow(1.0 - t, 4.0);\r\n}\r\n\r\nfloat easeQuartOut(float t, float b, float c, float d) {\r\n  return b + easeQuartOut(t / d) * c;\r\n}\r\n";
+var ease_quart_out = "float easeQuartOut(float t) {\n  return 1.0 - pow(1.0 - t, 4.0);\n}\nfloat easeQuartOut(float t, float b, float c, float d) {\n  return b + easeQuartOut(t / d) * c;\n}\n";
 
-var ease_quint_in = "float easeQuintIn(float t) {\r\n    return pow(t, 5.0);\r\n}\r\n\r\nfloat easeQuintIn(float t, float b, float c, float d) {\r\n    return b + easeQuintIn(t / d) * c;\r\n}\r\n";
+var ease_quint_in = "float easeQuintIn(float t) {\n    return pow(t, 5.0);\n}\nfloat easeQuintIn(float t, float b, float c, float d) {\n    return b + easeQuintIn(t / d) * c;\n}\n";
 
-var ease_quint_in_out = "float easeQuintInOut(float t) {\r\n    return (t /= 0.5) < 1.0 ? 0.5 * t * t * t * t * t : 0.5 * ((t -= 2.0) * t * t * t * t + 2.0);\r\n}\r\n\r\nfloat easeQuintInOut(float t, float b, float c, float d) {\r\n    return b + easeQuintInOut(t / d) * c;\r\n}\r\n";
+var ease_quint_in_out = "float easeQuintInOut(float t) {\n    return (t /= 0.5) < 1.0 ? 0.5 * t * t * t * t * t : 0.5 * ((t -= 2.0) * t * t * t * t + 2.0);\n}\nfloat easeQuintInOut(float t, float b, float c, float d) {\n    return b + easeQuintInOut(t / d) * c;\n}\n";
 
-var ease_quint_out = "float easeQuintOut(float t) {\r\n    return (t -= 1.0) * t * t * t * t + 1.0;\r\n}\r\n\r\nfloat easeQuintOut(float t, float b, float c, float d) {\r\n    return b + easeQuintOut(t / d) * c;\r\n}\r\n";
+var ease_quint_out = "float easeQuintOut(float t) {\n    return (t -= 1.0) * t * t * t * t + 1.0;\n}\nfloat easeQuintOut(float t, float b, float c, float d) {\n    return b + easeQuintOut(t / d) * c;\n}\n";
 
-var ease_sine_in = "float easeSineIn(float p) {\r\n  return -cos(p * 1.57079632679) + 1.0;\r\n}\r\n\r\nfloat easeSineIn(float t, float b, float c, float d) {\r\n  return b + easeSineIn(t / d) * c;\r\n}\r\n";
+var ease_sine_in = "float easeSineIn(float p) {\n  return -cos(p * 1.57079632679) + 1.0;\n}\nfloat easeSineIn(float t, float b, float c, float d) {\n  return b + easeSineIn(t / d) * c;\n}\n";
 
-var ease_sine_in_out = "float easeSineInOut(float p) {\r\n  return -0.5 * (cos(PI * p) - 1.0);\r\n}\r\n\r\nfloat easeSineInOut(float t, float b, float c, float d) {\r\n  return b + easeSineInOut(t / d) * c;\r\n}\r\n";
+var ease_sine_in_out = "float easeSineInOut(float p) {\n  return -0.5 * (cos(PI * p) - 1.0);\n}\nfloat easeSineInOut(float t, float b, float c, float d) {\n  return b + easeSineInOut(t / d) * c;\n}\n";
 
-var ease_sine_out = "float easeSineOut(float p) {\r\n  return sin(p * 1.57079632679);\r\n}\r\n\r\nfloat easeSineOut(float t, float b, float c, float d) {\r\n  return b + easeSineOut(t / d) * c;\r\n}\r\n";
+var ease_sine_out = "float easeSineOut(float p) {\n  return sin(p * 1.57079632679);\n}\nfloat easeSineOut(float t, float b, float c, float d) {\n  return b + easeSineOut(t / d) * c;\n}\n";
 
-var quaternion_rotation = "vec3 rotateVector(vec4 q, vec3 v) {\r\n    return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);\r\n}\r\n\r\nvec4 quatFromAxisAngle(vec3 axis, float angle) {\r\n    float halfAngle = angle * 0.5;\r\n    return vec4(axis.xyz * sin(halfAngle), cos(halfAngle));\r\n}\r\n";
+var quaternion_rotation = "vec3 rotateVector(vec4 q, vec3 v) {\n    return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);\n}\nvec4 quatFromAxisAngle(vec3 axis, float angle) {\n    float halfAngle = angle * 0.5;\n    return vec4(axis.xyz * sin(halfAngle), cos(halfAngle));\n}\n";
 
-var quaternion_slerp = "vec4 quatSlerp(vec4 q0, vec4 q1, float t) {\r\n    float s = 1.0 - t;\r\n    float c = dot(q0, q1);\r\n    float dir = -1.0; //c >= 0.0 ? 1.0 : -1.0;\r\n    float sqrSn = 1.0 - c * c;\r\n\r\n    if (sqrSn > 2.220446049250313e-16) {\r\n        float sn = sqrt(sqrSn);\r\n        float len = atan(sn, c * dir);\r\n\r\n        s = sin(s * len) / sn;\r\n        t = sin(t * len) / sn;\r\n    }\r\n\r\n    float tDir = t * dir;\r\n\r\n    return normalize(q0 * s + q1 * tDir);\r\n}\r\n";
+var quaternion_slerp = "vec4 quatSlerp(vec4 q0, vec4 q1, float t) {\n    float s = 1.0 - t;\n    float c = dot(q0, q1);\n    float dir = -1.0;    float sqrSn = 1.0 - c * c;\n    if (sqrSn > 2.220446049250313e-16) {\n        float sn = sqrt(sqrSn);\n        float len = atan(sn, c * dir);\n        s = sin(s * len) / sn;\n        t = sin(t * len) / sn;\n    }\n    float tDir = t * dir;\n    return normalize(q0 * s + q1 * tDir);\n}\n";
 
 // generated by scripts/build_shader_chunks.js
 

@@ -14,6 +14,7 @@ function PrefabBufferGeometry(prefab, count) {
    * @type {THREE.Geometry}
    */
   this.prefabGeometry = prefab;
+  this.isPrefabBufferGeometry = prefab.isBufferGeometry;
   
   /**
    * Number of prefabs.
@@ -25,8 +26,13 @@ function PrefabBufferGeometry(prefab, count) {
    * Number of vertices of the prefab.
    * @type {Number}
    */
-  this.prefabVertexCount = prefab.vertices.length;
-  
+  if (this.isPrefabBufferGeometry) {
+    this.prefabVertexCount = prefab.attributes.position.count;
+  }
+  else {
+    this.prefabVertexCount = prefab.vertices.length;
+  }
+
   this.bufferIndices();
   this.bufferPositions();
 }
@@ -34,17 +40,34 @@ PrefabBufferGeometry.prototype = Object.create(BufferGeometry.prototype);
 PrefabBufferGeometry.prototype.constructor = PrefabBufferGeometry;
 
 PrefabBufferGeometry.prototype.bufferIndices = function() {
-  const prefabFaceCount = this.prefabGeometry.faces.length;
-  const prefabIndexCount = this.prefabGeometry.faces.length * 3;
-  const prefabIndices = [];
-  
-  for (let h = 0; h < prefabFaceCount; h++) {
-    const face = this.prefabGeometry.faces[h];
-    prefabIndices.push(face.a, face.b, face.c);
+  let prefabIndices = [];
+  let prefabIndexCount;
+
+  if (this.isPrefabBufferGeometry) {
+    if (this.prefabGeometry.index) {
+      prefabIndexCount = this.prefabGeometry.index.count;
+      prefabIndices = this.prefabGeometry.index.array;
+    }
+    else {
+      prefabIndexCount = this.prefabVertexCount;
+
+      for (let i = 0; i < prefabIndexCount; i++) {
+        prefabIndices.push(i);
+      }
+    }
   }
-  
+  else {
+    const prefabFaceCount = this.prefabGeometry.faces.length;
+    prefabIndexCount = prefabFaceCount * 3;
+
+    for (let i = 0; i < prefabFaceCount; i++) {
+      const face = this.prefabGeometry.faces[i];
+      prefabIndices.push(face.a, face.b, face.c);
+    }
+  }
+
   const indexBuffer = new Uint32Array(this.prefabCount * prefabIndexCount);
-  
+
   this.setIndex(new BufferAttribute(indexBuffer, 1));
   
   for (let i = 0; i < this.prefabCount; i++) {
@@ -56,14 +79,27 @@ PrefabBufferGeometry.prototype.bufferIndices = function() {
 
 PrefabBufferGeometry.prototype.bufferPositions = function() {
   const positionBuffer = this.createAttribute('position', 3).array;
-  
-  for (let i = 0, offset = 0; i < this.prefabCount; i++) {
-    for (let j = 0; j < this.prefabVertexCount; j++, offset += 3) {
-      const prefabVertex = this.prefabGeometry.vertices[j];
-      
-      positionBuffer[offset    ] = prefabVertex.x;
-      positionBuffer[offset + 1] = prefabVertex.y;
-      positionBuffer[offset + 2] = prefabVertex.z;
+
+  if (this.isPrefabBufferGeometry) {
+    const positions = this.prefabGeometry.attributes.position.array;
+
+    for (let i = 0, offset = 0; i < this.prefabCount; i++) {
+      for (let j = 0; j < this.prefabVertexCount; j++, offset += 3) {
+        positionBuffer[offset    ] = positions[j * 3];
+        positionBuffer[offset + 1] = positions[j * 3 + 1];
+        positionBuffer[offset + 2] = positions[j * 3 + 2];
+      }
+    }
+  }
+  else {
+    for (let i = 0, offset = 0; i < this.prefabCount; i++) {
+      for (let j = 0; j < this.prefabVertexCount; j++, offset += 3) {
+        const prefabVertex = this.prefabGeometry.vertices[j];
+
+        positionBuffer[offset    ] = prefabVertex.x;
+        positionBuffer[offset + 1] = prefabVertex.y;
+        positionBuffer[offset + 2] = prefabVertex.z;
+      }
     }
   }
 };
@@ -72,23 +108,32 @@ PrefabBufferGeometry.prototype.bufferPositions = function() {
  * Creates a THREE.BufferAttribute with UV coordinates.
  */
 PrefabBufferGeometry.prototype.bufferUvs = function() {
-  const prefabFaceCount = this.prefabGeometry.faces.length;
-  const prefabVertexCount = this.prefabVertexCount = this.prefabGeometry.vertices.length;
   const prefabUvs = [];
-  
-  for (let h = 0; h < prefabFaceCount; h++) {
-    const face = this.prefabGeometry.faces[h];
-    const uv = this.prefabGeometry.faceVertexUvs[0][h];
-    
-    prefabUvs[face.a] = uv[0];
-    prefabUvs[face.b] = uv[1];
-    prefabUvs[face.c] = uv[2];
+
+  if (this.isPrefabBufferGeometry) {
+    const uv = this.prefabGeometry.attributes.uv.array;
+
+    for (let i = 0; i < this.prefabVertexCount; i++) {
+      prefabUvs.push(new THREE.Vector2(uv[i * 2], uv[i * 2 + 1]));
+    }
   }
-  
+  else {
+    const prefabFaceCount = this.prefabGeometry.faces.length;
+
+    for (let i = 0; i < prefabFaceCount; i++) {
+      const face = this.prefabGeometry.faces[i];
+      const uv = this.prefabGeometry.faceVertexUvs[0][i];
+
+      prefabUvs[face.a] = uv[0];
+      prefabUvs[face.b] = uv[1];
+      prefabUvs[face.c] = uv[2];
+    }
+  }
+
   const uvBuffer = this.createAttribute('uv', 2);
   
   for (let i = 0, offset = 0; i < this.prefabCount; i++) {
-    for (let j = 0; j < prefabVertexCount; j++, offset += 2) {
+    for (let j = 0; j < this.prefabVertexCount; j++, offset += 2) {
       let prefabUv = prefabUvs[j];
       
       uvBuffer.array[offset] = prefabUv.x;
