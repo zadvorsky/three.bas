@@ -1,8 +1,8 @@
 import { BufferGeometry, BufferAttribute, Vector2 } from 'three';
 /**
- * A THREE.BufferGeometry where a 'prefab' geometry is repeated a number of times.
+ * A BufferGeometry where a 'prefab' geometry is repeated a number of times.
  *
- * @param {THREE.Geometry} prefab The THREE.Geometry instance to repeat.
+ * @param {Geometry|BufferGeometry} prefab The Geometry instance to repeat.
  * @param {Number} count The number of times to repeat the geometry.
  * @constructor
  */
@@ -11,7 +11,7 @@ function PrefabBufferGeometry(prefab, count) {
   
   /**
    * A reference to the prefab geometry used to create this instance.
-   * @type {THREE.Geometry}
+   * @type {Geometry|BufferGeometry}
    */
   this.prefabGeometry = prefab;
   this.isPrefabBufferGeometry = prefab.isBufferGeometry;
@@ -105,7 +105,7 @@ PrefabBufferGeometry.prototype.bufferPositions = function() {
 };
 
 /**
- * Creates a THREE.BufferAttribute with UV coordinates.
+ * Creates a BufferAttribute with UV coordinates.
  */
 PrefabBufferGeometry.prototype.bufferUvs = function() {
   const prefabUvs = [];
@@ -143,13 +143,13 @@ PrefabBufferGeometry.prototype.bufferUvs = function() {
 };
 
 /**
- * Creates a THREE.BufferAttribute on this geometry instance.
+ * Creates a BufferAttribute on this geometry instance.
  *
  * @param {String} name Name of the attribute.
  * @param {Number} itemSize Number of floats per vertex (typically 1, 2, 3 or 4).
  * @param {function=} factory Function that will be called for each prefab upon creation. Accepts 3 arguments: data[], index and prefabCount. Calls setPrefabData.
  *
- * @returns {THREE.BufferAttribute}
+ * @returns {BufferAttribute}
  */
 PrefabBufferGeometry.prototype.createAttribute = function(name, itemSize, factory) {
   const buffer = new Float32Array(this.prefabCount * this.prefabVertexCount * itemSize);
@@ -173,7 +173,7 @@ PrefabBufferGeometry.prototype.createAttribute = function(name, itemSize, factor
  * Sets data for all vertices of a prefab at a given index.
  * Usually called in a loop.
  *
- * @param {String|THREE.BufferAttribute} attribute The attribute or attribute name where the data is to be stored.
+ * @param {String|BufferAttribute} attribute The attribute or attribute name where the data is to be stored.
  * @param {Number} prefabIndex Index of the prefab in the buffer geometry.
  * @param {Array} data Array of data. Length should be equal to item size of the attribute.
  */
