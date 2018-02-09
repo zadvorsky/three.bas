@@ -1,4 +1,4 @@
-import { BufferGeometry, BufferAttribute } from 'three';
+import { BufferGeometry, BufferAttribute, Vector2 } from 'three';
 /**
  * A THREE.BufferGeometry where a 'prefab' geometry is repeated a number of times.
  *
@@ -114,7 +114,7 @@ PrefabBufferGeometry.prototype.bufferUvs = function() {
     const uv = this.prefabGeometry.attributes.uv.array;
 
     for (let i = 0; i < this.prefabVertexCount; i++) {
-      prefabUvs.push(new THREE.Vector2(uv[i * 2], uv[i * 2 + 1]));
+      prefabUvs.push(new Vector2(uv[i * 2], uv[i * 2 + 1]));
     }
   }
   else {
