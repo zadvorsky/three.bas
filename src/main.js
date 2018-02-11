@@ -7,6 +7,7 @@ export { DepthAnimationMaterial } from './materials/DepthAnimationMaterial';
 export { DistanceAnimationMaterial } from './materials/DistanceAnimationMaterial';
 
 export { PrefabBufferGeometry } from './geometry/PrefabBufferGeometry';
+export { MultiPrefabBufferGeometry } from './geometry/MultiPrefabBufferGeometry';
 export { ModelBufferGeometry } from './geometry/ModelBufferGeometry';
 export { PointBufferGeometry } from './geometry/PointBufferGeometry'
 
