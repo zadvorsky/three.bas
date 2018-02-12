@@ -22,6 +22,10 @@ function MultiPrefabBufferGeometry(prefabs, repeatCount) {
    * @type {Number}
    */
   this.prefabCount = repeatCount * this.prefabGeometriesCount;
+  /**
+   * How often the prefab array is repeated.
+   * @type {Number}
+   */
   this.repeatCount = repeatCount;
   
   /**
@@ -29,6 +33,10 @@ function MultiPrefabBufferGeometry(prefabs, repeatCount) {
    * @type {Array}
    */
   this.prefabVertexCounts = this.prefabGeometries.map(p => p.isBufferGeometry ? p.attributes.position.count : p.vertices.length);
+  /**
+   * Total number of vertices for one repetition of the prefabs
+   * @type {number}
+   */
   this.repeatVertexCount = this.prefabVertexCounts.reduce((r, v) => r + v, 0);
 
   this.bufferIndices();
@@ -38,10 +46,9 @@ MultiPrefabBufferGeometry.prototype = Object.create(BufferGeometry.prototype);
 MultiPrefabBufferGeometry.prototype.constructor = MultiPrefabBufferGeometry;
 
 MultiPrefabBufferGeometry.prototype.bufferIndices = function() {
-  this.prefabIndices = [];
   let repeatIndexCount = 0;
 
-  this.prefabGeometries.forEach(geometry => {
+  this.prefabIndices = this.prefabGeometries.map(geometry => {
     let indices = [];
 
     if (geometry.isBufferGeometry) {
@@ -59,9 +66,9 @@ MultiPrefabBufferGeometry.prototype.bufferIndices = function() {
       }
     }
 
-    this.prefabIndices.push(indices);
-
     repeatIndexCount += indices.length;
+
+    return indices;
   });
 
   const indexBuffer = new Uint32Array(repeatIndexCount * this.repeatCount);
