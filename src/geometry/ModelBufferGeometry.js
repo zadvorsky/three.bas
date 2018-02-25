@@ -133,6 +133,29 @@ ModelBufferGeometry.prototype.bufferUVs = function() {
 };
 
 /**
+ * Creates two THREE.BufferAttributes: skinIndex and skinWeight. Both are required for skinning.
+ */
+ModelBufferGeometry.prototype.bufferSkinning = function() {
+  const skinIndexBuffer = this.createAttribute('skinIndex', 4).array;
+  const skinWeightBuffer = this.createAttribute('skinWeight', 4).array;
+
+  for (let i = 0; i < this.vertexCount; i++) {
+    const skinIndex = this.modelGeometry.skinIndices[i];
+    const skinWeight = this.modelGeometry.skinWeights[i];
+
+    skinIndexBuffer[i * 4    ] = skinIndex.x;
+    skinIndexBuffer[i * 4 + 1] = skinIndex.y;
+    skinIndexBuffer[i * 4 + 2] = skinIndex.z;
+    skinIndexBuffer[i * 4 + 3] = skinIndex.w;
+
+    skinWeightBuffer[i * 4    ] = skinWeight.x;
+    skinWeightBuffer[i * 4 + 1] = skinWeight.y;
+    skinWeightBuffer[i * 4 + 2] = skinWeight.z;
+    skinWeightBuffer[i * 4 + 3] = skinWeight.w;
+  }
+};
+
+/**
  * Creates a THREE.BufferAttribute on this geometry instance.
  *
  * @param {String} name Name of the attribute.
