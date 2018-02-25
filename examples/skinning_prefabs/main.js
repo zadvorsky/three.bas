@@ -74,8 +74,6 @@ function createGeometry(sizing) {
     true                     // openEnded
   );
 
-  BAS.Utils.separateFaces(baseGeometry);
-
   for (let i = 0; i < baseGeometry.vertices.length; i++) {
     const vertex = baseGeometry.vertices[i];
     const y = (vertex.y + sizing.halfHeight);
@@ -88,30 +86,39 @@ function createGeometry(sizing) {
     baseGeometry.skinWeights.push(new THREE.Vector4(1 - skinWeight, skinWeight, 0, 0));
   }
 
-  const geometry = new BAS.ModelBufferGeometry(baseGeometry, {
-    computeCentroids: true,
-    localizeFaces: true
-  });
+  // create a prefab for each vertex
 
-  // this needs to be called to create attributes used for skinning
-  geometry.bufferSkinning();
+  const prefab = new THREE.TetrahedronGeometry(1);
+  const prefabCount = baseGeometry.vertices.length;
+  const geometry = new BAS.PrefabBufferGeometry(prefab, prefabCount);
 
-  // position (copy centroid position)
+  // position (copy vertex position)
 
   geometry.createAttribute('aPosition', 3, function(data, i) {
-    geometry.centroids[i].toArray(data);
+    baseGeometry.vertices[i].toArray(data);
+  });
+
+  // skin indices, copy from geometry, based on vertex
+
+  geometry.createAttribute('skinIndex', 4, (data, i) => {
+    baseGeometry.skinIndices[i].toArray(data);
+  });
+
+  // skin weights, copy from geometry, based on vertex
+
+  geometry.createAttribute('skinWeight', 4, (data, i) => {
+    baseGeometry.skinWeights[i].toArray(data);
   });
 
   // rotation (this is completely arbitrary)
 
+  const axis = new THREE.Vector3();
+
   geometry.createAttribute('aAxisAngle', 4, function(data, i) {
-    data[0] = 0;
-    data[1] = 0;
-    data[2] = 1;
+    BAS.Utils.randomAxis(axis);
+    axis.toArray(data);
     data[3] = Math.PI * 2;
   });
-
-  console.log('g', geometry);
 
   return geometry;
 }
@@ -150,7 +157,3 @@ function createMesh(geometry, bones) {
 
   return mesh;
 }
-
-////////////////////
-// CLASSES
-////////////////////
