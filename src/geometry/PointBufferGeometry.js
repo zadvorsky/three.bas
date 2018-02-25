@@ -28,7 +28,7 @@ PointBufferGeometry.prototype.bufferPositions = function() {
  *
  * @param {String} name Name of the attribute.
  * @param {Number} itemSize Number of floats per vertex (typically 1, 2, 3 or 4).
- * @param {function=} factory Function that will be called for each point upon creation. Accepts 3 arguments: data[], index and prefabCount. Calls setPrefabData.
+ * @param {function=} factory Function that will be called for each point upon creation. Accepts 3 arguments: data[], index and prefabCount. Calls setPointData.
  *
  * @returns {THREE.BufferAttribute}
  */

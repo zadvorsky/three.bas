@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>THREE.js BufferAnimationSystem</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        font-family: monospace;
+      }
+    </style>
+</head>
+<body>
+<script id="ctPosition" type="x-shader/x-fragment">
+  void main () {
+    vec2 uv = gl_FragCoord.xy / resolution.xy;
+    vec3 pos = texture2D(ctPosition, uv).xyz;
+    vec3 vel = texture2D(ctVelocity, uv).xyz;
+    vec3 newPos = pos + vel;
+    gl_FragColor = vec4(newPos, 1.0);
+  }
+</script>
+
+<script id="ctVelocity" type="x-shader/x-fragment">
+  uniform float bounds;
+
+  void main () {
+    vec2 uv = gl_FragCoord.xy / resolution.xy;
+    vec3 pos = texture2D(ctPosition, uv).xyz;
+    vec3 vel = texture2D(ctVelocity, uv).xyz;
+    if (pos.x + vel.x > bounds || pos.x + vel.x < -bounds) {
+      vel.x *= -1.0;
+    }
+    if (pos.y + vel.y > bounds || pos.y + vel.y < -bounds) {
+      vel.y *= -1.0;
+    }
+    if (pos.z + vel.z > bounds || pos.z + vel.z < -bounds) {
+      vel.z *= -1.0;
+    }
+    gl_FragColor = vec4(vel, 1.0);
+  }
+</script>
+
+<div id="three-container"></div>
+
+<script src="../_lib/TweenMax.min.js"></script>
+<script src="../../node_modules/three/build/three.js"></script>
+<script src="../../node_modules/three/examples/js/controls/OrbitControls.js"></script>
+<script src="../../node_modules/three/examples/js/GPUComputationRenderer.js"></script>
+<script src="../../dist/bas.js"></script>
+<script src="../_js/root.js"></script>
+
+<script src="main.js"></script>
+</body>
+</html>
