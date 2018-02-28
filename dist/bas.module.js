@@ -849,7 +849,7 @@ var Utils = {
     var b = geometry.vertices[face.b];
     var c = geometry.vertices[face.c];
 
-    v = v || new THREE.Vector3();
+    v = v || new Vector3();
 
     v.x = (a.x + b.x + c.x) / 3;
     v.y = (a.y + b.y + c.y) / 3;
@@ -1010,7 +1010,7 @@ ModelBufferGeometry.prototype.bufferPositions = function (localizeFaces) {
   if (localizeFaces === true) {
     for (i = 0; i < this.faceCount; i++) {
       var face = this.modelGeometry.faces[i];
-      var centroid = this.centroids ? this.centroids[i] : THREE.BAS.Utils.computeCentroid(this.modelGeometry, face);
+      var centroid = this.centroids ? this.centroids[i] : Utils.computeCentroid(this.modelGeometry, face);
 
       var a = this.modelGeometry.vertices[face.a];
       var b = this.modelGeometry.vertices[face.b];
@@ -1094,11 +1094,11 @@ ModelBufferGeometry.prototype.bufferSkinning = function () {
  * @param {int} itemSize Number of floats per vertex (typically 1, 2, 3 or 4).
  * @param {function=} factory Function that will be called for each face upon creation. Accepts 3 arguments: data[], index and faceCount. Calls setFaceData.
  *
- * @returns {THREE.BufferAttribute}
+ * @returns {BufferAttribute}
  */
 ModelBufferGeometry.prototype.createAttribute = function (name, itemSize, factory) {
   var buffer = new Float32Array(this.vertexCount * itemSize);
-  var attribute = new THREE.BufferAttribute(buffer, itemSize);
+  var attribute = new BufferAttribute(buffer, itemSize);
 
   this.addAttribute(name, attribute);
 

@@ -77,7 +77,7 @@ ModelBufferGeometry.prototype.bufferPositions = function(localizeFaces) {
   if (localizeFaces === true) {
     for (i = 0; i < this.faceCount; i++) {
       const face = this.modelGeometry.faces[i];
-      const centroid = this.centroids ? this.centroids[i] : THREE.BAS.Utils.computeCentroid(this.modelGeometry, face);
+      const centroid = this.centroids ? this.centroids[i] : Utils.computeCentroid(this.modelGeometry, face);
 
       const a = this.modelGeometry.vertices[face.a];
       const b = this.modelGeometry.vertices[face.b];
@@ -162,11 +162,11 @@ ModelBufferGeometry.prototype.bufferSkinning = function() {
  * @param {int} itemSize Number of floats per vertex (typically 1, 2, 3 or 4).
  * @param {function=} factory Function that will be called for each face upon creation. Accepts 3 arguments: data[], index and faceCount. Calls setFaceData.
  *
- * @returns {THREE.BufferAttribute}
+ * @returns {BufferAttribute}
  */
 ModelBufferGeometry.prototype.createAttribute = function(name, itemSize, factory) {
   const buffer = new Float32Array(this.vertexCount * itemSize);
-  const attribute = new THREE.BufferAttribute(buffer, itemSize);
+  const attribute = new BufferAttribute(buffer, itemSize);
 
   this.addAttribute(name, attribute);
 

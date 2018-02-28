@@ -1,1 +1,1 @@
-THREE.BAS = {};
+BAS = {};

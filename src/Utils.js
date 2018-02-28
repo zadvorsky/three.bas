@@ -53,7 +53,7 @@ const Utils = {
     let b = geometry.vertices[face.b];
     let c = geometry.vertices[face.c];
 
-    v = v || new THREE.Vector3();
+    v = v || new Vector3();
 
     v.x = (a.x + b.x + c.x) / 3;
     v.y = (a.y + b.y + c.y) / 3;
