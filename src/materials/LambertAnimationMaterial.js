@@ -53,7 +53,8 @@ LambertAnimationMaterial.prototype.concatVertexShader = function () {
   #include <uv2_pars_vertex>
   #include <envmap_pars_vertex>
   #include <bsdfs>
-  #include <lights_pars>
+  #include <lights_pars_begin>
+  #include <lights_pars_maps>
   #include <color_pars_vertex>
   #include <fog_pars_vertex>
   #include <morphtarget_pars_vertex>
@@ -129,7 +130,8 @@ LambertAnimationMaterial.prototype.concatFragmentShader = function () {
   #include <emissivemap_pars_fragment>
   #include <envmap_pars_fragment>
   #include <bsdfs>
-  #include <lights_pars>
+  #include <lights_pars_begin>
+  #include <lights_pars_maps>
   #include <fog_pars_fragment>
   #include <shadowmap_pars_fragment>
   #include <shadowmask_pars_fragment>
