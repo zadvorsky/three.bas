@@ -1,6 +1,6 @@
 {
   "name": "three-bas",
-  "version": "2.5.1",
+  "version": "2.6.0",
   "description": "THREE.js Buffer Animation System",
   "repository": "https://github.com/zadvorsky/three.bas",
   "main": "dist/bas.js",
