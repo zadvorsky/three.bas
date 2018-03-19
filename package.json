@@ -3,7 +3,9 @@
   "version": "2.5.1",
   "description": "THREE.js Buffer Animation System",
   "repository": "https://github.com/zadvorsky/three.bas",
-  "main": "src/main.js",
+  "main": "dist/bas.js",
+  "jsnext:main": "dist/bas.module.js",
+  "module": "dist/bas.module.js",
   "directories": {
     "example": "examples"
   },

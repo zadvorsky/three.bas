@@ -177,11 +177,12 @@ PhongAnimationMaterial.prototype.concatFragmentShader = function () {
   
     // accumulation
     #include <lights_phong_fragment>
+    #include <lights_fragment_begin>
+    #include <lights_fragment_maps>
+    #include <lights_fragment_end>
     
     ${this.stringifyChunk('fragmentSpecular')}
     
-    #include <lights_template>
-  
     // modulation
     #include <aomap_fragment>
   

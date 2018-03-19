@@ -210,7 +210,9 @@ StandardAnimationMaterial.prototype.concatFragmentShader = function () {
   
     // accumulation
     #include <lights_physical_fragment>
-    #include <lights_template>
+    #include <lights_fragment_begin>
+    #include <lights_fragment_maps>
+    #include <lights_fragment_end>
   
     // modulation
     #include <aomap_fragment>

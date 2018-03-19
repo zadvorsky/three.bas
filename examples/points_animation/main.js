@@ -260,7 +260,7 @@ function Animation() {
 
   this.frustumCulled = false;
 }
-Animation.prototype = Object.create(THREE.Mesh.prototype);
+Animation.prototype = Object.create(THREE.Points.prototype);
 Animation.prototype.constructor = Animation;
 // helper method for changing the uTime uniform
 Object.defineProperty(Animation.prototype, 'time', {
