@@ -18,6 +18,8 @@ function LambertAnimationMaterial(parameters) {
   this.vertexNormal = [];
   this.vertexPosition = [];
   this.vertexColor = [];
+  this.vertexPostMorph = [];
+  this.vertexPostSkinning = [];
   
   this.fragmentFunctions = [];
   this.fragmentParameters = [];
@@ -90,7 +92,13 @@ LambertAnimationMaterial.prototype.concatVertexShader = function () {
     ${this.stringifyChunk('vertexColor')}
     
     #include <morphtarget_vertex>
+    
+    ${this.stringifyChunk('vertexPostMorph')}
+    
     #include <skinning_vertex>
+
+    ${this.stringifyChunk('vertexPostSkinning')}
+    
     #include <project_vertex>
     #include <logdepthbuf_vertex>
     #include <clipping_planes_vertex>

@@ -9,6 +9,8 @@ function DepthAnimationMaterial(parameters) {
   this.vertexParameters = [];
   this.vertexInit = [];
   this.vertexPosition = [];
+  this.vertexPostMorph = [];
+  this.vertexPostSkinning = [];
 
   BaseAnimationMaterial.call(this, parameters);
   
@@ -54,7 +56,13 @@ DepthAnimationMaterial.prototype.concatVertexShader = function () {
     ${this.stringifyChunk('vertexPosition')}
 
     #include <morphtarget_vertex>
+    
+    ${this.stringifyChunk('vertexPostMorph')}
+    
     #include <skinning_vertex>
+
+    ${this.stringifyChunk('vertexPostSkinning')}
+    
     #include <displacementmap_vertex>
     #include <project_vertex>
     #include <logdepthbuf_vertex>
