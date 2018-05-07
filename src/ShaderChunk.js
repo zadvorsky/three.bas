@@ -33,6 +33,7 @@ import ease_quint_out from './glsl/ease_quint_out.glsl';
 import ease_sine_in from './glsl/ease_sine_in.glsl';
 import ease_sine_in_out from './glsl/ease_sine_in_out.glsl';
 import ease_sine_out from './glsl/ease_sine_out.glsl';
+import quadratic_bezier from './glsl/quadratic_bezier.glsl';
 import quaternion_rotation from './glsl/quaternion_rotation.glsl';
 import quaternion_slerp from './glsl/quaternion_slerp.glsl';
 
@@ -71,6 +72,7 @@ export const ShaderChunk = {
   ease_sine_in: ease_sine_in,
   ease_sine_in_out: ease_sine_in_out,
   ease_sine_out: ease_sine_out,
+  quadratic_bezier: quadratic_bezier,
   quaternion_rotation: quaternion_rotation,
   quaternion_slerp: quaternion_slerp,
 
