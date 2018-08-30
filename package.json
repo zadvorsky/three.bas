@@ -21,6 +21,7 @@
     "babel-core": "^6.26.0",
     "babel-plugin-external-helpers": "^6.22.0",
     "babel-preset-es2015": "^6.24.1",
+    "live-server": "^1.2.0",
     "rollup": "^0.49.2",
     "rollup-plugin-babel": "^3.0.2",
     "rollup-plugin-commonjs": "^8.2.0",
@@ -29,6 +30,6 @@
     "uglify-js": "^3.0.28"
   },
   "dependencies": {
-    "three": "^0.91.0"
+    "three": "^0.95.0"
   }
 }
