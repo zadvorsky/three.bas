@@ -18,7 +18,7 @@
   "author": "Szenia Zadvornykh",
   "license": "MIT",
   "devDependencies": {
-    "babel-core": "^6.26.0",
+    "babel-core": "^6.26.3",
     "babel-plugin-external-helpers": "^6.22.0",
     "babel-preset-es2015": "^6.24.1",
     "live-server": "^1.2.0",
