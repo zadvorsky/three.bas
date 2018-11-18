@@ -67,7 +67,7 @@ function Slide(width, height, animationPhase) {
   });
 
   // buffer UVs so the textures are mapped correctly
-  geometry.bufferUVs();
+  geometry.bufferUvs();
 
   var i, j, offset, centroid;
 

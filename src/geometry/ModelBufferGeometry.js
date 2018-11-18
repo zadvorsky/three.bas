@@ -110,7 +110,7 @@ ModelBufferGeometry.prototype.bufferPositions = function(localizeFaces) {
 /**
  * Creates a THREE.BufferAttribute with UV coordinates.
  */
-ModelBufferGeometry.prototype.bufferUVs = function() {
+ModelBufferGeometry.prototype.bufferUvs = function() {
   const uvBuffer = this.createAttribute('uv', 2).array;
 
   for (let i = 0; i < this.faceCount; i++) {
