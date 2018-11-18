@@ -30,6 +30,6 @@
     "uglify-js": "^3.0.28"
   },
   "dependencies": {
-    "three": "^0.95.0"
+    "three": "^0.98.0"
   }
 }
