@@ -8,20 +8,20 @@ import { BufferGeometry, BufferAttribute, Vector2 } from 'three';
  */
 function PrefabBufferGeometry(prefab, count) {
   BufferGeometry.call(this);
-  
+
   /**
    * A reference to the prefab geometry used to create this instance.
    * @type {Geometry|BufferGeometry}
    */
   this.prefabGeometry = prefab;
   this.isPrefabBufferGeometry = prefab.isBufferGeometry;
-  
+
   /**
    * Number of prefabs.
    * @type {Number}
    */
   this.prefabCount = count;
-  
+
   /**
    * Number of vertices of the prefab.
    * @type {Number}
@@ -69,7 +69,7 @@ PrefabBufferGeometry.prototype.bufferIndices = function() {
   const indexBuffer = new Uint32Array(this.prefabCount * prefabIndexCount);
 
   this.setIndex(new BufferAttribute(indexBuffer, 1));
-  
+
   for (let i = 0; i < this.prefabCount; i++) {
     for (let k = 0; k < prefabIndexCount; k++) {
       indexBuffer[i * prefabIndexCount + k] = prefabIndices[k] + i * this.prefabVertexCount;
@@ -108,36 +108,37 @@ PrefabBufferGeometry.prototype.bufferPositions = function() {
  * Creates a BufferAttribute with UV coordinates.
  */
 PrefabBufferGeometry.prototype.bufferUvs = function() {
-  const prefabUvs = [];
+  const uvBuffer = this.createAttribute('uv', 2).array;
 
   if (this.isPrefabBufferGeometry) {
-    const uv = this.prefabGeometry.attributes.uv.array;
+    const uvs = this.prefabGeometry.attributes.uv.array
 
-    for (let i = 0; i < this.prefabVertexCount; i++) {
-      prefabUvs.push(new Vector2(uv[i * 2], uv[i * 2 + 1]));
+    for (let i = 0, offset = 0; i < this.prefabCount; i++) {
+      for (let j = 0; j < this.prefabVertexCount; j++, offset += 2) {
+        uvBuffer[offset    ] = uvs[j * 2];
+        uvBuffer[offset + 1] = uvs[j * 2 + 1];
+      }
     }
-  }
-  else {
+  } else {
     const prefabFaceCount = this.prefabGeometry.faces.length;
+    const uvs = []
 
     for (let i = 0; i < prefabFaceCount; i++) {
       const face = this.prefabGeometry.faces[i];
       const uv = this.prefabGeometry.faceVertexUvs[0][i];
 
-      prefabUvs[face.a] = uv[0];
-      prefabUvs[face.b] = uv[1];
-      prefabUvs[face.c] = uv[2];
+      uvs[face.a] = uv[0];
+      uvs[face.b] = uv[1];
+      uvs[face.c] = uv[2];
     }
-  }
 
-  const uvBuffer = this.createAttribute('uv', 2);
-  
-  for (let i = 0, offset = 0; i < this.prefabCount; i++) {
-    for (let j = 0; j < this.prefabVertexCount; j++, offset += 2) {
-      let prefabUv = prefabUvs[j];
-      
-      uvBuffer.array[offset] = prefabUv.x;
-      uvBuffer.array[offset + 1] = prefabUv.y;
+    for (let i = 0, offset = 0; i < this.prefabCount; i++) {
+      for (let j = 0; j < this.prefabVertexCount; j++, offset += 2) {
+        const uv = uvs[j];
+
+        uvBuffer[offset] = uv.x;
+        uvBuffer[offset + 1] = uv.y;
+      }
     }
   }
 };
@@ -154,18 +155,18 @@ PrefabBufferGeometry.prototype.bufferUvs = function() {
 PrefabBufferGeometry.prototype.createAttribute = function(name, itemSize, factory) {
   const buffer = new Float32Array(this.prefabCount * this.prefabVertexCount * itemSize);
   const attribute = new BufferAttribute(buffer, itemSize);
-  
+
   this.addAttribute(name, attribute);
-  
+
   if (factory) {
     const data = [];
-    
+
     for (let i = 0; i < this.prefabCount; i++) {
       factory(data, i, this.prefabCount);
       this.setPrefabData(attribute, i, data);
     }
   }
-  
+
   return attribute;
 };
 
@@ -179,9 +180,9 @@ PrefabBufferGeometry.prototype.createAttribute = function(name, itemSize, factor
  */
 PrefabBufferGeometry.prototype.setPrefabData = function(attribute, prefabIndex, data) {
   attribute = (typeof attribute === 'string') ? this.attributes[attribute] : attribute;
-  
+
   let offset = prefabIndex * this.prefabVertexCount * attribute.itemSize;
-  
+
   for (let i = 0; i < this.prefabVertexCount; i++) {
     for (let j = 0; j < attribute.itemSize; j++) {
       attribute.array[offset++] = data[j];
