@@ -41,13 +41,13 @@ PhongAnimationMaterial.prototype.concatVertexShader = function () {
   #define PHONG
 
   varying vec3 vViewPosition;
-  
+
   #ifndef FLAT_SHADED
-  
+
     varying vec3 vNormal;
-  
+
   #endif
-  
+
   #include <common>
   #include <uv_pars_vertex>
   #include <uv2_pars_vertex>
@@ -60,48 +60,48 @@ PhongAnimationMaterial.prototype.concatVertexShader = function () {
   #include <shadowmap_pars_vertex>
   #include <logdepthbuf_pars_vertex>
   #include <clipping_planes_pars_vertex>
-  
+
   ${this.stringifyChunk('vertexParameters')}
   ${this.stringifyChunk('varyingParameters')}
   ${this.stringifyChunk('vertexFunctions')}
-  
+
   void main() {
-  
+
     ${this.stringifyChunk('vertexInit')}
-  
+
     #include <uv_vertex>
     #include <uv2_vertex>
     #include <color_vertex>
-  
+
     #include <beginnormal_vertex>
-    
+
     ${this.stringifyChunk('vertexNormal')}
-    
+
     #include <morphnormal_vertex>
     #include <skinbase_vertex>
     #include <skinnormal_vertex>
     #include <defaultnormal_vertex>
-  
+
   #ifndef FLAT_SHADED // Normal computed with derivatives when FLAT_SHADED
-  
+
     vNormal = normalize( transformedNormal );
-  
+
   #endif
-  
+
     #include <begin_vertex>
-    
+
     ${this.stringifyChunk('vertexPosition')}
     ${this.stringifyChunk('vertexColor')}
-    
+
     #include <morphtarget_vertex>
     #include <skinning_vertex>
     #include <displacementmap_vertex>
     #include <project_vertex>
     #include <logdepthbuf_vertex>
     #include <clipping_planes_vertex>
-  
+
     vViewPosition = - mvPosition.xyz;
-  
+
     #include <worldpos_vertex>
     #include <envmap_vertex>
     #include <shadowmap_vertex>
@@ -118,7 +118,7 @@ PhongAnimationMaterial.prototype.concatFragmentShader = function () {
   uniform vec3 specular;
   uniform float shininess;
   uniform float opacity;
-  
+
   #include <common>
   #include <packing>
   #include <dithering_pars_fragment>
@@ -143,23 +143,23 @@ PhongAnimationMaterial.prototype.concatFragmentShader = function () {
   #include <specularmap_pars_fragment>
   #include <logdepthbuf_pars_fragment>
   #include <clipping_planes_pars_fragment>
-  
+
   ${this.stringifyChunk('fragmentParameters')}
   ${this.stringifyChunk('varyingParameters')}
   ${this.stringifyChunk('fragmentFunctions')}
-  
+
   void main() {
-  
+
     ${this.stringifyChunk('fragmentInit')}
-  
+
     #include <clipping_planes_fragment>
-  
+
     vec4 diffuseColor = vec4( diffuse, opacity );
     ReflectedLight reflectedLight = ReflectedLight( vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ) );
     vec3 totalEmissiveRadiance = emissive;
-  
+
     ${this.stringifyChunk('fragmentDiffuse')}
-  
+
     #include <logdepthbuf_fragment>
 
     ${(this.stringifyChunk('fragmentMap') || '#include <map_fragment>')}
@@ -170,34 +170,34 @@ PhongAnimationMaterial.prototype.concatFragmentShader = function () {
     #include <specularmap_fragment>
     #include <normal_fragment_begin>
     #include <normal_fragment_maps>
-    
+
     ${this.stringifyChunk('fragmentEmissive')}
-    
+
     #include <emissivemap_fragment>
-  
+
     // accumulation
     #include <lights_phong_fragment>
     #include <lights_fragment_begin>
     #include <lights_fragment_maps>
     #include <lights_fragment_end>
-    
+
     ${this.stringifyChunk('fragmentSpecular')}
-    
+
     // modulation
     #include <aomap_fragment>
-  
+
     vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + reflectedLight.directSpecular + reflectedLight.indirectSpecular + totalEmissiveRadiance;
-  
+
     #include <envmap_fragment>
-  
+
     gl_FragColor = vec4( outgoingLight, diffuseColor.a );
-  
+
     #include <tonemapping_fragment>
     #include <encodings_fragment>
     #include <fog_fragment>
     #include <premultiplied_alpha_fragment>
     #include <dithering_fragment>
-  
+
   }`;
 };
 

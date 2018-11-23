@@ -1,4 +1,4 @@
-import { BufferGeometry, BufferAttribute, Vector2 } from 'three';
+import { BufferGeometry, BufferAttribute } from 'three';
 /**
  * A BufferGeometry where a 'prefab' geometry is repeated a number of times.
  *

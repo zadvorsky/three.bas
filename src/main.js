@@ -2,12 +2,14 @@ export { BasicAnimationMaterial } from './materials/BasicAnimationMaterial';
 export { LambertAnimationMaterial } from './materials/LambertAnimationMaterial';
 export { PhongAnimationMaterial } from './materials/PhongAnimationMaterial';
 export { StandardAnimationMaterial } from './materials/StandardAnimationMaterial';
+export { ToonAnimationMaterial } from './materials/ToonAnimationMaterial';
 export { PointsAnimationMaterial } from './materials/PointsAnimationMaterial';
 export { DepthAnimationMaterial } from './materials/DepthAnimationMaterial';
 export { DistanceAnimationMaterial } from './materials/DistanceAnimationMaterial';
 
 export { PrefabBufferGeometry } from './geometry/PrefabBufferGeometry';
 export { MultiPrefabBufferGeometry } from './geometry/MultiPrefabBufferGeometry';
+export { InstancedPrefabBufferGeometry } from './geometry/InstancedPrefabBufferGeometry';
 export { ModelBufferGeometry } from './geometry/ModelBufferGeometry';
 export { PointBufferGeometry } from './geometry/PointBufferGeometry'
 
