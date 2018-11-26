@@ -1,9 +1,10 @@
 import { InstancedBufferGeometry, InstancedBufferAttribute } from 'three';
 /**
- * A wrapper around THREE.InstancedBufferGeometry.
+ * A wrapper around THREE.InstancedBufferGeometry, which is more memory efficient than PrefabBufferGeometry, but requires the ANGLE_instanced_arrays extension.
  *
  * @param {BufferGeometry} prefab The Geometry instance to repeat.
  * @param {Number} count The number of times to repeat the geometry.
+ *
  * @constructor
  */
 function InstancedPrefabBufferGeometry(prefab, count) {
