@@ -14,7 +14,8 @@
     "dev": "rollup -c -w -m inline",
     "serve": "live-server --watch=dist/bas.js,examples",
     "build-min": "rollup -c && uglifyjs dist/bas.js -cm > dist/bas.min.js",
-    "docs": "node_modules/.bin/jsdoc --configure .jsdoc.json --verbose"
+    "docs": "node_modules/.bin/jsdoc --configure .jsdoc.json --verbose",
+    "deploy": "surge --project ./ --domain three-bas-examples.surge.sh"
   },
   "author": "Szenia Zadvornykh",
   "license": "MIT",
