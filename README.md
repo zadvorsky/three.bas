@@ -7,7 +7,7 @@ The two building blocks of this approach are THREE.BufferGeometry and THREE.Shad
 
 While this approach is more cumbersome to work with, it provides a significant performance boost both on desktop and mobile. It has been used in award winning projects such as [Cavalier Challenge](https://cavalierchallenge.com/) and [DS Signature Art](https://ds-signatureart.com/).
 
-See [examples](http://three-bas-examples.surge.sh/), [documentation](http://three-bas-examples.surge.sh/docs/gen/) and the wiki for more information.
+See [examples](http://three-bas-examples.surge.sh/), [documentation](http://three-bas-examples.surge.sh/docs/) and the wiki for more information.
 
 ## Compatibility
 Tested with THREE.js r98. May fail with older versions (r74 and down).
