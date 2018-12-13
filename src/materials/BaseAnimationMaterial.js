@@ -133,9 +133,13 @@ BaseAnimationMaterial.prototype = Object.assign(Object.create(ShaderMaterial.pro
       var uniform = this.uniforms[ name ];
       var value = uniform.value;
 
-      if (value === null || value === undefined) continue;
+      if (value === null || value === undefined) {
 
-      if ( value.isTexture ) {
+        data.uniforms[ name ] = {
+          value: value
+        };
+
+      } else if ( value.isTexture ) {
 
         data.uniforms[ name ] = {
           type: 't',
