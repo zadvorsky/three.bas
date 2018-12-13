@@ -19,7 +19,7 @@ function init() {
   root.add(light);
 
   const animation = new Animation();
-  animation.animate(8.0, {ease: Power0.easeIn, repeat:-1, repeatDelay:0.25, yoyo: true});
+  animation.animate(4.0, {ease: Power0.easeIn, repeat:-1, repeatDelay:0.25, yoyo: true});
   root.add(animation);
 }
 
@@ -64,7 +64,7 @@ function Animation() {
     axis.normalize();
     axis.toArray(data);
 
-    data[3] = Math.PI * THREE.Math.randFloat(4.0, 8.0);
+    data[3] = Math.PI * 4;
   });
 
   const material = new BAS.ToonAnimationMaterial({

@@ -76,6 +76,9 @@ function init() {
       root.renderer.setClearColor(debug.visible ? 0x222222 : 0x00000);
     }
   });
+
+  // const json = animation.toJSON()
+  // console.log(json)
 }
 
 ////////////////////
