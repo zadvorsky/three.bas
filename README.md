@@ -9,6 +9,8 @@ While this approach is more cumbersome to work with, it provides a significant p
 
 See [examples](http://three-bas-examples.surge.sh/), [documentation](http://three-bas-examples.surge.sh/docs/) and the wiki for more information.
 
+There is also a tutorial [here](https://medium.com/@Zadvorsky/into-vertex-shaders-594e6d8cd804) that goes through the basics of vertex shaders, and the approach of BAS. Part 4 in particular focusses on using this extension. 
+
 ## Compatibility
 Tested with THREE.js r98. May fail with older versions (r74 and down).
 
