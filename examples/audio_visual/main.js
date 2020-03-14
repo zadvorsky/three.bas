@@ -16,14 +16,6 @@ function init() {
   });
   root.renderer.setClearColor(0x000000);//0x0e0609
   root.camera.position.set(0, 560, 0);
-  
-  var bloomPass = new THREE.BloomPass(4.0, 25, 4, 512);
-  var copyPass = new THREE.ShaderPass(THREE.CopyShader);
-  
-  root.initPostProcessing([
-    bloomPass,
-    copyPass
-  ]);
 
   // root.controls.autoRotate = true;
   var lightColor = new THREE.Color();

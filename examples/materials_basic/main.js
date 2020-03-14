@@ -45,9 +45,6 @@ function init() {
 ////////////////////
 
 function Animation(envMap) {
-  
-  console.log('..!', envMap);
-  
   var rangeX = 300;
   var rangeY = 200;
   var prefabCount = 6;

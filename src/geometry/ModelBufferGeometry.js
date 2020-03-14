@@ -168,7 +168,7 @@ ModelBufferGeometry.prototype.createAttribute = function(name, itemSize, factory
   const buffer = new Float32Array(this.vertexCount * itemSize);
   const attribute = new BufferAttribute(buffer, itemSize);
 
-  this.addAttribute(name, attribute);
+  this.setAttribute(name, attribute);
 
   if (factory) {
     const data = [];

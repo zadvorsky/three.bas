@@ -27,7 +27,7 @@ function MultiPrefabBufferGeometry(prefabs, repeatCount) {
    * @type {Number}
    */
   this.repeatCount = repeatCount;
-  
+
   /**
    * Array of vertex counts per prefab.
    * @type {Array}
@@ -193,18 +193,18 @@ MultiPrefabBufferGeometry.prototype.bufferUvs = function() {
 MultiPrefabBufferGeometry.prototype.createAttribute = function(name, itemSize, factory) {
   const buffer = new Float32Array(this.repeatCount * this.repeatVertexCount * itemSize);
   const attribute = new BufferAttribute(buffer, itemSize);
-  
-  this.addAttribute(name, attribute);
-  
+
+  this.setAttribute(name, attribute);
+
   if (factory) {
     const data = [];
-    
+
     for (let i = 0; i < this.prefabCount; i++) {
       factory(data, i, this.prefabCount);
       this.setPrefabData(attribute, i, data);
     }
   }
-  
+
   return attribute;
 };
 

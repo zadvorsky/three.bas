@@ -103,7 +103,7 @@ function init() {
 
     // use the shape to create a geometry
     var shapeGeometry = new THREE.ExtrudeGeometry(shape, {
-      amount: CONFIG.extrudeAmount,
+      depth: CONFIG.extrudeAmount,
       bevelEnabled: false
     });
 
@@ -153,15 +153,6 @@ function init() {
     e.keyCode === 80 && (paused = !paused);
   });
 
-  // post processing
-  var bloomPass = new THREE.BloomPass(2.0, 25, 4, 512);
-  var copyPass = new THREE.ShaderPass(THREE.CopyShader);
-
-  root.initPostProcessing([
-    bloomPass,
-    copyPass
-  ]);
-
   // dat.gui
   var g = new dat.GUI();
   var colorProxy = {};
@@ -176,7 +167,6 @@ function init() {
   });
 
   g.addColor(colorProxy, 'diffuse').name('color');
-  g.add(bloomPass.copyUniforms.opacity, 'value').name('bloom str');
 }
 
 ////////////////////

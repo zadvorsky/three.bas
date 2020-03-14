@@ -36,7 +36,7 @@ InstancedPrefabBufferGeometry.prototype.createAttribute = function(name, itemSiz
   const buffer = new Float32Array(this.prefabCount * itemSize);
   const attribute = new InstancedBufferAttribute(buffer, itemSize);
 
-  this.addAttribute(name, attribute);
+  this.setAttribute(name, attribute);
 
   if (factory) {
     const data = [];

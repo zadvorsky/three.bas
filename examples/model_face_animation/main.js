@@ -102,13 +102,11 @@ function Animation() {
   var material = new BAS.StandardAnimationMaterial({
     flatShading: true,
     side: THREE.DoubleSide,
+    diffuse: new THREE.Color(0x222222),
     uniforms: {
       uTime: {value: 0},
       // this color will be used for back-facing fragments in fragmentDiffuse
       uBackColor: {value: new THREE.Color().setHSL(0, 1.0, 0.5)}
-    },
-    uniformValues: {
-      diffuse: new THREE.Color(0x000000)
     },
     vertexFunctions: [
       BAS.ShaderChunk['ease_cubic_in_out'],
@@ -138,7 +136,7 @@ function Animation() {
     fragmentDiffuse: [
       // gl_FrontFacing is a built-in glsl variable that indicates if the current fragment is front-facing
       // if its not front facing, set diffuse color to uBackColor
-      'if (!gl_FrontFacing) {',
+      'if (gl_FrontFacing == false) {',
       ' diffuseColor.rgb = uBackColor.xyz;',
       '}'
     ]

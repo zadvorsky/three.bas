@@ -9,15 +9,26 @@ While this approach is more cumbersome to work with, it provides a significant p
 
 See [examples](http://three-bas-examples.surge.sh/), [documentation](http://three-bas-examples.surge.sh/docs/) and the wiki for more information.
 
-There is also a tutorial [here](https://medium.com/@Zadvorsky/into-vertex-shaders-594e6d8cd804) that goes through the basics of vertex shaders, and the approach of BAS. Part 4 in particular focusses on using this extension. 
+There is also a tutorial [here](https://medium.com/@Zadvorsky/into-vertex-shaders-594e6d8cd804) that goes through the basics of vertex shaders, and the approach of BAS. Part 4 in particular focusses on using this extension.
 
 ## Compatibility
-Tested with THREE.js r98. May fail with older versions (r74 and down).
+Tested with THREE.js r114. Because the animation materials inject code into the built in materials, BAS may not work with other versions of three.
 
 ## Usage
 Include `dist/bas.js` or `dist/bas.min.js` in your project. An npm package is also available:
 
     $ npm install three-bas
+
+## ES6 imports
+```js
+import * as BAS from 'three-bas'
+// or
+import {
+  PrefabBufferGeometry,
+  StandardAnimationMaterial,
+  // etc
+} from 'three-bas'
+```
 
 ## Development
 This project relies or [npm](https://www.npmjs.com/) and [rollup](https://rollupjs.org/) for building the source.
