@@ -10,23 +10,6 @@ import BaseAnimationMaterial from './BaseAnimationMaterial';
  * @constructor
  */
 function PhongAnimationMaterial(parameters) {
-  this.varyingParameters = [];
-
-  this.vertexFunctions = [];
-  this.vertexParameters = [];
-  this.vertexInit = [];
-  this.vertexNormal = [];
-  this.vertexPosition = [];
-  this.vertexColor = [];
-
-  this.fragmentFunctions = [];
-  this.fragmentParameters = [];
-  this.fragmentInit = [];
-  this.fragmentMap = [];
-  this.fragmentDiffuse = [];
-  this.fragmentEmissive = [];
-  this.fragmentSpecular = [];
-
   BaseAnimationMaterial.call(this, parameters, ShaderLib['phong'].uniforms);
 
   this.lights = true;

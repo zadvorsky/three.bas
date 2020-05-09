@@ -5,16 +5,8 @@ function DepthAnimationMaterial(parameters) {
   this.depthPacking = RGBADepthPacking;
   this.clipping = true;
 
-  this.vertexFunctions = [];
-  this.vertexParameters = [];
-  this.vertexInit = [];
-  this.vertexPosition = [];
-  this.vertexPostMorph = [];
-  this.vertexPostSkinning = [];
-
   BaseAnimationMaterial.call(this, parameters, ShaderLib['depth'].uniforms);
 
-  // this.uniforms = UniformsUtils.merge([ShaderLib['depth'].uniforms, parameters.uniforms]);
   this.vertexShader = this.concatVertexShader();
   this.fragmentShader = ShaderLib['depth'].fragmentShader;
 }

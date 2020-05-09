@@ -10,25 +10,6 @@ import BaseAnimationMaterial from './BaseAnimationMaterial';
  * @constructor
  */
 function LambertAnimationMaterial(parameters) {
-  this.varyingParameters = [];
-
-  this.vertexFunctions = [];
-  this.vertexParameters = [];
-  this.vertexInit = [];
-  this.vertexNormal = [];
-  this.vertexPosition = [];
-  this.vertexColor = [];
-  this.vertexPostMorph = [];
-  this.vertexPostSkinning = [];
-
-  this.fragmentFunctions = [];
-  this.fragmentParameters = [];
-  this.fragmentInit = [];
-  this.fragmentMap = [];
-  this.fragmentDiffuse = [];
-  this.fragmentEmissive = [];
-  this.fragmentSpecular = [];
-
   BaseAnimationMaterial.call(this, parameters, ShaderLib['lambert'].uniforms);
 
   this.lights = true;

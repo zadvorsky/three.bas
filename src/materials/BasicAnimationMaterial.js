@@ -10,23 +10,6 @@ import BaseAnimationMaterial from './BaseAnimationMaterial';
  * @constructor
  */
 function BasicAnimationMaterial(parameters) {
-  this.varyingParameters = [];
-
-  this.vertexParameters = [];
-  this.vertexFunctions = [];
-  this.vertexInit = [];
-  this.vertexNormal = [];
-  this.vertexPosition = [];
-  this.vertexColor = [];
-  this.vertexPostMorph = [];
-  this.vertexPostSkinning = [];
-
-  this.fragmentFunctions = [];
-  this.fragmentParameters = [];
-  this.fragmentInit = [];
-  this.fragmentMap = [];
-  this.fragmentDiffuse = [];
-
   BaseAnimationMaterial.call(this, parameters, ShaderLib['basic'].uniforms);
 
   this.lights = false;

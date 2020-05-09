@@ -10,26 +10,6 @@ import BaseAnimationMaterial from './BaseAnimationMaterial';
  * @constructor
  */
 function StandardAnimationMaterial(parameters) {
-  this.varyingParameters = [];
-
-  this.vertexFunctions = [];
-  this.vertexParameters = [];
-  this.vertexInit = [];
-  this.vertexNormal = [];
-  this.vertexPosition = [];
-  this.vertexColor = [];
-  this.vertexPostMorph = [];
-  this.vertexPostSkinning = [];
-
-  this.fragmentFunctions = [];
-  this.fragmentParameters = [];
-  this.fragmentInit = [];
-  this.fragmentMap = [];
-  this.fragmentDiffuse = [];
-  this.fragmentRoughness = [];
-  this.fragmentMetalness = [];
-  this.fragmentEmissive = [];
-
   BaseAnimationMaterial.call(this, parameters, ShaderLib['physical'].uniforms);
 
   this.lights = true;
@@ -108,6 +88,14 @@ StandardAnimationMaterial.prototype.concatFragmentShader = function () {
       ${this.stringifyChunk('fragmentDiffuse')}
       ${(this.stringifyChunk('fragmentMap') || '#include <map_fragment>')}
 
+      `
+    )
+    .replace(
+      '#include <emissivemap_fragment>',
+      `
+      ${this.stringifyChunk('fragmentEmissive')}
+
+      #include <emissivemap_fragment>
       `
     )
     .replace(

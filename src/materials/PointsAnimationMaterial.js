@@ -8,22 +8,6 @@ import BaseAnimationMaterial from './BaseAnimationMaterial';
  * @constructor
  */
 function PointsAnimationMaterial(parameters) {
-  this.varyingParameters = [];
-
-  this.vertexFunctions = [];
-  this.vertexParameters = [];
-  this.vertexInit = [];
-  this.vertexPosition = [];
-  this.vertexColor = [];
-
-  this.fragmentFunctions = [];
-  this.fragmentParameters = [];
-  this.fragmentInit = [];
-  this.fragmentMap = [];
-  this.fragmentDiffuse = [];
-  // use fragment shader to shape to point, reference: https://thebookofshaders.com/07/
-  this.fragmentShape = [];
-
   BaseAnimationMaterial.call(this, parameters, ShaderLib['points'].uniforms);
 
   this.vertexShader = this.concatVertexShader();

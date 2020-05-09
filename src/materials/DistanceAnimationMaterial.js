@@ -5,16 +5,8 @@ function DistanceAnimationMaterial(parameters) {
   this.depthPacking = RGBADepthPacking;
   this.clipping = true;
 
-  this.vertexFunctions = [];
-  this.vertexParameters = [];
-  this.vertexInit = [];
-  this.vertexPosition = [];
-  this.vertexPostMorph = [];
-  this.vertexPostSkinning = [];
-
   BaseAnimationMaterial.call(this, parameters, ShaderLib['distanceRGBA'].uniforms);
 
-  // this.uniforms = UniformsUtils.merge([ShaderLib['distanceRGBA'].uniforms, parameters.uniforms]);
   this.vertexShader = this.concatVertexShader();
   this.fragmentShader = ShaderLib['distanceRGBA'].fragmentShader;
 }
