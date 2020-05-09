@@ -39,78 +39,82 @@ LambertAnimationMaterial.prototype = Object.create(BaseAnimationMaterial.prototy
 LambertAnimationMaterial.prototype.constructor = LambertAnimationMaterial;
 
 LambertAnimationMaterial.prototype.concatVertexShader = function () {
-  return `
-  #define LAMBERT
+  return ShaderLib.lambert.vertexShader
+    .replace(
+      'void main() {',
+      `
+      ${this.stringifyChunk('vertexParameters')}
+      ${this.stringifyChunk('varyingParameters')}
+      ${this.stringifyChunk('vertexFunctions')}
 
-  varying vec3 vLightFront;
-  varying vec3 vIndirectFront;
+      void main() {
+        ${this.stringifyChunk('vertexInit')}
+      `
+    )
+    .replace(
+      '#include <beginnormal_vertex>',
+      `
+      #include <beginnormal_vertex>
 
-  #ifdef DOUBLE_SIDED
-    varying vec3 vLightBack;
-    varying vec3 vIndirectBack;
-  #endif
+      ${this.stringifyChunk('vertexNormal')}
+      `
+    )
+    .replace(
+      '#include <begin_vertex>',
+      `
+      #include <begin_vertex>
 
-  #include <common>
-  #include <uv_pars_vertex>
-  #include <uv2_pars_vertex>
-  #include <envmap_pars_vertex>
-  #include <bsdfs>
-  #include <lights_pars_begin>
-  #include <color_pars_vertex>
-  #include <fog_pars_vertex>
-  #include <morphtarget_pars_vertex>
-  #include <skinning_pars_vertex>
-  #include <shadowmap_pars_vertex>
-  #include <logdepthbuf_pars_vertex>
-  #include <clipping_planes_pars_vertex>
+      ${this.stringifyChunk('vertexPosition')}
+      ${this.stringifyChunk('vertexColor')}
+      `
+    )
+    .replace(
+      '#include <morphtarget_vertex>',
+      `
+      #include <morphtarget_vertex>
 
-  ${this.stringifyChunk('vertexParameters')}
-  ${this.stringifyChunk('varyingParameters')}
-  ${this.stringifyChunk('vertexFunctions')}
+      ${this.stringifyChunk('vertexPostMorph')}
+      `
+    )
+    .replace(
+      '#include <skinning_vertex>',
+      `
+      #include <skinning_vertex>
 
-  void main() {
-
-    ${this.stringifyChunk('vertexInit')}
-
-    #include <uv_vertex>
-    #include <uv2_vertex>
-    #include <color_vertex>
-
-    #include <beginnormal_vertex>
-
-    ${this.stringifyChunk('vertexNormal')}
-
-    #include <morphnormal_vertex>
-    #include <skinbase_vertex>
-    #include <skinnormal_vertex>
-    #include <defaultnormal_vertex>
-
-    #include <begin_vertex>
-
-    ${this.stringifyChunk('vertexPosition')}
-    ${this.stringifyChunk('vertexColor')}
-
-    #include <morphtarget_vertex>
-
-    ${this.stringifyChunk('vertexPostMorph')}
-
-    #include <skinning_vertex>
-
-    ${this.stringifyChunk('vertexPostSkinning')}
-
-    #include <project_vertex>
-    #include <logdepthbuf_vertex>
-    #include <clipping_planes_vertex>
-
-    #include <worldpos_vertex>
-    #include <envmap_vertex>
-    #include <lights_lambert_vertex>
-    #include <shadowmap_vertex>
-    #include <fog_vertex>
-  }`;
+      ${this.stringifyChunk('vertexPostSkinning')}
+      `
+    )
 };
 
 LambertAnimationMaterial.prototype.concatFragmentShader = function () {
+  return ShaderLib.lambert.fragmentShader
+    .replace(
+      'void main() {',
+      `
+      ${this.stringifyChunk('fragmentParameters')}
+      ${this.stringifyChunk('varyingParameters')}
+      ${this.stringifyChunk('fragmentFunctions')}
+
+      void main() {
+        ${this.stringifyChunk('fragmentInit')}
+      `
+    )
+    .replace(
+      '#include <map_fragment>',
+      `
+      ${this.stringifyChunk('fragmentDiffuse')}
+      ${(this.stringifyChunk('fragmentMap') || '#include <map_fragment>')}
+
+      `
+    )
+    .replace(
+      '#include <emissivemap_fragment>',
+      `
+      ${this.stringifyChunk('fragmentEmissive')}
+
+      #include <emissivemap_fragment>
+      `
+    )
   return `
   uniform vec3 diffuse;
   uniform vec3 emissive;
@@ -161,10 +165,9 @@ LambertAnimationMaterial.prototype.concatFragmentShader = function () {
     ReflectedLight reflectedLight = ReflectedLight( vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ) );
     vec3 totalEmissiveRadiance = emissive;
 
-    ${this.stringifyChunk('fragmentDiffuse')}
-
     #include <logdepthbuf_fragment>
 
+    ${this.stringifyChunk('fragmentDiffuse')}
     ${(this.stringifyChunk('fragmentMap') || '#include <map_fragment>')}
 
     #include <color_fragment>
