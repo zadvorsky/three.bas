@@ -1,3 +1,4 @@
+export { default as BaseAnimationMaterial } from './materials/BaseAnimationMaterial';
 export { BasicAnimationMaterial } from './materials/BasicAnimationMaterial';
 export { LambertAnimationMaterial } from './materials/LambertAnimationMaterial';
 export { PhongAnimationMaterial } from './materials/PhongAnimationMaterial';

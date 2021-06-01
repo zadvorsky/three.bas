@@ -36,7 +36,7 @@ function init() {
   // pass the path definition to the animation
   var animation = new Animation(points);
   animation.animate(24.0, {ease: Power0.easeIn, repeat:-1});
-  root.add(animation);
+  root.add(animation.mesh);
 
   // debug helpers / visuals
   var debug = new THREE.Group();
@@ -224,18 +224,16 @@ function Animation(path) {
     ]
   });
 
-  THREE.Mesh.call(this, geometry, material);
-
-  this.frustumCulled = false;
+  this.mesh = new THREE.Mesh(geometry, material);
+  this.mesh.frustumCulled = false;
 }
-Animation.prototype = Object.create(THREE.Mesh.prototype);
-Animation.prototype.constructor = Animation;
+
 Object.defineProperty(Animation.prototype, 'time', {
   get: function () {
-    return this.material.uniforms['uTime'].value;
+    return this.mesh.material.uniforms['uTime'].value;
   },
   set: function (v) {
-    this.material.uniforms['uTime'].value = v;
+    this.mesh.material.uniforms['uTime'].value = v;
   }
 });
 
@@ -246,29 +244,26 @@ Animation.prototype.animate = function (duration, options) {
   return TweenMax.fromTo(this, duration, {time: 0.0}, options);
 };
 
-function PointHelper(color, size, position) {
-  THREE.Mesh.call(this,
-    new THREE.SphereGeometry(size || 1.0, 8, 8),
-    new THREE.MeshBasicMaterial({
-      color: color || 0xff0000,
-      wireframe: true,
-      depthWrite: false,
-      depthTest: false
-    })
-  );
+class PointHelper extends THREE.Mesh {
+  constructor (color, size, position) {
+    super(
+      new THREE.SphereGeometry(size || 1.0, 16, 16),
+      new THREE.MeshBasicMaterial({
+        color: color || 0xff0000,
+        wireframe: true
+      })
+    );
 
-  position && this.position.copy(position);
+    position && this.position.copy(position);
+  }
 }
-PointHelper.prototype = Object.create(THREE.Mesh.prototype);
-PointHelper.prototype.constructor = PointHelper;
 
-function LineHelper(points, params) {
-  var g = new THREE.Geometry();
-  var m = new THREE.LineBasicMaterial(params);
-
-  g.vertices = points;
-
-  THREE.Line.call(this, g, m);
+class LineHelper extends THREE.Line {
+  constructor (points, params) {
+    super(
+      new THREE.BufferGeometry().setFromPoints(points),
+      new THREE.LineBasicMaterial(params)
+    );
+  }
 }
-LineHelper.prototype = Object.create(THREE.Line.prototype);
-LineHelper.prototype.constructor = LineHelper;
+

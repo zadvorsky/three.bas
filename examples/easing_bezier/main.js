@@ -9,14 +9,14 @@ function init() {
   root.renderer.setClearColor(0x222222);
   root.camera.position.set(0, 0, 150);
 
-  var grid = new THREE.GridHelper(50, 10,0x333333, 0x333333);
+  var grid = new THREE.GridHelper(100, 10,0x333333, 0x333333);
   grid.material.depthWrite = false;
   grid.rotation.x = Math.PI * 0.5;
   root.scene.add(grid);
 
   var system = new EaseSystem();
   system.animate(2.0, {ease: Power0.easeIn, repeat:-1, repeatDelay:0.25, yoyo: true});
-  root.add(system);
+  root.add(system.mesh);
 }
 
 ////////////////////
@@ -46,7 +46,7 @@ function EaseSystem() {
   for (i = 0, offset = 0; i < prefabCount; i++) {
     var delay = THREE.Math.mapLinear(i, 0, prefabCount, 0.0, maxPrefabDelay);
 
-    for (j = 0; j < prefabGeometry.vertices.length; j++) {
+    for (j = 0; j < prefabGeometry.attributes.position.count; j++) {
       aDelayDuration.array[offset] = delay + (2 - j % 2) * maxVertexDelay;
       aDelayDuration.array[offset + 1] = duration;
 
@@ -69,7 +69,7 @@ function EaseSystem() {
     endPosition.y = startPosition.y;
     endPosition.z = 0;
 
-    for (j = 0; j < prefabGeometry.vertices.length; j++) {
+    for (j = 0; j < prefabGeometry.attributes.position.count; j++) {
       aStartPosition.array[offset] = startPosition.x;
       aStartPosition.array[offset + 1] = startPosition.y;
       aStartPosition.array[offset + 2] = startPosition.z;
@@ -110,18 +110,15 @@ function EaseSystem() {
     ]
   });
 
-  THREE.Mesh.call(this, geometry, material);
-
-  this.frustumCulled = false;
+  this.mesh = new THREE.Mesh(geometry, material);
+  this.mesh.frustumCulled = false;
 }
-EaseSystem.prototype = Object.create(THREE.Mesh.prototype);
-EaseSystem.prototype.constructor = EaseSystem;
 Object.defineProperty(EaseSystem.prototype, 'time', {
   get: function () {
-    return this.material.uniforms['uTime'].value;
+    return this.mesh.material.uniforms['uTime'].value;
   },
   set: function (v) {
-    this.material.uniforms['uTime'].value = v;
+    this.mesh.material.uniforms['uTime'].value = v;
   }
 });
 

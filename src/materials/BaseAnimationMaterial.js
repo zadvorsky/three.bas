@@ -1,42 +1,39 @@
 import {
-  Material,
   ShaderMaterial,
   UniformsUtils,
 } from 'three';
 
-function BaseAnimationMaterial(parameters, uniforms) {
-  ShaderMaterial.call(this);
+class BaseAnimationMaterial extends ShaderMaterial {
+  constructor (parameters, uniforms) {
+    super();
 
-  if (parameters.uniformValues) {
-    console.warn('THREE.BAS - `uniformValues` is deprecated. Put their values directly into the parameters.')
+    if (parameters.uniformValues) {
+      console.warn('THREE.BAS - `uniformValues` is deprecated. Put their values directly into the parameters.')
 
-    Object.keys(parameters.uniformValues).forEach((key) => {
-      parameters[key] = parameters.uniformValues[key]
+      Object.keys(parameters.uniformValues).forEach((key) => {
+        parameters[key] = parameters.uniformValues[key]
+      })
+
+      delete parameters.uniformValues
+    }
+
+    // copy parameters to (1) make use of internal #define generation
+    // and (2) prevent 'x is not a property of this material' warnings.
+    Object.keys(parameters).forEach((key) => {
+      this[key] = parameters[key]
     })
 
-    delete parameters.uniformValues
+    // override default parameter values
+    this.setValues(parameters);
+
+    // override uniforms
+    this.uniforms = UniformsUtils.merge([uniforms, parameters.uniforms || {}]);
+
+    // set uniform values from parameters that affect uniforms
+    this.setUniformValues(parameters);
   }
 
-  // copy parameters to (1) make use of internal #define generation
-  // and (2) prevent 'x is not a property of this material' warnings.
-  Object.keys(parameters).forEach((key) => {
-    this[key] = parameters[key]
-  })
-
-  // override default parameter values
-  this.setValues(parameters);
-
-  // override uniforms
-  this.uniforms = UniformsUtils.merge([uniforms, parameters.uniforms || {}]);
-
-  // set uniform values from parameters that affect uniforms
-  this.setUniformValues(parameters);
-}
-
-BaseAnimationMaterial.prototype = Object.assign(Object.create(ShaderMaterial.prototype), {
-  constructor: BaseAnimationMaterial,
-
-  setUniformValues(values) {
+  setUniformValues (values) {
     if (!values) return;
 
     const keys = Object.keys(values);
@@ -44,9 +41,9 @@ BaseAnimationMaterial.prototype = Object.assign(Object.create(ShaderMaterial.pro
     keys.forEach((key) => {
       key in this.uniforms && (this.uniforms[key].value = values[key]);
     });
-  },
+  }
 
-  stringifyChunk(name) {
+  stringifyChunk (name) {
     let value;
 
     if (!this[name]) {
@@ -60,8 +57,7 @@ BaseAnimationMaterial.prototype = Object.assign(Object.create(ShaderMaterial.pro
     }
 
     return value;
-  },
-
-});
+  }
+}
 
 export default BaseAnimationMaterial;

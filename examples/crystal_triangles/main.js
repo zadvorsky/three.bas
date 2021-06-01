@@ -106,6 +106,7 @@ function init() {
       depth: CONFIG.extrudeAmount,
       bevelEnabled: false
     });
+    shapeGeometry = new THREE.Geometry().fromBufferGeometry(shapeGeometry)
 
     // offset z vector components based on the two splines
     for (j = 0; j < shapeGeometry.vertices.length; j++) {
@@ -125,7 +126,7 @@ function init() {
 
   // 5. feed the geometry to the animation
   var animation = new Animation(geometry);
-  root.add(animation);
+  root.add(animation.mesh);
 
   // interactive
   var paused = false;
@@ -142,11 +143,11 @@ function init() {
     var px = e.clientX / window.innerWidth;
     var py = e.clientY / window.innerHeight;
 
-    animation.material.uniforms['uD'].value = 2.0 + px * 16;
-    animation.material.uniforms['uA'].value = py * 4.0;
+    animation.mesh.material.uniforms['uD'].value = 2.0 + px * 16;
+    animation.mesh.material.uniforms['uA'].value = py * 4.0;
 
-    animation.material.uniforms['roughness'].value = px;
-    animation.material.uniforms['metalness'].value = py;
+    animation.mesh.material.uniforms['roughness'].value = px;
+    animation.mesh.material.uniforms['metalness'].value = py;
   });
 
   window.addEventListener('keyup', function(e) {
@@ -159,10 +160,10 @@ function init() {
 
   Object.defineProperty(colorProxy, 'diffuse', {
     get: function() {
-      return '#' + animation.material.uniforms['diffuse'].value.getHexString();
+      return '#' + animation.mesh.material.uniforms['diffuse'].value.getHexString();
     },
     set: function(v) {
-      animation.material.uniforms['diffuse'].value.set(v);
+      animation.mesh.material.uniforms['diffuse'].value.set(v);
     }
   });
 
@@ -253,17 +254,15 @@ function Animation(modelGeometry) {
 
   geometry.computeVertexNormals();
 
-  THREE.Mesh.call(this, geometry, material);
-
-  this.frustumCulled = false;
+  this.mesh = new THREE.Mesh(geometry, material);
+  this.mesh.frustumCulled = false;
 }
-Animation.prototype = Object.create(THREE.Mesh.prototype);
-Animation.prototype.constructor = Animation;
+
 Object.defineProperty(Animation.prototype, 'time', {
   get: function () {
-    return this.material.uniforms['uTime'].value;
+    return this.mesh.material.uniforms['uTime'].value;
   },
   set: function (v) {
-    this.material.uniforms['uTime'].value = v;
+    this.mesh.material.uniforms['uTime'].value = v;
   }
 });

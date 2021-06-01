@@ -59,7 +59,7 @@ function init() {
   var animation = new Animation(points);
   var tween = animation.animate(24.0, {ease: Power0.easeInOut, repeat:-1});
 
-  root.add(animation);
+  root.add(animation.mesh);
 
   // audio
 
@@ -114,7 +114,7 @@ function init() {
   root.addUpdateCallback(function() {
     analyzer.updateSample();
 
-    var spline = animation.material.uniforms['uPath'].value;
+    var spline = animation.mesh.material.uniforms['uPath'].value;
     var data = analyzer.frequencyByteData;
 
     var avg = analyzer.getAverageFloat();
@@ -123,9 +123,9 @@ function init() {
     var avgMH = analyzer.getAverageFloat(16, 24);
     var avgHH = analyzer.getAverageFloat(24, 32);
 
-    animation.material.uniforms.roughness.value =     mapEase(Power2.easeInOut, avgLL, 0.0, 1.0, 0/5, 1.0);
-    animation.material.uniforms.metalness.value =     mapEase(Power2.easeInOut, avgML, 0.0, 1.0, 0.0, 0.5);
-    animation.material.uniforms.uGlobalPivot.value =  mapEase(Power4.easeOut, avgHH, 0.0, 1.0, 2.0, 0.125);
+    animation.mesh.material.uniforms.roughness.value =     mapEase(Power2.easeInOut, avgLL, 0.0, 1.0, 0/5, 1.0);
+    animation.mesh.material.uniforms.metalness.value =     mapEase(Power2.easeInOut, avgML, 0.0, 1.0, 0.0, 0.5);
+    animation.mesh.material.uniforms.uGlobalPivot.value =  mapEase(Power4.easeOut, avgHH, 0.0, 1.0, 2.0, 0.125);
 
     centerLight.intensity = mapEase(Power2.easeIn, avg, 0.0, 1.0, 0.5, 1.0);
     topLight.intensity = mapEase(Power2.easeIn, avg, 0.0, 1.0, 0.0, 4.0);
@@ -143,9 +143,9 @@ function init() {
       p.w = data[i] / 255 * maxW + 20;
     }
 
-    animation.rotation.x += 0.01 * avgLL;
-    animation.rotation.y += 0.01 * avgML;
-    animation.rotation.z += 0.01 * avgMH;
+    animation.mesh.rotation.x += 0.01 * avgLL;
+    animation.mesh.rotation.y += 0.01 * avgML;
+    animation.mesh.rotation.z += 0.01 * avgMH;
 
     centerLight.color.offsetHSL(0.001, 0, 0);
     topLight.color.offsetHSL(0.001, 0, 0);
@@ -271,18 +271,15 @@ function Animation(path) {
     ]
   });
 
-  THREE.Mesh.call(this, geometry, material);
-
-  this.frustumCulled = false;
+  this.mesh = new THREE.Mesh(geometry, material);
+  this.mesh.frustumCulled = false;
 }
-Animation.prototype = Object.create(THREE.Mesh.prototype);
-Animation.prototype.constructor = Animation;
 Object.defineProperty(Animation.prototype, 'time', {
   get: function () {
-    return this.material.uniforms['uTime'].value;
+    return this.mesh.material.uniforms['uTime'].value;
   },
   set: function (v) {
-    this.material.uniforms['uTime'].value = v;
+    this.mesh.material.uniforms['uTime'].value = v;
   }
 });
 Animation.prototype.animate = function (duration, options) {

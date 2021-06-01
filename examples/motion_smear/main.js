@@ -44,6 +44,8 @@ function init() {
 
   // create a geometry for the smear mesh
   var geometry = new THREE.OctahedronGeometry(10, 4);
+  geometry = new THREE.Geometry().fromBufferGeometry(geometry);
+
   // create the smear mesh
   var smearMesh = new SmearMesh(geometry, {
     smearFactor: 2.0,
@@ -51,9 +53,9 @@ function init() {
     smearDecayFactor: 0.5,
     createDepthMaterial: true
   });
-  smearMesh.castShadow = true;
+  smearMesh.mesh.castShadow = true;
 
-  root.add(smearMesh);
+  root.add(smearMesh.mesh);
   // smearMesh.update must be called each frame
   root.addUpdateCallback(function() {
     smearMesh.update();
@@ -70,7 +72,7 @@ function init() {
 
   var autoTween = new TimelineMax({repeat: -1, repeatDelay: 0.5, yoyo: true, onUpdate: updateMeshPosition});
   // set the initial position to prevent jumping
-  smearMesh.position.set(-100, 0, 0);
+  smearMesh.mesh.position.set(-100, 0, 0);
   // setup the animation
   autoTween.fromTo(autoPosition, 1, {x: -100}, {x: 100, ease: Power4.easeInOut});
 
@@ -79,13 +81,13 @@ function init() {
   // create a drag controller for mouse interactivity
   var dragController = new DragController(root.camera, root.renderer.domElement, root.controls);
   // register the mesh with the dragController so it will dispatch 'dragStart', 'drag' and 'dragEnd' events
-  dragController.register(smearMesh);
+  dragController.register(smearMesh.mesh);
   // pause the tween on drag start
-  smearMesh.addEventListener('dragStart', function() {
+  smearMesh.mesh.addEventListener('dragStart', function() {
     autoTween.pause();
   });
   // resume the tween on drag end after the position is reset
-  smearMesh.addEventListener('dragEnd', function() {
+  smearMesh.mesh.addEventListener('dragEnd', function() {
     autoPosition.copy(smearMesh.position);
     TweenMax.to(autoPosition, 0.5, {x:-100, y: 0, z: 0, ease: Power2.easeInOut,
       onUpdate: updateMeshPosition,
@@ -95,7 +97,7 @@ function init() {
     })
   });
   // update position on drag
-  smearMesh.addEventListener('drag', function(e) {
+  smearMesh.mesh.addEventListener('drag', function(e) {
     // call the moveTo function instead of setting the position directly
     // moveTo is where the smear effect is calculated
     this.moveTo(e.position);
@@ -122,6 +124,7 @@ function DragController(camera, element, controls) {
   this.hoverObject = null;
 
   // MOUSE
+  console.log(this.element)
   this.element.addEventListener('mousedown', function(e) {
     e.preventDefault();
     this.updatePointerUDC(e.clientX, e.clientY);
@@ -167,7 +170,7 @@ DragController.prototype = {
     this.raycaster.setFromCamera(this.pointerUDC, this.camera);
 
     var intersects = this.raycaster.intersectObjects(this.objects);
-
+    console.log(intersects)
     if (intersects.length > 0) {
       this.controls && (this.controls.enabled = false);
 
@@ -279,32 +282,27 @@ function SmearMesh(geometry, settings) {
   }, settings.materialParams));
 
   // normals for smooth shading
-  if (material.flatShading === false) {
-    bufferGeometry.computeVertexNormals();
-  }
+  bufferGeometry.computeVertexNormals();
+
+  this.mesh = new THREE.Mesh(bufferGeometry, material);
+  this.mesh.frustumCulled = false;
 
   // for point light shadows
   if (settings.createDistanceMaterial) {
-    this.customDistanceMaterial = BAS.Utils.createDistanceAnimationMaterial(material);
+    this.mesh.customDistanceMaterial = BAS.Utils.createDistanceAnimationMaterial(material);
   }
 
   // for dir & spot light shadows
   if (settings.createDepthMaterial) {
-    this.customDepthMaterial = BAS.Utils.createDepthAnimationMaterial(material);
+    this.mesh.customDepthMaterial = BAS.Utils.createDepthAnimationMaterial(material);
   }
-
-  THREE.Mesh.call(this, bufferGeometry, material);
-
-  this.frustumCulled = false;
 }
-SmearMesh.prototype = Object.create(THREE.Mesh.prototype);
-SmearMesh.prototype.constructor = SmearMesh;
 
 SmearMesh.prototype.moveTo = function(target) {
-  var v = this.material.uniforms['uDelta'].value;
+  var v = this.mesh.material.uniforms['uDelta'].value;
 
-  v.subVectors(target, this.position);
-  this.position.copy(target);
+  v.subVectors(target, this.mesh.position);
+  this.mesh.position.copy(target);
 
   if (v.length() < this.smearVelocityThreshold) {
     v.setScalar(0.0);
@@ -312,13 +310,13 @@ SmearMesh.prototype.moveTo = function(target) {
 };
 
 SmearMesh.prototype.update = function() {
-  this.material.uniforms['uDelta'].value.multiplyScalar(this.smearDecayFactor);
+  this.mesh.material.uniforms['uDelta'].value.multiplyScalar(this.smearDecayFactor);
 
-  if (this.customDepthMaterial) {
-    this.customDepthMaterial.uniforms['uDelta'].value.copy(this.material.uniforms['uDelta'].value);
+  if (this.mesh.customDepthMaterial) {
+    this.mesh.customDepthMaterial.uniforms['uDelta'].value.copy(this.mesh.material.uniforms['uDelta'].value);
   }
 
-  if (this.customDistanceMaterial) {
-    this.customDistanceMaterial.uniforms['uDelta'].value.copy(this.material.uniforms['uDelta'].value);
+  if (this.mesh.customDistanceMaterial) {
+    this.mesh.customDistanceMaterial.uniforms['uDelta'].value.copy(this.mesh.material.uniforms['uDelta'].value);
   }
 };

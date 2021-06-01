@@ -51,14 +51,14 @@ function init() {
     elBtnLeft.classList.toggle('disabled', index === 0);
 
     if (animation) {
-      root.remove(animation);
-      animation.material.dispose();
-      animation.geometry.dispose();
+      root.remove(animation.mesh);
+      animation.mesh.material.dispose();
+      animation.mesh.geometry.dispose();
       tween.kill();
     }
 
     animation = new Animation(count, settings);
-    root.add(animation);
+    root.add(animation.mesh);
 
     tween = animation.animate({repeat:-1, repeatDelay: 0.0, ease:Power0.easeNone}).timeScale(settings.timeScale);
   }
@@ -226,19 +226,16 @@ function Animation(prefabCount, settings) {
     ]
   });
 
-  THREE.Mesh.call(this, geometry, material);
-
-  this.frustumCulled = false;
+  this.mesh = new THREE.Mesh(geometry, material);
+  this.mesh.frustumCulled = false;
 }
-Animation.prototype = Object.create(THREE.Mesh.prototype);
-Animation.prototype.constructor = Animation;
 
 Object.defineProperty(Animation.prototype, 'time', {
   get: function () {
-    return this.material.uniforms['uTime'].value;
+    return this.mesh.material.uniforms['uTime'].value;
   },
   set: function (v) {
-    this.material.uniforms['uTime'].value = v;
+    this.mesh.material.uniforms['uTime'].value = v;
   }
 });
 

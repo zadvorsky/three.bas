@@ -65,7 +65,7 @@ function createBones(sizing) {
 }
 
 function createGeometry(sizing) {
-  const baseGeometry = new THREE.CylinderGeometry(
+  let baseGeometry = new THREE.CylinderGeometry(
     5,                       // radiusTop
     5,                       // radiusBottom
     sizing.height,           // height
@@ -73,6 +73,7 @@ function createGeometry(sizing) {
     sizing.segmentCount * 4, // heightSegments
     true                     // openEnded
   );
+  baseGeometry = new THREE.Geometry().fromBufferGeometry(baseGeometry);
 
   for (let i = 0; i < baseGeometry.vertices.length; i++) {
     const vertex = baseGeometry.vertices[i];
@@ -133,7 +134,7 @@ function createMesh(geometry, bones) {
     },
     vertexParameters: `
       uniform float time;
-      
+
       attribute vec3 aPosition;
       attribute vec4 aAxisAngle;
     `,
@@ -142,9 +143,9 @@ function createMesh(geometry, bones) {
     ],
     vertexPosition: `
       vec4 q = quatFromAxisAngle(aAxisAngle.xyz, aAxisAngle.w * time);
-      
+
       transformed = rotateVector(q, transformed);
-      
+
       transformed += aPosition;
     `
   });

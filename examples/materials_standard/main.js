@@ -34,7 +34,13 @@ function init() {
   orientationBox.position.z = -100;
   root.scene.add(orientationBox);
 
-  var envCubeCamera = new THREE.CubeCamera(1, 1000, 1024);
+  const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(1024, {
+    format: THREE.RGBFormat,
+    generateMipmaps: true,
+    minFilter: THREE.LinearMipmapLinearFilter
+  });
+
+  var envCubeCamera = new THREE.CubeCamera(1, 1000, cubeRenderTarget);
   envCubeCamera.renderTarget.texture.mapping = THREE.CubeRefractionMapping;
   //envCubeCamera.renderTarget.texture.mapping = THREE.CubeReflectionMapping;
 
@@ -44,7 +50,7 @@ function init() {
 
   var animation = new Animation(envCubeCamera.renderTarget.texture);
   animation.animate(4.0, {ease: Power0.easeIn, repeat:-1, repeatDelay:0.25, yoyo: true});
-  root.add(animation);
+  root.add(animation.mesh);
 }
 
 ////////////////////
@@ -218,18 +224,15 @@ function Animation(envMap) {
   geometry.computeVertexNormals();
   geometry.bufferUvs();
 
-  THREE.Mesh.call(this, geometry, material);
-
-  this.frustumCulled = false;
+  this.mesh = new THREE.Mesh(geometry, material);
+  this.mesh.frustumCulled = false;
 }
-Animation.prototype = Object.create(THREE.Mesh.prototype);
-Animation.prototype.constructor = Animation;
 Object.defineProperty(Animation.prototype, 'time', {
   get: function () {
-    return this.material.uniforms['uTime'].value;
+    return this.mesh.material.uniforms['uTime'].value;
   },
   set: function (v) {
-    this.material.uniforms['uTime'].value = v;
+    this.mesh.material.uniforms['uTime'].value = v;
   }
 });
 

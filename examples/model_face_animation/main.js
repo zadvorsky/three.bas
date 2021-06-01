@@ -1,5 +1,7 @@
 window.onload = init;
 
+console.log(THREE.Geometry, THREE.Face3)
+
 function init() {
   var root = new THREERoot();
   root.renderer.setClearColor(0x000000);
@@ -15,7 +17,7 @@ function init() {
   root.scene.add(light);
 
   var animation = new Animation();
-  root.add(animation);
+  root.add(animation.mesh);
 
   // set a new random back-face color each time the animation repeats
   animation.animate(4.0, {ease: Power0.easeIn, repeat:-1, onRepeat: function() {
@@ -32,6 +34,7 @@ function Animation() {
   var modelRadius = 10;
   var modelTube = 4;
   var model = new THREE.TorusGeometry(modelRadius, modelTube, 256, 256);
+  model = new Geometry().fromBufferGeometry(model);
 
   // duplicate some vertices so that each face becomes a separate triangle.
   // this is the same as the THREE.ExplodeModifier
@@ -142,28 +145,25 @@ function Animation() {
     ]
   });
 
-  THREE.Mesh.call(this, geometry, material);
-
-  this.frustumCulled = false;
+  this.mesh = new THREE.Mesh(geometry, material);
+  this.mesh.frustumCulled = false;
 }
-Animation.prototype = Object.create(THREE.Mesh.prototype);
-Animation.prototype.constructor = Animation;
 
 Object.defineProperty(Animation.prototype, 'time', {
   get: function () {
-    return this.material.uniforms['uTime'].value;
+    return this.mesh.material.uniforms['uTime'].value;
   },
   set: function (v) {
-    this.material.uniforms['uTime'].value = v;
+    this.mesh.material.uniforms['uTime'].value = v;
   }
 });
 
 Object.defineProperty(Animation.prototype, 'backFaceColor', {
   get: function () {
-    return this.material.uniforms['uBackColor'].value;
+    return this.mesh.material.uniforms['uBackColor'].value;
   },
   set: function (v) {
-    this.material.uniforms['uBackColor'].value = v;
+    this.mesh.material.uniforms['uBackColor'].value = v;
   }
 });
 

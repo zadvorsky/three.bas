@@ -4,7 +4,7 @@ function init() {
   var root = new THREERoot();
   root.renderer.setClearColor(0x000000);
   root.camera.position.set(0, 0.25, -1).multiplyScalar(4);
-  
+
   // create a ground for reference
   var ground = new THREE.Mesh(
     new THREE.PlaneBufferGeometry(10, 10, 9, 9),
@@ -34,14 +34,6 @@ function init() {
     )
   };
 
-  // add some box helpers for visualization
-  var boundsHelpers = new THREE.Group();
-  boundsHelpers.add(new THREE.BoxHelper(bounds.cp0, 0xff0000));
-  boundsHelpers.add(new THREE.BoxHelper(bounds.cp1, 0x00ff00));
-  boundsHelpers.add(new THREE.BoxHelper(bounds.end, 0x0000ff));
-  boundsHelpers.visible = false;
-  root.add(boundsHelpers);
-
   // animation
   var animation;
 
@@ -53,18 +45,18 @@ function init() {
     size: 0.05,
     create: function() {
       if (animation) {
-        root.remove(animation);
-        animation.geometry.dispose();
-        animation.material.dispose();
+        root.remove(animation.mesh);
+        animation.mesh.geometry.dispose();
+        animation.mesh.material.dispose();
         animation.tween.kill();
       }
 
       animation = new Animation(controller.count, controller.size, bounds);
       animation.tween.timeScale(controller.timeScale);
-      animation.addEventListener('tween_complete', function() {
+      animation.mesh.addEventListener('tween_complete', function() {
         animation.play();
       });
-      root.add(animation);
+      root.add(animation.mesh);
 
       animation.play();
     },
@@ -73,7 +65,6 @@ function init() {
     }
   };
 
-  gui.add(boundsHelpers, 'visible').name('show bounds');
   gui.add(controller, 'timeScale', 0.01, 1.0).step(0.01).onChange(function(v) {
     animation.tween.timeScale(v);
   });
@@ -95,10 +86,11 @@ function Animation(prefabCount, prefabSize, bounds) {
 
   // create a prefab
   var prefab = new THREE.PlaneGeometry(prefabSize, prefabSize, 1, 8);
+  prefab = new Geometry().fromBufferGeometry(prefab);
 
   // create a geometry where the prefab is repeated 'prefabCount' times
   var geometry = new NuggetCollisionGeometry(prefab, prefabCount);
-  
+
   // animation timing
 
   // each prefab has a start time (delay) and duration
@@ -113,7 +105,7 @@ function Animation(prefabCount, prefabSize, bounds) {
   for (var i = 0, offset = 0; i < prefabCount; i++) {
     delay = prefabDelay * i;
     duration = THREE.Math.randFloat(minDuration, maxDuration);
-    
+
     for (var j = 0; j < geometry.prefabVertexCount; j++) {
       // by giving EACH VERTEX in a prefab its own delay (based on index) the prefabs are stretched out
       // as the animation plays
@@ -121,7 +113,7 @@ function Animation(prefabCount, prefabSize, bounds) {
       aDelayDuration.array[offset++] = duration;
     }
   }
-  
+
   this.totalDuration = maxDuration + prefabDelay * prefabCount + vertexDelay * geometry.prefabVertexCount;
 
   // position
@@ -140,25 +132,25 @@ function Animation(prefabCount, prefabSize, bounds) {
   var colorObj = new THREE.Color('#d7d2bf');
   var colorHSL = colorObj.getHSL();
   var h, s, l;
-  
+
   geometry.createAttribute('color', 3, function(data) {
     h = colorHSL.h;
     s = colorHSL.s;
     l = THREE.Math.randFloat(0.25, 1.00);
     colorObj.setHSL(h, s, l);
-    
+
     colorObj.toArray(data);
   });
-  
+
   // rotation
-  
+
   var axis = new THREE.Vector3();
-  
+
   geometry.createAttribute('aAxisAngle', 4, function(data) {
     BAS.Utils.randomAxis(axis).toArray(data);
     data[3] = Math.PI * THREE.Math.randFloat(8, 16);
   });
-  
+
   var material = new BAS.BasicAnimationMaterial({
     side: THREE.DoubleSide,
     vertexColors: THREE.VertexColors,
@@ -173,7 +165,7 @@ function Animation(prefabCount, prefabSize, bounds) {
     ],
     vertexParameters: [
       'uniform float uTime;',
-  
+
       'attribute vec2 aDelayDuration;',
       'attribute vec3 aStartPosition;',
       'attribute vec3 aControlPosition0;',
@@ -198,73 +190,71 @@ function Animation(prefabCount, prefabSize, bounds) {
     ]
   });
 
-  THREE.Mesh.call(this, geometry, material);
-  this.frustumCulled = false;
-  
-  this.tween = TweenMax.fromTo(this.material.uniforms['uTime'], 1.0, {value: 0}, {
+  this.mesh = new THREE.Mesh(geometry, material);
+  this.mesh.frustumCulled = false;
+
+  this.tween = TweenMax.fromTo(this.mesh.material.uniforms['uTime'], 1.0, {value: 0}, {
     value:this.totalDuration,
     ease:Power0.easeOut,
     onCompleteScope: this,
     onComplete: function() {
-      this.dispatchEvent({type: 'tween_complete'});
+      this.mesh.dispatchEvent({type: 'tween_complete'});
     }
   });
   this.tween.pause();
 }
-Animation.prototype = Object.create(THREE.Mesh.prototype);
-Animation.prototype.constructor = Animation;
 
 Animation.prototype.play = function() {
   this.bufferPoints();
   this.tween.play(0);
 };
 Animation.prototype.bufferPoints = function() {
-  var aControlPosition0 = this.geometry.attributes['aControlPosition0'];
-  var aControlPosition1 = this.geometry.attributes['aControlPosition1'];
-  var aEndPosition = this.geometry.attributes['aEndPosition'];
+  var aControlPosition0 = this.mesh.geometry.attributes['aControlPosition0'];
+  var aControlPosition1 = this.mesh.geometry.attributes['aControlPosition1'];
+  var aEndPosition = this.mesh.geometry.attributes['aEndPosition'];
   var data = [];
   var v = new THREE.Vector3();
 
-  for (var i = 0; i < this.geometry.prefabCount; i++) {
+  for (var i = 0; i < this.mesh.geometry.prefabCount; i++) {
     BAS.Utils.randomInBox(this.bounds.cp0, v).toArray(data);
-    this.geometry.setPrefabData(aControlPosition0, i, data);
+    this.mesh.geometry.setPrefabData(aControlPosition0, i, data);
 
     BAS.Utils.randomInBox(this.bounds.cp1, v).toArray(data);
-    this.geometry.setPrefabData(aControlPosition1, i, data);
+    this.mesh.geometry.setPrefabData(aControlPosition1, i, data);
 
     BAS.Utils.randomInBox(this.bounds.end, v).toArray(data);
-    this.geometry.setPrefabData(aEndPosition, i, data);
+    this.mesh.geometry.setPrefabData(aEndPosition, i, data);
   }
 
   aControlPosition0.needsUpdate = true;
   aControlPosition1.needsUpdate = true;
 };
 
-function NuggetCollisionGeometry(prefab, count) {
-  BAS.PrefabBufferGeometry.call(this, prefab, count);
-}
-NuggetCollisionGeometry.prototype = Object.create(BAS.PrefabBufferGeometry.prototype);
-NuggetCollisionGeometry.prototype.constructor = NuggetCollisionGeometry;
-NuggetCollisionGeometry.prototype.bufferPositions = function() {
-  var positionBuffer = this.createAttribute('position', 3).array;
-  
-  var scaleMatrix = new THREE.Matrix4();
-  var scale;
-  var p = new THREE.Vector3();
-  
-  for (var i = 0, offset = 0; i < this.prefabCount; i++) {
-    for (var j = 0; j < this.prefabVertexCount; j++, offset += 3) {
-      var prefabVertex = this.prefabGeometry.vertices[j];
-      
-      scale = Math.random();
-      scaleMatrix.identity().makeScale(scale, scale, scale);
-      
-      p.copy(prefabVertex);
-      p.applyMatrix4(scaleMatrix);
-      
-      positionBuffer[offset    ] = p.x;
-      positionBuffer[offset + 1] = p.y;
-      positionBuffer[offset + 2] = p.z;
+class NuggetCollisionGeometry extends BAS.PrefabBufferGeometry {
+  constructor (prefab, count) {
+    super(prefab, count);
+  }
+
+  bufferPositions () {
+    var positionBuffer = this.createAttribute('position', 3).array;
+    var scaleMatrix = new THREE.Matrix4();
+    var scale;
+    var p = new THREE.Vector3();
+
+    for (var i = 0, offset = 0; i < this.prefabCount; i++) {
+      for (var j = 0; j < this.prefabVertexCount; j++, offset += 3) {
+        var prefabVertex = this.prefabGeometry.vertices[j];
+
+        scale = Math.random();
+        scaleMatrix.identity().makeScale(scale, scale, scale);
+
+        p.copy(prefabVertex);
+        p.applyMatrix4(scaleMatrix);
+
+        positionBuffer[offset    ] = p.x;
+        positionBuffer[offset + 1] = p.y;
+        positionBuffer[offset + 2] = p.z;
+      }
     }
   }
-};
+}

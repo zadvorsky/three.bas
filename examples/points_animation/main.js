@@ -12,7 +12,7 @@ function init() {
   root.camera.position.set(0, 0, 1500);
 
   var animation = new Animation();
-  root.add(animation);
+  root.add(animation.points);
 
   animation.animate(1.0, {ease: Power0.easeIn, repeat:-1, repeatDelay: 1.5, yoyo: true, onRepeat: function() {
     // change all points's aEndPos and aEndColor, when transform from ball state to picture state, not reverse
@@ -53,7 +53,7 @@ function init() {
  * Get a random point on a sphere
  *
  * @param {Float} r Shpere radius
- * @returns {Object} return the point's position 
+ * @returns {Object} return the point's position
  */
 function getRandomPointOnSphere(r) {
   var u = THREE.Math.randFloat(0, 1);
@@ -74,7 +74,7 @@ function getRandomPointOnSphere(r) {
  * Translate a picture to a set of points
  *
  * @param {String} selector The DOM selector of image
- * @returns {Array} return the set of points 
+ * @returns {Array} return the set of points
  */
 function getPointsOnPicture(selector) {
   var img = document.querySelector(selector);
@@ -126,7 +126,7 @@ function Animation() {
   var offset = radius;
   var geometry = new BAS.PointBufferGeometry(count);
 
-  // in start state, all points form a ball 
+  // in start state, all points form a ball
   geometry.createAttribute('aStartPos', 3, (data, index, num) => {
     var startVec3 = new THREE.Vector3();
     var randSphere = getRandomPointOnSphere(radius);
@@ -164,7 +164,7 @@ function Animation() {
 
   // svae the info, for animation
   this.endPointsCollections = endPointsCollections;
-  
+
   // use one picture info as default value
   var curPicPoints = this.endPointsCollections[0];
   for (var i = 0; i < count; i++) {
@@ -254,21 +254,20 @@ function Animation() {
       `
     ]
   });
-  
-  // use THREE.Points to create Particles
-  THREE.Points.call(this, geometry, material);
 
-  this.frustumCulled = false;
+  // use THREE.Points to create Particles
+  this.points = new THREE.Points(geometry, material);
+  this.points.frustumCulled = false;
 }
 Animation.prototype = Object.create(THREE.Points.prototype);
 Animation.prototype.constructor = Animation;
 // helper method for changing the uTime uniform
 Object.defineProperty(Animation.prototype, 'time', {
   get: function () {
-    return this.material.uniforms['uTime'].value;
+    return this.points.material.uniforms['uTime'].value;
   },
   set: function (v) {
-    this.material.uniforms['uTime'].value = v;
+    this.points.material.uniforms['uTime'].value = v;
   }
 });
 // helper method to animate the time between 0.0 and the totalDuration calculated in the constructor

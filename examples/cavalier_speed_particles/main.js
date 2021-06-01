@@ -36,14 +36,14 @@ function init() {
     size: 0.01,
     create: function() {
       if (animation) {
-        root.remove(animation);
-        animation.geometry.dispose();
-        animation.material.dispose();
+        root.remove(animation.mesh);
+        animation.mesh.geometry.dispose();
+        animation.mesh.material.dispose();
       }
 
       animation = new Animation(width, height, depth, controller.count, controller.size);
       animation.setScale(controller.speedScale);
-      root.add(animation);
+      root.add(animation.mesh);
     }
   };
 
@@ -72,6 +72,7 @@ function init() {
 function Animation(width, height, depth, prefabCount, prefabSize) {
   // create a prefab
   var prefab = new THREE.TetrahedronGeometry(prefabSize);
+  prefab = new Geometry().fromBufferGeometry(prefab);
 
   // create a geometry where the prefab is repeated 'prefabCount' times
   var geometry = new SpeedParticleGeometry(prefab, prefabCount);
@@ -101,7 +102,7 @@ function Animation(width, height, depth, prefabCount, prefabSize) {
     // all prefabs start at depth * -0.5
     data[2] = depth  * -0.5;
     geometry.setPrefabData(aStartPosition, i, data);
-    
+
     data[0] = x;
     data[1] = y;
     // all prefabs end at depth * 0.5
@@ -123,7 +124,7 @@ function Animation(width, height, depth, prefabCount, prefabSize) {
       'uniform float uTime;',
       'uniform float uDuration;',
       'uniform float uScale;',
-  
+
       'attribute float aOffset;',
       'attribute vec3 aStartPosition;',
       'attribute vec3 aEndPosition;'
@@ -138,58 +139,54 @@ function Animation(width, height, depth, prefabCount, prefabSize) {
     ]
   });
 
-  THREE.Mesh.call(this, geometry, material);
-  this.frustumCulled = false;
+  this.mesh = new THREE.Mesh(geometry, material);
+  this.mesh.frustumCulled = false;
 }
-Animation.prototype = Object.create(THREE.Mesh.prototype);
-Animation.prototype.constructor = Animation;
 
 Animation.prototype.update = function(delta) {
-  this.material.uniforms['uTime'].value += delta;
+  this.mesh.material.uniforms['uTime'].value += delta;
 };
 Animation.prototype.setScale = function(scale) {
-  this.material.uniforms['uScale'].value = scale;
+  this.mesh.material.uniforms['uScale'].value = scale;
 };
 
-function SpeedParticleGeometry(prefab, count) {
-  BAS.PrefabBufferGeometry.call(this, prefab, count);
-}
-SpeedParticleGeometry.prototype = Object.create(BAS.PrefabBufferGeometry.prototype);
-SpeedParticleGeometry.prototype.constructor = SpeedParticleGeometry;
+class SpeedParticleGeometry extends BAS.PrefabBufferGeometry {
+  constructor (prefab, count) {
+    super (prefab, count);
+  }
 
-// override BAS.PrefabBufferGeometry.bufferPosition
-// instead of simply copying the prefab, a random scale and rotation is applied
-SpeedParticleGeometry.prototype.bufferPositions = function() {
-  var positionBuffer = this.createAttribute('position', 3).array;
+  bufferPositions () {
+    var positionBuffer = this.createAttribute('position', 3).array;
 
-  var axis = new THREE.Vector3();
-  var scaleMatrix = new THREE.Matrix4();
-  var rotationMatrix = new THREE.Matrix4();
-  var transformMatrix = new THREE.Matrix4();
-  var p = new THREE.Vector3();
+    var axis = new THREE.Vector3();
+    var scaleMatrix = new THREE.Matrix4();
+    var rotationMatrix = new THREE.Matrix4();
+    var transformMatrix = new THREE.Matrix4();
+    var p = new THREE.Vector3();
 
-  // for each prefab, compute a random transformation
-  for (var i = 0, offset = 0; i < this.prefabCount; i++) {
-    // random scale
-    scaleMatrix.identity().makeScale(Math.random(), Math.random(), Math.random());
+    // for each prefab, compute a random transformation
+    for (var i = 0, offset = 0; i < this.prefabCount; i++) {
+      // random scale
+      scaleMatrix.identity().makeScale(Math.random(), Math.random(), Math.random());
 
-    // random axis rotation
-    BAS.Utils.randomAxis(axis);
-    rotationMatrix.identity().makeRotationAxis(axis, Math.random() * Math.PI * 2);
+      // random axis rotation
+      BAS.Utils.randomAxis(axis);
+      rotationMatrix.identity().makeRotationAxis(axis, Math.random() * Math.PI * 2);
 
-    // mush the two matrices together
-    transformMatrix.multiplyMatrices(scaleMatrix, rotationMatrix);
+      // mush the two matrices together
+      transformMatrix.multiplyMatrices(scaleMatrix, rotationMatrix);
 
-    // for each prefab vertex, apply the transformation matrix
-    for (var j = 0; j < this.prefabVertexCount; j++, offset += 3) {
-      var prefabVertex = this.prefabGeometry.vertices[j];
+      // for each prefab vertex, apply the transformation matrix
+      for (var j = 0; j < this.prefabVertexCount; j++, offset += 3) {
+        var prefabVertex = this.prefabGeometry.vertices[j];
 
-      p.copy(prefabVertex);
-      p.applyMatrix4(transformMatrix);
+        p.copy(prefabVertex);
+        p.applyMatrix4(transformMatrix);
 
-      positionBuffer[offset    ] = p.x;
-      positionBuffer[offset + 1] = p.y;
-      positionBuffer[offset + 2] = p.z;
+        positionBuffer[offset    ] = p.x;
+        positionBuffer[offset + 1] = p.y;
+        positionBuffer[offset + 2] = p.z;
+      }
     }
   }
-};
+}

@@ -22,7 +22,7 @@ function init() {
   // Animation extends THREE.Mesh
   var animation = new Animation();
   animation.animate(8.0, {ease: Power0.easeIn, repeat:-1, repeatDelay:0.25, yoyo: true});
-  root.add(animation);
+  root.add(animation.mesh);
 }
 
 ////////////////////
@@ -35,6 +35,8 @@ function Animation() {
   // the geometry that will be used by the PrefabBufferGeometry
   // any Geometry will do, but more complex ones can be repeated less often
   var prefabGeometry = new THREE.TetrahedronGeometry(1.0);
+
+  console.log(prefabGeometry)
 
   // the number of times the prefabGeometry will be repeated
   var prefabCount = 100000;
@@ -64,7 +66,7 @@ function Animation() {
     // we have to do this because the vertex shader is executed for each vertex
     // because the values are the same per vertex, the prefab will move as a whole
     // if the duration or delay varies per vertex, you can achieve a stretching effect
-    for (j = 0; j < prefabGeometry.vertices.length; j++) {
+    for (j = 0; j < prefabGeometry.attributes.position.count; j++) {
       aDelayDuration.array[offset] = delay;
       aDelayDuration.array[offset + 1] = duration;
 
@@ -202,21 +204,21 @@ function Animation() {
   // this isn't required when using flat shading
   //geometry.computeVertexNormals();
 
-  THREE.Mesh.call(this, geometry, material);
+  this.mesh = new THREE.Mesh(geometry, material);
 
   // it's usually a good idea to set frustum culling to false because
   // the bounding box does not reflect the dimensions of the whole object in the scene
-  this.frustumCulled = false;
+  this.mesh.frustumCulled = false;
 }
 Animation.prototype = Object.create(THREE.Mesh.prototype);
 Animation.prototype.constructor = Animation;
 // helper method for changing the uTime uniform
 Object.defineProperty(Animation.prototype, 'time', {
   get: function () {
-    return this.material.uniforms['uTime'].value;
+    return this.mesh.material.uniforms['uTime'].value;
   },
   set: function (v) {
-    this.material.uniforms['uTime'].value = v;
+    this.mesh.material.uniforms['uTime'].value = v;
   }
 });
 // helper method to animate the time between 0.0 and the totalDuration calculated in the constructor

@@ -20,14 +20,14 @@ function init() {
 
   // slide 1 will be the transition out slide
   var slide = new Slide(width, height, 'out');
-  root.scene.add(slide);
+  root.scene.add(slide.mesh);
   new THREE.ImageLoader().load('winter.jpg', function(image) {
     slide.setImage(image);
   });
 
   // slide 2 will be the transition in slide
   var slide2 = new Slide(width, height, 'in');
-  root.scene.add(slide2);
+  root.scene.add(slide2.mesh);
   new THREE.ImageLoader().load('spring.jpg', function(image) {
     slide2.setImage(image);
   });
@@ -50,7 +50,7 @@ function Slide(width, height, animationPhase) {
   // create a geometry that will be used by BAS.ModelBufferGeometry
   // its a plane with a bunch of segments
   var plane = new THREE.PlaneGeometry(width, height, width * 2, height * 2);
-
+  plane = new THREE.Geometry().fromBufferGeometry(plane);
   // duplicate some vertices so that each face becomes a separate triangle.
   // this is the same as the THREE.ExplodeModifier
   BAS.Utils.separateFaces(plane);
@@ -198,24 +198,21 @@ function Slide(width, height, animationPhase) {
     ]
   });
 
-  THREE.Mesh.call(this, geometry, material);
-
-  this.frustumCulled = false;
+  this.mesh = new THREE.Mesh(geometry, material);
+  this.mesh.frustumCulled = false;
 }
-Slide.prototype = Object.create(THREE.Mesh.prototype);
-Slide.prototype.constructor = Slide;
 Object.defineProperty(Slide.prototype, 'time', {
   get: function () {
-    return this.material.uniforms['uTime'].value;
+    return this.mesh.material.uniforms['uTime'].value;
   },
   set: function (v) {
-    this.material.uniforms['uTime'].value = v;
+    this.mesh.material.uniforms['uTime'].value = v;
   }
 });
 
 Slide.prototype.setImage = function(image) {
-  this.material.uniforms.map.value.image = image;
-  this.material.uniforms.map.value.needsUpdate = true;
+  this.mesh.material.uniforms.map.value.image = image;
+  this.mesh.material.uniforms.map.value.needsUpdate = true;
 };
 
 Slide.prototype.transition = function() {

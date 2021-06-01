@@ -46,16 +46,16 @@ function init() {
     }
 
     if (animation) {
-      root.remove(animation);
-      animation.material.dispose();
-      animation.geometry.dispose();
+      root.remove(animation.mesh);
+      animation.mesh.material.dispose();
+      animation.mesh.geometry.dispose();
     }
 
     gridHelper = new THREE.GridHelper(gridSize * 0.5, 1, 0x222222, 0x444444);
     root.add(gridHelper);
 
     animation = new Animation(gridSize);
-    root.add(animation);
+    root.add(animation.mesh);
 
     tween = animation.animate({repeat:-1, repeatDelay: 0.0, ease:Power0.easeNone}).timeScale(2.0);
   }
@@ -212,19 +212,16 @@ function Animation(gridSize) {
     ]
   });
 
-  THREE.Mesh.call(this, geometry, material);
-
-  this.frustumCulled = false;
+  this.mesh = new THREE.Mesh(geometry, material);
+  this.mesh.frustumCulled = false;
 }
-Animation.prototype = Object.create(THREE.Mesh.prototype);
-Animation.prototype.constructor = Animation;
 
 Object.defineProperty(Animation.prototype, 'time', {
   get: function () {
-    return this.material.uniforms['uTime'].value;
+    return this.mesh.material.uniforms['uTime'].value;
   },
   set: function (v) {
-    this.material.uniforms['uTime'].value = v;
+    this.mesh.material.uniforms['uTime'].value = v;
   }
 });
 

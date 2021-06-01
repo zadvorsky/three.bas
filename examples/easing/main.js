@@ -9,7 +9,7 @@ function init() {
   root.renderer.setClearColor(0x222222);
   root.camera.position.set(0, 0, 150);
 
-  var grid = new THREE.GridHelper(50, 10, 0x333333, 0x333333);
+  var grid = new THREE.GridHelper(100, 10, 0x333333, 0x333333);
   grid.material.depthWrite = false;
   grid.rotation.x = Math.PI * 0.5;
   root.scene.add(grid);
@@ -84,13 +84,13 @@ function init() {
       system = systems[ease] = new EaseSystem(ease);
     }
 
-    currentSystem && root.remove(currentSystem);
+    currentSystem && root.remove(currentSystem.mesh);
     currentSystem = system;
     currentSystem.animate(2.0, {ease: Power0.easeIn, repeat:-1, repeatDelay:0.25, yoyo: true});
 
     elEaseName.innerHTML = currentSystem.ease;
 
-    root.add(currentSystem);
+    root.add(currentSystem.mesh);
   }
 
   setCurrentSystem(index);
@@ -127,7 +127,7 @@ function EaseSystem(ease) {
   for (i = 0, offset = 0; i < prefabCount; i++) {
     var prefabDelay = THREE.Math.mapLinear(i, 0, prefabCount, 0.0, maxPrefabDelay);
 
-    for (j = 0; j < prefabGeometry.vertices.length; j++) {
+    for (j = 0; j < prefabGeometry.attributes.position.count; j++) {
       // give top right and bottom right corner of the plane a longer delay
       // this causes the plane to stretch
       aDelayDuration.array[offset    ] = prefabDelay + (2 - j % 2) * maxVertexDelay;
@@ -158,7 +158,7 @@ function EaseSystem(ease) {
     endPosition.z = 0;
 
     // store the same values per prefab
-    for (j = 0; j < prefabGeometry.vertices.length; j++) {
+    for (j = 0; j < prefabGeometry.attributes.position.count; j++) {
       aStartPosition.array[offset    ] = startPosition.x;
       aStartPosition.array[offset + 1] = startPosition.y;
       aStartPosition.array[offset + 2] = startPosition.z;
@@ -222,20 +222,17 @@ function EaseSystem(ease) {
     ]
   });
 
-  THREE.Mesh.call(this, geometry, material);
-
-  this.frustumCulled = false;
+  this.mesh = new THREE.Mesh(geometry, material);
+  this.mesh.frustumCulled = false;
 }
-EaseSystem.prototype = Object.create(THREE.Mesh.prototype);
-EaseSystem.prototype.constructor = EaseSystem;
 
 // helper method to set the uTime uniform value
 Object.defineProperty(EaseSystem.prototype, 'time', {
   get: function () {
-    return this.material.uniforms['uTime'].value;
+    return this.mesh.material.uniforms['uTime'].value;
   },
   set: function (v) {
-    this.material.uniforms['uTime'].value = v;
+    this.mesh.material.uniforms['uTime'].value = v;
   }
 });
 

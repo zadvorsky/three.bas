@@ -14,7 +14,7 @@ function init () {
 
   var sizeX = 8;
   var sizeY = 8;
-  var gpuCompute = new GPUComputationRenderer(sizeX, sizeY, root.renderer);
+  var gpuCompute = new THREE.GPUComputationRenderer(sizeX, sizeY, root.renderer);
   var ctVelocity = gpuCompute.createTexture();
   var ctPosition = gpuCompute.createTexture();
 
@@ -48,7 +48,7 @@ function init () {
   gpuCompute.init();
 
   var animation = new Animation(sizeX, sizeY);
-  root.add(animation);
+  root.add(animation.mesh);
 
   root.addUpdateCallback(function() {
     gpuCompute.compute();
@@ -88,12 +88,10 @@ function Animation (sizeX, sizeY) {
     ]
   });
 
-  THREE.Mesh.call(this, geometry, material);
-  this.frustumCulled = false;
+  this.mesh = new THREE.Mesh(geometry, material);
+  this.mesh.frustumCulled = false;
 }
-Animation.prototype = Object.create(THREE.Mesh.prototype);
-Animation.prototype.constructor = Animation;
 
 Animation.prototype.setPositionTexture = function (t) {
-  this.material.uniforms.ctPosition.value = t;
+  this.mesh.material.uniforms.ctPosition.value = t;
 };

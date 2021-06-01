@@ -22,7 +22,7 @@ function init() {
   // Animation extends THREE.Mesh
   const animation = new Animation();
   animation.animate(8.0, {ease: Power0.easeIn, repeat:-1, repeatDelay:0.25, yoyo: true});
-  root.add(animation);
+  root.add(animation.mesh);
 }
 
 ////////////////////
@@ -56,7 +56,7 @@ function Animation() {
 
   const startPosition = new THREE.Vector3();
   const endPosition = new THREE.Vector3();
-  const range = 100;
+  const range = 400;
   const prefabData = [];
 
   for (let i = 0; i < repeatCount * prefabs.length; i++) {
@@ -125,19 +125,16 @@ function Animation() {
 
   geometry.bufferUvs();
 
-  THREE.Mesh.call(this, geometry, material);
-
-  this.frustumCulled = false;
+  this.mesh = new THREE.Mesh(geometry, material);
+  this.mesh.frustumCulled = false;
 }
-Animation.prototype = Object.create(THREE.Mesh.prototype);
-Animation.prototype.constructor = Animation;
 
 Object.defineProperty(Animation.prototype, 'time', {
   get: function () {
-    return this.material.uniforms['uTime'].value;
+    return this.mesh.material.uniforms['uTime'].value;
   },
   set: function (v) {
-    this.material.uniforms['uTime'].value = v;
+    this.mesh.material.uniforms['uTime'].value = v;
   }
 });
 

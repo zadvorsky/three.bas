@@ -65,7 +65,7 @@ function init() {
 
   var particleSystem = new ParticleSystem();
   particleSystem.animate();
-  root.scene.add(particleSystem);
+  root.scene.add(particleSystem.mesh);
 }
 
 ////////////////////
@@ -92,7 +92,7 @@ function ParticleSystem() {
     var delay = 0;
     var duration = THREE.Math.randFloat(minDuration, maxDuration);
 
-    for (j = 0; j < prefabGeometry.vertices.length; j++) {
+    for (j = 0; j < prefabGeometry.attributes.position.count; j++) {
       aAnimation.array[offset] = delay;
       aAnimation.array[offset + 1] = duration;
 
@@ -109,7 +109,7 @@ function ParticleSystem() {
     position.y = THREE.Math.randFloatSpread(40);
     position.z = THREE.Math.randFloatSpread(40);
 
-    for (j = 0; j < prefabGeometry.vertices.length; j++) {
+    for (j = 0; j < prefabGeometry.attributes.position.count; j++) {
       aPosition.array[offset] = position.x;
       aPosition.array[offset + 1] = position.y;
       aPosition.array[offset + 2] = position.z;
@@ -130,7 +130,7 @@ function ParticleSystem() {
     axis.normalize();
     angle = Math.PI * 2;
 
-    for (j = 0; j < prefabGeometry.vertices.length; j++) {
+    for (j = 0; j < prefabGeometry.attributes.position.count; j++) {
       aAxisAngle.array[offset] = axis.x;
       aAxisAngle.array[offset + 1] = axis.y;
       aAxisAngle.array[offset + 2] = axis.z;
@@ -170,29 +170,28 @@ function ParticleSystem() {
     }
   );
 
-  THREE.Mesh.call(this, geometry, material);
-
-  this.frustumCulled = false;
-  this.castShadow = true;
-  this.receiveShadow = true;
+  this.mesh = new THREE.Mesh(geometry, material);
+  this.mesh.frustumCulled = false;
+  this.mesh.castShadow = true;
+  this.mesh.receiveShadow = true;
 
   // depth material is used for directional & spot light shadows
-  this.customDepthMaterial = BAS.Utils.createDepthAnimationMaterial(material);
+  this.mesh.customDepthMaterial = BAS.Utils.createDepthAnimationMaterial(material);
   // distance material is used for point light shadows
-  this.customDistanceMaterial = BAS.Utils.createDistanceAnimationMaterial(material);
+  this.mesh.customDistanceMaterial = BAS.Utils.createDistanceAnimationMaterial(material);
 }
 ParticleSystem.prototype = Object.create(THREE.Mesh.prototype);
 ParticleSystem.prototype.constructor = ParticleSystem;
 Object.defineProperty(ParticleSystem.prototype, 'time', {
   get: function () {
-    return this.material.uniforms['uTime'].value;
+    return this.mesh.material.uniforms['uTime'].value;
   },
   set: function (v) {
     // sync animation time between the materials so the animation state is the same
     // could experiment with offsetting these values..
-    this.material.uniforms['uTime'].value = v;
-    this.customDepthMaterial.uniforms['uTime'].value = v;
-    this.customDistanceMaterial.uniforms['uTime'].value = v;
+    this.mesh.material.uniforms['uTime'].value = v;
+    this.mesh.customDepthMaterial.uniforms['uTime'].value = v;
+    this.mesh.customDistanceMaterial.uniforms['uTime'].value = v;
   }
 });
 
