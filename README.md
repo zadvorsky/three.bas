@@ -12,7 +12,7 @@ See [examples](http://three-bas-examples.surge.sh/), [documentation](http://thre
 There is also a tutorial [here](https://medium.com/@Zadvorsky/into-vertex-shaders-594e6d8cd804) that goes through the basics of vertex shaders, and the approach of BAS. Part 4 in particular focusses on using this extension.
 
 ## Compatibility
-Tested with THREE.js r114. Because the animation materials inject code into the built in materials, BAS may not work with other versions of three.
+Because this project uses some Three.js internals, it may (or may not) break with each new Three.js release. The aim is to support the current release, so please let me know if anything breaks!
 
 ## Usage
 Include `dist/bas.js` or `dist/bas.min.js` in your project. An npm package is also available:
