@@ -1,5 +1,8 @@
 window.onload = init;
 
+// animation
+var animation;
+
 function init() {
   var root = new THREERoot();
   root.renderer.setClearColor(0x000000);
@@ -33,9 +36,6 @@ function init() {
       new THREE.Vector3(6, 8, 6)
     )
   };
-
-  // animation
-  var animation;
 
   // gui
   var gui = new dat.GUI();
@@ -130,7 +130,7 @@ function Animation(prefabCount, prefabSize, bounds) {
 
   // each prefab will have a tint of the gold-ish color #d7d2bf
   var colorObj = new THREE.Color('#d7d2bf');
-  var colorHSL = colorObj.getHSL();
+  var colorHSL = colorObj.getHSL(colorObj);
   var h, s, l;
 
   geometry.createAttribute('color', 3, function(data) {

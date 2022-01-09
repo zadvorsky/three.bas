@@ -203,13 +203,10 @@ function Animation() {
     depthWrite: false,
     uniforms: {
       uTime: { type: 'f', value: 0 },
+      size: { type: 'f', value: 10.0 },
+      sizeAttenuation: { type: 'b', value: true },
     },
-    uniformValues: {
-      size: 10.0,
-      sizeAttenuation: true,
-      // all points will have the same color
-      // diffuse: new THREE.Vector3(0xffffff),
-    },
+
     vertexFunctions: [
       BAS.ShaderChunk['ease_expo_in_out'],
     ],
