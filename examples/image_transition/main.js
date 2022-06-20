@@ -86,18 +86,18 @@ function Slide(width, height, animationPhase) {
   for (i = 0, offset = 0; i < geometry.faceCount; i++) {
     centroid = geometry.centroids[i];
 
-    var duration = THREE.Math.randFloat(minDuration, maxDuration);
+    var duration = THREE.MathUtils.randFloat(minDuration, maxDuration);
     // delay is based on the position of each face within the original plane geometry
     // because the faces are localized, this position is available in the centroids array
-    var delayX = THREE.Math.mapLinear(centroid.x, -width * 0.5, width * 0.5, 0.0, maxDelayX);
+    var delayX = THREE.MathUtils.mapLinear(centroid.x, -width * 0.5, width * 0.5, 0.0, maxDelayX);
     var delayY;
 
     // create a different delayY mapping based on the animation phase (in or out)
     if (animationPhase === 'in') {
-      delayY = THREE.Math.mapLinear(Math.abs(centroid.y), 0, height * 0.5, 0.0, maxDelayY)
+      delayY = THREE.MathUtils.mapLinear(Math.abs(centroid.y), 0, height * 0.5, 0.0, maxDelayY)
     }
     else {
-      delayY = THREE.Math.mapLinear(Math.abs(centroid.y), 0, height * 0.5, maxDelayY, 0.0)
+      delayY = THREE.MathUtils.mapLinear(Math.abs(centroid.y), 0, height * 0.5, maxDelayY, 0.0)
     }
 
     // store the delay and duration FOR EACH VERTEX of the face
@@ -137,13 +137,13 @@ function Slide(width, height, animationPhase) {
     // the logic to determine the control points is completely arbitrary
     var signY = Math.sign(centroid.y);
 
-    control0.x = THREE.Math.randFloat(0.1, 0.3) * 50;
-    control0.y = signY * THREE.Math.randFloat(0.1, 0.3) * 70;
-    control0.z = THREE.Math.randFloatSpread(20);
+    control0.x = THREE.MathUtils.randFloat(0.1, 0.3) * 50;
+    control0.y = signY * THREE.MathUtils.randFloat(0.1, 0.3) * 70;
+    control0.z = THREE.MathUtils.randFloatSpread(20);
 
-    control1.x = THREE.Math.randFloat(0.3, 0.6) * 50;
-    control1.y = -signY * THREE.Math.randFloat(0.3, 0.6) * 70;
-    control1.z = THREE.Math.randFloatSpread(20);
+    control1.x = THREE.MathUtils.randFloat(0.3, 0.6) * 50;
+    control1.y = -signY * THREE.MathUtils.randFloat(0.3, 0.6) * 70;
+    control1.z = THREE.MathUtils.randFloatSpread(20);
 
     if (animationPhase === 'in') {
       control0.subVectors(centroid, control0);
@@ -166,11 +166,9 @@ function Slide(width, height, animationPhase) {
   var material = new BAS.BasicAnimationMaterial({
     flatShading: true,
     side: THREE.DoubleSide,
+    map: texture,
     uniforms: {
       uTime: {value: 0}
-    },
-    uniformValues: {
-      map: texture
     },
     vertexFunctions: [
       BAS.ShaderChunk['cubic_bezier'],

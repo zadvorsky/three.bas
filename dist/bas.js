@@ -2,7 +2,7 @@
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('three')) :
 	typeof define === 'function' && define.amd ? define(['exports', 'three'], factory) :
 	(global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.BAS = {}, global.THREE));
-}(this, (function (exports, three) { 'use strict';
+})(this, (function (exports, three) { 'use strict';
 
 	class BaseAnimationMaterial extends three.ShaderMaterial {
 	  constructor(parameters, uniforms) {
@@ -1044,9 +1044,9 @@
 	   */
 	  randomInBox: function (box, v) {
 	    v = v || new three.Vector3();
-	    v.x = three.Math.randFloat(box.min.x, box.max.x);
-	    v.y = three.Math.randFloat(box.min.y, box.max.y);
-	    v.z = three.Math.randFloat(box.min.z, box.max.z);
+	    v.x = three.MathUtils.randFloat(box.min.x, box.max.x);
+	    v.y = three.MathUtils.randFloat(box.min.y, box.max.y);
+	    v.z = three.MathUtils.randFloat(box.min.z, box.max.z);
 	    return v;
 	  },
 
@@ -1058,9 +1058,9 @@
 	   */
 	  randomAxis: function (v) {
 	    v = v || new three.Vector3();
-	    v.x = three.Math.randFloatSpread(2.0);
-	    v.y = three.Math.randFloatSpread(2.0);
-	    v.z = three.Math.randFloatSpread(2.0);
+	    v.x = three.MathUtils.randFloatSpread(2.0);
+	    v.y = three.MathUtils.randFloatSpread(2.0);
+	    v.z = three.MathUtils.randFloatSpread(2.0);
 	    v.normalize();
 	    return v;
 	  },
@@ -1772,4 +1772,4 @@
 
 	Object.defineProperty(exports, '__esModule', { value: true });
 
-})));
+}));

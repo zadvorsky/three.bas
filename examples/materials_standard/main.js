@@ -77,7 +77,7 @@ function Animation(envMap) {
   this.totalDuration = duration + maxPrefabDelay;
 
   for (i = 0; i < prefabCount; i++) {
-    var delay = THREE.Math.mapLinear(i, 0, prefabCount, 0.0, maxPrefabDelay);
+    var delay = THREE.MathUtils.mapLinear(i, 0, prefabCount, 0.0, maxPrefabDelay);
 
     geometry.setPrefabData(aDelayDuration, i, [delay, duration]);
   }
@@ -89,7 +89,7 @@ function Animation(envMap) {
 
   for (i = 0; i < prefabCount; i++) {
     startPosition.x = -rangeX * 0.5;
-    startPosition.y = THREE.Math.mapLinear(i, 0, prefabCount, -rangeY * 0.5, rangeY * 0.5) + size * 0.5;
+    startPosition.y = THREE.MathUtils.mapLinear(i, 0, prefabCount, -rangeY * 0.5, rangeY * 0.5) + size * 0.5;
     startPosition.z = 0;
 
     endPosition.x = rangeX * 0.5;
@@ -105,9 +105,9 @@ function Animation(envMap) {
   var angle;
 
   for (i = 0; i < prefabCount; i++) {
-    axis.x = THREE.Math.randFloatSpread(2);
-    axis.y = THREE.Math.randFloatSpread(2);
-    axis.z = THREE.Math.randFloatSpread(2);
+    axis.x = THREE.MathUtils.randFloatSpread(2);
+    axis.y = THREE.MathUtils.randFloatSpread(2);
+    axis.z = THREE.MathUtils.randFloatSpread(2);
     axis.normalize();
     angle = Math.PI * 2;
 
@@ -192,7 +192,7 @@ function Animation(envMap) {
     fragmentMap: [
       'vec4 texelColor1 = texture2D(map, vUv);',
       'vec4 texelColor2 = texture2D(uMap2, vUv);',
-      'vec4 texelColor = mapTexelToLinear(mix(texelColor1, texelColor2, vProgress));',
+      'vec4 texelColor = mix(texelColor1, texelColor2, vProgress);',
       'diffuseColor *= texelColor;'
     ],
     // this chunk gets injected after 'diffuseColor' is defined

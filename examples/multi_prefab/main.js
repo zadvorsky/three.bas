@@ -60,13 +60,13 @@ function Animation() {
   const prefabData = [];
 
   for (let i = 0; i < repeatCount * prefabs.length; i++) {
-    startPosition.x = THREE.Math.randFloatSpread(range) - range * 0.5;
-    startPosition.y = THREE.Math.randFloatSpread(range);
-    startPosition.z = THREE.Math.randFloatSpread(range);
+    startPosition.x = THREE.MathUtils.randFloatSpread(range) - range * 0.5;
+    startPosition.y = THREE.MathUtils.randFloatSpread(range);
+    startPosition.z = THREE.MathUtils.randFloatSpread(range);
 
-    endPosition.x = THREE.Math.randFloatSpread(range) + range * 0.5;
-    endPosition.y = THREE.Math.randFloatSpread(range);
-    endPosition.z = THREE.Math.randFloatSpread(range);
+    endPosition.x = THREE.MathUtils.randFloatSpread(range) + range * 0.5;
+    endPosition.y = THREE.MathUtils.randFloatSpread(range);
+    endPosition.z = THREE.MathUtils.randFloatSpread(range);
 
     geometry.setPrefabData(aStartPosition, i, startPosition.toArray(prefabData));
     geometry.setPrefabData(aEndPosition, i, endPosition.toArray(prefabData));
@@ -75,25 +75,23 @@ function Animation() {
   const axis = new THREE.Vector3();
 
   geometry.createAttribute('aAxisAngle', 4, function(data) {
-    axis.x = THREE.Math.randFloatSpread(2);
-    axis.y = THREE.Math.randFloatSpread(2);
-    axis.z = THREE.Math.randFloatSpread(2);
+    axis.x = THREE.MathUtils.randFloatSpread(2);
+    axis.y = THREE.MathUtils.randFloatSpread(2);
+    axis.z = THREE.MathUtils.randFloatSpread(2);
     axis.normalize();
     axis.toArray(data);
 
-    data[3] = Math.PI * THREE.Math.randFloat(4.0, 8.0);
+    data[3] = Math.PI * THREE.MathUtils.randFloat(4.0, 8.0);
   });
 
   const material = new BAS.StandardAnimationMaterial({
     flatShading: true,
     side: THREE.DoubleSide,
+    metalness: 0.5,
+    roughness: 0.5,
+    map: new THREE.TextureLoader().load('../_tex/UV_Grid.jpg'),
     uniforms: {
       uTime: {value: 0}
-    },
-    uniformValues: {
-      metalness: 0.5,
-      roughness: 0.5,
-      map: new THREE.TextureLoader().load('../_tex/UV_Grid.jpg')
     },
     vertexFunctions: [
       BAS.ShaderChunk['ease_cubic_in_out'],

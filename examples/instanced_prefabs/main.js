@@ -62,9 +62,9 @@ function Animation() {
   const axis = new THREE.Vector3();
 
   geometry.createAttribute('aAxisAngle', 4, function(data) {
-    axis.x = THREE.Math.randFloatSpread(2);
-    axis.y = THREE.Math.randFloatSpread(2);
-    axis.z = THREE.Math.randFloatSpread(2);
+    axis.x = THREE.MathUtils.randFloatSpread(2);
+    axis.y = THREE.MathUtils.randFloatSpread(2);
+    axis.z = THREE.MathUtils.randFloatSpread(2);
     axis.normalize();
     axis.toArray(data);
 

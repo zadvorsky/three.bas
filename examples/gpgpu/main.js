@@ -10,7 +10,7 @@ function init () {
   root.camera.position.set(1, 1, 1).multiplyScalar(20);
 
   root.add(new THREE.PointLight());
-  root.add(new THREE.AxisHelper(10));
+  root.add(new THREE.AxesHelper(10));
 
   var sizeX = 8;
   var sizeY = 8;
@@ -19,18 +19,18 @@ function init () {
   var ctPosition = gpuCompute.createTexture();
 
   for (var k = 0, kl = ctPosition.image.data.length; k < kl; k += 4) {
-    var x = THREE.Math.randFloatSpread(10);
-    var y = THREE.Math.randFloatSpread(10);
-    var z = THREE.Math.randFloatSpread(10);
+    var x = THREE.MathUtils.randFloatSpread(10);
+    var y = THREE.MathUtils.randFloatSpread(10);
+    var z = THREE.MathUtils.randFloatSpread(10);
     ctPosition.image.data[k + 0] = x;
     ctPosition.image.data[k + 1] = y;
     ctPosition.image.data[k + 2] = z;
     ctPosition.image.data[k + 3] = 1;
   }
   for (var k = 0, kl = ctVelocity.image.data.length; k < kl; k += 4) {
-    var x = THREE.Math.randFloatSpread(1);
-    var y = THREE.Math.randFloatSpread(1);
-    var z = THREE.Math.randFloatSpread(1);
+    var x = THREE.MathUtils.randFloatSpread(1);
+    var y = THREE.MathUtils.randFloatSpread(1);
+    var z = THREE.MathUtils.randFloatSpread(1);
     ctVelocity.image.data[k + 0] = x;
     ctVelocity.image.data[k + 1] = y;
     ctVelocity.image.data[k + 2] = z;
@@ -71,13 +71,11 @@ function Animation (sizeX, sizeY) {
   }
 
   var material = new BAS.PhongAnimationMaterial({
-    shading: THREE.FlatShading,
-    side: THREE.FrontSize,
+    flatShading: true,
+    side: THREE.FrontSide,
+    diffuse: new THREE.Color(0xffffff),
     uniforms: {
       ctPosition: {value: null}
-    },
-    uniformValues: {
-      diffuse: new THREE.Color(0xffffff)
     },
     vertexParameters: [
       'uniform sampler2D ctPosition;',

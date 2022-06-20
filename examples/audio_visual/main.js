@@ -1,11 +1,4 @@
-// soundcloud api
-var SC_ID = 'ba47209edc0a4c129a460a936fb4e9f2';
-var TRACK_URL = 'https://soundcloud.com/longarms/starpower';
-//var TRACK_URL = 'https://soundcloud.com/nicolas-jaar/flashy-flashy';
-
-SC.initialize({
-  client_id: SC_ID
-});
+var TRACK_URL = '../_audio/song.mp3';
 
 window.onload = init;
 
@@ -42,16 +35,16 @@ function init() {
 
   for (var i = 0; i < pointCount; i++) {
     var angle = Math.PI * 2 * i / pointCount;
-    var r = radius * THREE.Math.randFloat(0.5, 1.0);
+    var r = radius * THREE.MathUtils.randFloat(0.5, 1.0);
 
     x = Math.cos(angle) * r;
-    y = 0;// THREE.Math.randFloat(-64, 64);// * (i % 2 ? 1 : -1)
+    y = 0;// THREE.MathUtils.randFloat(-64, 64);// * (i % 2 ? 1 : -1)
     z = Math.sin(angle) * r;
 
     pivotDistance = 1;
 
     var v = new THREE.Vector4(x, y, z, pivotDistance);
-    v._y = THREE.Math.randFloatSpread(256);
+    v._y = THREE.MathUtils.randFloatSpread(256);
 
     points.push(v);
   }
@@ -63,21 +56,13 @@ function init() {
 
   // audio
 
-  var audioInput = document.getElementById('audioInput');
-  audioInput.value = TRACK_URL;
-  audioInput.addEventListener('input', function() {
-    audioInput.value && (audioInput.value.indexOf('http') == 0) && getTrack(audioInput.value);
-  });
-
   var audioElement = document.getElementById('player');
   audioElement.crossOrigin = 'Anonymous';
+  audioElement.src = TRACK_URL
   audioElement.loop = true;
 
   var analyzer = new SpectrumAnalyzer(pointCount, 0.75);
   analyzer.setSource(audioElement);
-
-  var scLink = document.getElementById('sc_link');
-  var scImage = document.getElementById('sc_img');
 
   var scVisible = true;
   var sc = document.getElementById('soundcloud');
@@ -87,27 +72,6 @@ function init() {
       sc.style.display = (scVisible = !scVisible) ? 'block' : 'none';
     }
   });
-
-  function getTrack(url) {
-    SC.get('/resolve', {url: url}).then(function(data) {
-      console.log('success?', data);
-
-      if (typeof data.errors === 'undefined') {
-        if (data.streamable) {
-          audioElement.src = data.stream_url + '?client_id=' + SC_ID;
-          scLink.href = data.permalink_url;
-          scImage.src = data.artwork_url;
-        }
-        else {
-          alert('This SoundCloud URL is not allowed to be streamed.');
-        }
-      }
-      else {
-        alert('SoundCloud error :(');
-      }
-    });
-  }
-  getTrack(TRACK_URL);
 
   // VISUALISER UPDATE LOOP
 
@@ -127,9 +91,9 @@ function init() {
     animation.mesh.material.uniforms.metalness.value =     mapEase(Power2.easeInOut, avgML, 0.0, 1.0, 0.0, 0.5);
     animation.mesh.material.uniforms.uGlobalPivot.value =  mapEase(Power4.easeOut, avgHH, 0.0, 1.0, 2.0, 0.125);
 
-    centerLight.intensity = mapEase(Power2.easeIn, avg, 0.0, 1.0, 0.5, 1.0);
-    topLight.intensity = mapEase(Power2.easeIn, avg, 0.0, 1.0, 0.0, 4.0);
-    bottomLight.intensity = mapEase(Power2.easeIn, avg, 0.0, 1.0, 0.0, 4.0);
+    centerLight.intensity = mapEase(Power2.easeIn, avg, 0.0, 1.0, 0.5, 2.0);
+    topLight.intensity = mapEase(Power2.easeIn, avg, 0.0, 1.0, 0.0, 8.0);
+    bottomLight.intensity = mapEase(Power2.easeIn, avg, 0.0, 1.0, 0.0, 8.0);
 
     tween.timeScale(avg);
 
@@ -173,7 +137,7 @@ function Animation(path) {
     var pDelay = mapEase(Circ.easeOut, i, 0, prefabCount, 0, totalDuration);
 
     for (var j = 0; j < geometry.prefabVertexCount; j++) {
-      var vDelay = j * 0.00025 * THREE.Math.randFloat(0.75, 1.25);
+      var vDelay = j * 0.00025 * THREE.MathUtils.randFloat(0.75, 1.25);
 
       aDelayDuration.array[offset++] =  (pDelay + vDelay);
       aDelayDuration.array[offset++] =  totalDuration;
@@ -184,7 +148,7 @@ function Animation(path) {
 
   geometry.createAttribute('aPivotRotation', 2, function(data) {
     data[0] = Math.random();// * 0.5 + 0.5;
-    data[1] = Math.PI * 2 * THREE.Math.randInt(16, 32);
+    data[1] = Math.PI * 2 * THREE.MathUtils.randInt(16, 32);
   });
 
   // COLOR
@@ -206,8 +170,11 @@ function Animation(path) {
 
   var material = new BAS.StandardAnimationMaterial({
     flatShading: true,
-    vertexColors: THREE.VertexColors,
+    vertexColors: true,
     side: THREE.DoubleSide,
+    emissive: new THREE.Color(0x000000),//0x542437,0x0e0609
+    roughness: 0,
+    metalness: 0,
     //transparent: true,
     defines: {
       PATH_LENGTH: path.length,
@@ -218,11 +185,6 @@ function Animation(path) {
       uPath: {value: path},
       uSmoothness: {value: new THREE.Vector2().setScalar(1.5)},
       uGlobalPivot: {value: 0},
-    },
-    uniformValues: {
-      emissive: new THREE.Color(0x000000),//0x542437,0x0e0609
-      roughness: 0,
-      metalness: 0
     },
     vertexFunctions: [
       BAS.ShaderChunk['catmull_rom_spline'],

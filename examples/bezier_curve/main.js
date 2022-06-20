@@ -34,8 +34,8 @@ function init() {
 
   // debug helpers / visuals
   var debug = new THREE.Group();
-  var control0RangeCenter = control0Range.center();
-  var control1RangeCenter = control1Range.center();
+  var control0RangeCenter = control0Range.getCenter(new THREE.Vector3());
+  var control1RangeCenter = control1Range.getCenter(new THREE.Vector3());
 
   debug.add(new PointHelper(0xff0000, 4.0, startPosition));
   debug.add(new PointHelper(0xff0000, 4.0, control0RangeCenter));
@@ -151,12 +151,12 @@ function Animation(startPosition, control0Range, control1Range, endPosition) {
   var angle = 0;
 
   geometry.createAttribute('aAxisAngle', 4, function(data) {
-    axis.x = THREE.Math.randFloatSpread(2);
-    axis.y = THREE.Math.randFloatSpread(2);
-    axis.z = THREE.Math.randFloatSpread(2);
+    axis.x = THREE.MathUtils.randFloatSpread(2);
+    axis.y = THREE.MathUtils.randFloatSpread(2);
+    axis.z = THREE.MathUtils.randFloatSpread(2);
     axis.normalize();
 
-    angle = Math.PI * THREE.Math.randInt(16, 32);
+    angle = Math.PI * THREE.MathUtils.randInt(16, 32);
 
     data[0] = axis.x;
     data[1] = axis.y;
@@ -175,8 +175,8 @@ function Animation(startPosition, control0Range, control1Range, endPosition) {
   geometry.createAttribute('color', 3, function(data, i, count) {
     // modulate the hue
     h = i / count;
-    s = THREE.Math.randFloat(0.4, 0.6);
-    l = THREE.Math.randFloat(0.4, 0.6);
+    s = THREE.MathUtils.randFloat(0.4, 0.6);
+    l = THREE.MathUtils.randFloat(0.4, 0.6);
 
     color.setHSL(h, s, l);
     color.toArray(data);
@@ -184,14 +184,12 @@ function Animation(startPosition, control0Range, control1Range, endPosition) {
 
   var material = new BAS.PhongAnimationMaterial({
     flatShading: true,
-    vertexColors: THREE.VertexColors,
+    vertexColors: true,
     side: THREE.DoubleSide,
+    specular: new THREE.Color(0xff0000),
+    shininess: 20,
     uniforms: {
       uTime: {type: 'f', value: 0}
-    },
-    uniformValues: {
-      specular: new THREE.Color(0xff0000),
-      shininess: 20
     },
     vertexFunctions: [
       // cubic_bezier defines the cubicBezier function used in the vertexPosition chunk

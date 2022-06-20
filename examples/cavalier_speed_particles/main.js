@@ -91,9 +91,9 @@ function Animation(width, height, depth, prefabCount, prefabSize) {
   // for each prefab
   for (var i = 0; i < prefabCount; i++) {
     // get a random x coordinate between -width/2 and width/2
-    x = THREE.Math.randFloatSpread(width);
+    x = THREE.MathUtils.randFloatSpread(width);
     // get a random y coordinate between 0 and height
-    y = THREE.Math.randFloat(0, height);
+    y = THREE.MathUtils.randFloat(0, height);
 
     // store the coordinates in the buffer attribute
     // x and y are the same for start and end position, causing each prefab to move in a straight line
@@ -112,13 +112,11 @@ function Animation(width, height, depth, prefabCount, prefabSize) {
 
   var material = new BAS.BasicAnimationMaterial({
     side: THREE.DoubleSide,
+    diffuse: new THREE.Color(0xf1f1f1),
     uniforms: {
       uTime: {value: 0.0},
       uDuration: {value: 1.0},
       uScale: {value: 1.0}
-    },
-    uniformValues: {
-      diffuse: new THREE.Color(0xf1f1f1)
     },
     vertexParameters: [
       'uniform float uTime;',

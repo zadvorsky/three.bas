@@ -90,7 +90,7 @@ function ParticleSystem() {
 
   for (i = 0, offset = 0; i < prefabCount; i++) {
     var delay = 0;
-    var duration = THREE.Math.randFloat(minDuration, maxDuration);
+    var duration = THREE.MathUtils.randFloat(minDuration, maxDuration);
 
     for (j = 0; j < prefabGeometry.attributes.position.count; j++) {
       aAnimation.array[offset] = delay;
@@ -105,9 +105,9 @@ function ParticleSystem() {
   var position = new THREE.Vector3();
 
   for (i = 0, offset = 0; i < prefabCount; i++) {
-    position.x = THREE.Math.randFloatSpread(40);
-    position.y = THREE.Math.randFloatSpread(40);
-    position.z = THREE.Math.randFloatSpread(40);
+    position.x = THREE.MathUtils.randFloatSpread(40);
+    position.y = THREE.MathUtils.randFloatSpread(40);
+    position.z = THREE.MathUtils.randFloatSpread(40);
 
     for (j = 0; j < prefabGeometry.attributes.position.count; j++) {
       aPosition.array[offset] = position.x;
@@ -124,9 +124,9 @@ function ParticleSystem() {
   var angle;
 
   for (i = 0, offset = 0; i < prefabCount; i++) {
-    axis.x = THREE.Math.randFloatSpread(2);
-    axis.y = THREE.Math.randFloatSpread(2);
-    axis.z = THREE.Math.randFloatSpread(2);
+    axis.x = THREE.MathUtils.randFloatSpread(2);
+    axis.y = THREE.MathUtils.randFloatSpread(2);
+    axis.z = THREE.MathUtils.randFloatSpread(2);
     axis.normalize();
     angle = Math.PI * 2;
 
@@ -146,8 +146,6 @@ function ParticleSystem() {
       transparent: true,
       uniforms: {
         uTime: {value: 0}
-      },
-      uniformValues: {
       },
       vertexFunctions: [
         BAS.ShaderChunk['quaternion_rotation']

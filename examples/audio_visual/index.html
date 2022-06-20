@@ -10,24 +10,13 @@
         font-family: monospace;
         background-image: radial-gradient(#2e141e, #0e0609);
       }
-      #soundcloud {
+      .player_container {
         position: absolute;
         z-index: 0;
-        left: 0;
+        left: 12px;
         bottom: 0;
         display: block;
         width: 100%;
-      }
-
-      .img_container {
-        display: inline-block;
-        float: left;
-        line-height: 0;
-        margin: 0 10px 10px;
-      }
-      .player_container {
-        display: inline-block;
-        float: left;
       }
 
       #player {
@@ -53,20 +42,9 @@
 <body>
 <div id="three-container"></div>
 
-
-<div id="soundcloud">
-  <div class="img_container">
-    <a href="" id="sc_link">
-      <img src="" alt="" id="sc_img">
-    </a>
-  </div>
-  <div class="player_container">
-    <audio id="player" controls="" autoplay="false" preload="preload" autobuffer="autobuffer" src=""></audio>
-    <input id="audioInput" type="url"/>
-  </div>
+<div class="player_container">
+  <audio id="player" controls="" autoplay="false" preload="preload" autobuffer="autobuffer" src=""></audio>
 </div>
-
-<script src="https://connect.soundcloud.com/sdk/sdk-3.1.2.js"></script>
 
 <script src="../_lib/TweenMax.min.js"></script>
 <script src="https://unpkg.com/three/build/three.js"></script>

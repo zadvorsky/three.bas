@@ -155,8 +155,8 @@ function Animation(gridSize) {
 
   for (var i = 0; i < gridSize; i++) {
     for (var j = 0; j < gridSize; j++) {
-      var x = THREE.Math.mapLinear(i, 0, gridSize, -gridSize * 0.5, gridSize * 0.5) + 0.5;
-      var z = THREE.Math.mapLinear(j, 0, gridSize, -gridSize * 0.5, gridSize * 0.5) + 0.5;
+      var x = THREE.MathUtils.mapLinear(i, 0, gridSize, -gridSize * 0.5, gridSize * 0.5) + 0.5;
+      var z = THREE.MathUtils.mapLinear(j, 0, gridSize, -gridSize * 0.5, gridSize * 0.5) + 0.5;
 
       // position
       dataArray[0] = x;
@@ -175,13 +175,11 @@ function Animation(gridSize) {
 
   var material = new BAS.StandardAnimationMaterial({
     flatShading: true,
+    diffuse: new THREE.Color(0x888888),
+    metalness: 1.0,
+    roughness: 1.0,
     uniforms: {
       uTime: {value: 0}
-    },
-    uniformValues: {
-      diffuse: new THREE.Color(0x888888),
-      metalness: 1.0,
-      roughness: 1.0
     },
     vertexFunctions: [
       // the eases used by the timeline defined above

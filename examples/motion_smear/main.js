@@ -88,7 +88,7 @@ function init() {
   });
   // resume the tween on drag end after the position is reset
   smearMesh.mesh.addEventListener('dragEnd', function() {
-    autoPosition.copy(smearMesh.position);
+    autoPosition.copy(smearMesh.mesh.position);
     TweenMax.to(autoPosition, 0.5, {x:-100, y: 0, z: 0, ease: Power2.easeInOut,
       onUpdate: updateMeshPosition,
       onComplete: function() {
@@ -100,7 +100,7 @@ function init() {
   smearMesh.mesh.addEventListener('drag', function(e) {
     // call the moveTo function instead of setting the position directly
     // moveTo is where the smear effect is calculated
-    this.moveTo(e.position);
+    smearMesh.moveTo(e.position);
   });
 }
 
@@ -255,7 +255,7 @@ function SmearMesh(geometry, settings) {
   var bufferGeometry = new BAS.ModelBufferGeometry(geometry);
   // store smear factor per vertex to create a per vertex offset / smear
   bufferGeometry.createAttribute('aSmearFactor', 1, function(data) {
-    data[0] = settings.smearFactor + THREE.Math.randFloatSpread(settings.smearFactorVariance);
+    data[0] = settings.smearFactor + THREE.MathUtils.randFloatSpread(settings.smearFactorVariance);
   });
 
   // MATERIAL

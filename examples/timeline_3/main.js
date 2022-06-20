@@ -189,11 +189,9 @@ function Animation(prefabCount, settings) {
   var material = new BAS.PhongAnimationMaterial({
     flatShading: true,
     side: THREE.DoubleSide,
+    color: new THREE.Color(0xffffff),
     uniforms: {
       uTime: {value: 0}
-    },
-    uniformValues: {
-      diffuse: new THREE.Color(0xffffff)
     },
     vertexFunctions: [
       // the eases used by the timeline defined above

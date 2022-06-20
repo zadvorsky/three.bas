@@ -44,7 +44,7 @@ function EaseSystem() {
   this.totalDuration = duration + maxPrefabDelay + maxVertexDelay * 2;
 
   for (i = 0, offset = 0; i < prefabCount; i++) {
-    var delay = THREE.Math.mapLinear(i, 0, prefabCount, 0.0, maxPrefabDelay);
+    var delay = THREE.MathUtils.mapLinear(i, 0, prefabCount, 0.0, maxPrefabDelay);
 
     for (j = 0; j < prefabGeometry.attributes.position.count; j++) {
       aDelayDuration.array[offset] = delay + (2 - j % 2) * maxVertexDelay;
@@ -62,7 +62,7 @@ function EaseSystem() {
 
   for (i = 0, offset = 0; i < prefabCount; i++) {
     startPosition.x = -rangeX * 0.5;
-    startPosition.y = THREE.Math.mapLinear(i, 0, prefabCount, -rangeY * 0.5, rangeY * 0.5);
+    startPosition.y = THREE.MathUtils.mapLinear(i, 0, prefabCount, -rangeY * 0.5, rangeY * 0.5);
     startPosition.z = 0;
 
     endPosition.x = rangeX * 0.5;

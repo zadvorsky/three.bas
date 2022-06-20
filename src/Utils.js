@@ -1,4 +1,4 @@
-import { Math as tMath, Vector3 } from 'three';
+import { MathUtils, Vector3 } from 'three';
 import { DepthAnimationMaterial } from './materials/DepthAnimationMaterial';
 import { DistanceAnimationMaterial } from './materials/DistanceAnimationMaterial';
 
@@ -72,9 +72,9 @@ const Utils = {
   randomInBox: function(box, v) {
     v = v || new Vector3();
 
-    v.x = tMath.randFloat(box.min.x, box.max.x);
-    v.y = tMath.randFloat(box.min.y, box.max.y);
-    v.z = tMath.randFloat(box.min.z, box.max.z);
+    v.x = MathUtils.randFloat(box.min.x, box.max.x);
+    v.y = MathUtils.randFloat(box.min.y, box.max.y);
+    v.z = MathUtils.randFloat(box.min.z, box.max.z);
 
     return v;
   },
@@ -88,9 +88,9 @@ const Utils = {
   randomAxis: function(v) {
     v = v || new Vector3();
 
-    v.x = tMath.randFloatSpread(2.0);
-    v.y = tMath.randFloatSpread(2.0);
-    v.z = tMath.randFloatSpread(2.0);
+    v.x = MathUtils.randFloatSpread(2.0);
+    v.y = MathUtils.randFloatSpread(2.0);
+    v.z = MathUtils.randFloatSpread(2.0);
     v.normalize();
 
     return v;

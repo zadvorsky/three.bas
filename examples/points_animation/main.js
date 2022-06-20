@@ -22,7 +22,7 @@ function init() {
     }
 
     // randomly pick one picture info
-    var curPicPoints = animation.endPointsCollections[THREE.Math.randInt(0, 2)];
+    var curPicPoints = animation.endPointsCollections[THREE.MathUtils.randInt(0, 2)];
     var aEndPos = animation.aEndPos;
     var aEndColor = animation.aEndColor;
     for (var i = 0; i < aEndPos.array.length; i++) {
@@ -56,8 +56,8 @@ function init() {
  * @returns {Object} return the point's position
  */
 function getRandomPointOnSphere(r) {
-  var u = THREE.Math.randFloat(0, 1);
-  var v = THREE.Math.randFloat(0, 1);
+  var u = THREE.MathUtils.randFloat(0, 1);
+  var v = THREE.MathUtils.randFloat(0, 1);
   var theta = 2 * Math.PI * u;
   var phi = Math.acos(2 * v - 1);
   var x = r * Math.sin(theta) * Math.sin(phi);
@@ -141,8 +141,8 @@ function Animation() {
   geometry.createAttribute('aStartColor', 3, function(data, index, count) {
     // modulate the hue
     h = index / count;
-    s = THREE.Math.randFloat(0.4, 0.6);
-    l = THREE.Math.randFloat(0.4, 0.6);
+    s = THREE.MathUtils.randFloat(0.4, 0.6);
+    l = THREE.MathUtils.randFloat(0.4, 0.6);
 
     color.setHSL(h, s, l);
     color.toArray(data);
@@ -199,7 +199,7 @@ function Animation() {
   var material = new BAS.PointsAnimationMaterial({
     transparent: true,
     blending: THREE.AdditiveBlending,
-    vertexColors: THREE.VertexColors,
+    vertexColors: true,
     depthWrite: false,
     uniforms: {
       uTime: { type: 'f', value: 0 },

@@ -11,7 +11,7 @@ function TweenScrubber(tween, seekSpeed) {
 
   function seek(dx) {
     var progress = tween.progress();
-    var p = THREE.Math.clamp((progress + (dx * seekSpeed)), 0, 1);
+    var p = THREE.MathUtils.clamp((progress + (dx * seekSpeed)), 0, 1);
 
     tween.progress(p);
   }

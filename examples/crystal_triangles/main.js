@@ -31,8 +31,8 @@ function init() {
   for (i = 0; i <= n; i++) {
     var t = i * PHI;
     var r = Math.sqrt(i) / Math.sqrt(n);
-    var x = r * Math.cos(t) * (radius - THREE.Math.randFloat(0, noise));
-    var y = r * Math.sin(t) * (radius - THREE.Math.randFloatSpread(0, noise));
+    var x = r * Math.cos(t) * (radius - THREE.MathUtils.randFloat(0, noise));
+    var y = r * Math.sin(t) * (radius - THREE.MathUtils.randFloatSpread(0, noise));
 
     vertices.push([x, y]);
   }
@@ -48,16 +48,16 @@ function init() {
 
   for (i = 0; i <= segmentsX; i++) {
     pointsX.push(new THREE.Vector3(
-      THREE.Math.mapLinear(i, 0, segmentsX, -radius, radius),
+      THREE.MathUtils.mapLinear(i, 0, segmentsX, -radius, radius),
       0,
-      (i === 0 || i === segmentsX) ? 0 : -THREE.Math.randFloat(64, 72)
+      (i === 0 || i === segmentsX) ? 0 : -THREE.MathUtils.randFloat(64, 72)
     ));
   }
   for (i = 0; i <= segmentsY; i++) {
     pointsY.push(new THREE.Vector3(
       0,
-      THREE.Math.mapLinear(i, 0, segmentsY, -radius, radius),
-      (i === 0 || i === segmentsY) ? 0 : -THREE.Math.randFloat(64, 72)
+      THREE.MathUtils.mapLinear(i, 0, segmentsY, -radius, radius),
+      (i === 0 || i === segmentsY) ? 0 : -THREE.MathUtils.randFloat(64, 72)
     ));
   }
 
@@ -111,8 +111,8 @@ function init() {
     // offset z vector components based on the two splines
     for (j = 0; j < shapeGeometry.vertices.length; j++) {
       var v = shapeGeometry.vertices[j];
-      var ux = THREE.Math.clamp(THREE.Math.mapLinear(v.x, -radius, radius, 0.0, 1.0), 0.0, 1.0);
-      var uy = THREE.Math.clamp(THREE.Math.mapLinear(v.y, -radius, radius, 0.0, 1.0), 0.0, 1.0);
+      var ux = THREE.MathUtils.clamp(THREE.MathUtils.mapLinear(v.x, -radius, radius, 0.0, 1.0), 0.0, 1.0);
+      var uy = THREE.MathUtils.clamp(THREE.MathUtils.mapLinear(v.y, -radius, radius, 0.0, 1.0), 0.0, 1.0);
 
       v.z += splineX.getPointAt(ux).z;
       v.z += splineY.getPointAt(uy).z;
@@ -184,8 +184,8 @@ function Animation(modelGeometry) {
   var x, y, distance;
 
   for (i = 0; i < aOffsetAmplitude.array.length; i += 12) { // 6 * 2
-    var offset = THREE.Math.randFloat(1, 4);
-    var amplitude = THREE.Math.randFloat(0.5, 1.0);
+    var offset = THREE.MathUtils.randFloat(1, 4);
+    var amplitude = THREE.MathUtils.randFloat(0.5, 1.0);
 
     x = 0;
     y = 0;
@@ -202,7 +202,7 @@ function Animation(modelGeometry) {
     distance = Math.sqrt(x * x + y * y);
 
     for (j = 0; j < 12; j += 2) {
-      aOffsetAmplitude.array[i + j]     = (distance + offset) * (1.0 + THREE.Math.randFloatSpread(0.0125));
+      aOffsetAmplitude.array[i + j]     = (distance + offset) * (1.0 + THREE.MathUtils.randFloatSpread(0.0125));
       aOffsetAmplitude.array[i + j + 1] = amplitude;
     }
   }
@@ -211,7 +211,7 @@ function Animation(modelGeometry) {
   var color = new THREE.Color();
 
   for (i = 0; i < aColor.array.length; i += 18) { // 6 * 3
-    color.setHSL(0, 0, THREE.Math.randFloat(0.5, 1.0));
+    color.setHSL(0, 0, THREE.MathUtils.randFloat(0.5, 1.0));
 
     for (j = 0; j < 18; j += 3) {
       aColor.array[i + j]     = color.r;
@@ -222,19 +222,17 @@ function Animation(modelGeometry) {
 
   var material = new BAS.StandardAnimationMaterial({
     flatShading: true,
-    vertexColors: THREE.VertexColors,
+    vertexColors: true,
     transparent: true,
+    diffuse: new THREE.Color(0x9B111E),
+    roughness: 0.2,
+    metalness: 0.8,
+    opacity: 0.8,
     side: THREE.DoubleSide,
     uniforms: {
       uTime: {value: 0},
       uD: {value: 4.4},
       uA: {value: 3.2}
-    },
-    uniformValues: {
-      diffuse: new THREE.Color(0x9B111E),
-      roughness: 0.2,
-      metalness: 0.8,
-      opacity: 0.8
     },
     vertexFunctions: [
       BAS.ShaderChunk['ease_cubic_in_out']

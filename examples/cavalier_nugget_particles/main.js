@@ -104,7 +104,7 @@ function Animation(prefabCount, prefabSize, bounds) {
 
   for (var i = 0, offset = 0; i < prefabCount; i++) {
     delay = prefabDelay * i;
-    duration = THREE.Math.randFloat(minDuration, maxDuration);
+    duration = THREE.MathUtils.randFloat(minDuration, maxDuration);
 
     for (var j = 0; j < geometry.prefabVertexCount; j++) {
       // by giving EACH VERTEX in a prefab its own delay (based on index) the prefabs are stretched out
@@ -136,7 +136,7 @@ function Animation(prefabCount, prefabSize, bounds) {
   geometry.createAttribute('color', 3, function(data) {
     h = colorHSL.h;
     s = colorHSL.s;
-    l = THREE.Math.randFloat(0.25, 1.00);
+    l = THREE.MathUtils.randFloat(0.25, 1.00);
     colorObj.setHSL(h, s, l);
 
     colorObj.toArray(data);
@@ -148,12 +148,12 @@ function Animation(prefabCount, prefabSize, bounds) {
 
   geometry.createAttribute('aAxisAngle', 4, function(data) {
     BAS.Utils.randomAxis(axis).toArray(data);
-    data[3] = Math.PI * THREE.Math.randFloat(8, 16);
+    data[3] = Math.PI * THREE.MathUtils.randFloat(8, 16);
   });
 
   var material = new BAS.BasicAnimationMaterial({
     side: THREE.DoubleSide,
-    vertexColors: THREE.VertexColors,
+    vertexColors: true,
     transparent: true,
     uniforms: {
       uTime: {value: 0.0}

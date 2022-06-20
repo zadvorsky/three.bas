@@ -23,12 +23,12 @@ function init() {
 
   for (var i = 0; i < length; i++) {
     // spread x linearly from -1000 to 1000
-    x = THREE.Math.mapLinear(i, 0, length - 1, -1000, 1000);
+    x = THREE.MathUtils.mapLinear(i, 0, length - 1, -1000, 1000);
     // alternate y so the spline becomes wavy
-    y = THREE.Math.randFloat(50, 150) * (i % 2 ? 1 : -1);
+    y = THREE.MathUtils.randFloat(50, 150) * (i % 2 ? 1 : -1);
     z = 0;
     // the first and last point will have a pivot distance of 0, the others will be randomized
-    pivotDistance = (i === 0 || i === length - 1) ? 0 : THREE.Math.randFloat(0, 80.0);
+    pivotDistance = (i === 0 || i === length - 1) ? 0 : THREE.MathUtils.randFloat(0, 80.0);
 
     points.push(new THREE.Vector4(x, y, z, pivotDistance));
   }
@@ -110,12 +110,12 @@ function Animation(path) {
   var angle = 0;
 
   geometry.createAttribute('aAxisAngle', 4, function(data) {
-    axis.x = THREE.Math.randFloatSpread(2);
-    axis.y = THREE.Math.randFloatSpread(2);
-    axis.z = THREE.Math.randFloatSpread(2);
+    axis.x = THREE.MathUtils.randFloatSpread(2);
+    axis.y = THREE.MathUtils.randFloatSpread(2);
+    axis.z = THREE.MathUtils.randFloatSpread(2);
     axis.normalize();
 
-    angle = Math.PI * THREE.Math.randFloat(4, 8);
+    angle = Math.PI * THREE.MathUtils.randFloat(4, 8);
 
     data[0] = axis.x;
     data[1] = axis.y;
@@ -134,8 +134,8 @@ function Animation(path) {
   geometry.createAttribute('color', 3, function(data, i, count) {
     // modulate the hue
     h = i / count;
-    s = THREE.Math.randFloat(0.4, 0.6);
-    l = THREE.Math.randFloat(0.4, 0.6);
+    s = THREE.MathUtils.randFloat(0.4, 0.6);
+    l = THREE.MathUtils.randFloat(0.4, 0.6);
 
     color.setHSL(h, s, l);
     color.toArray(data);
@@ -143,8 +143,10 @@ function Animation(path) {
 
   var material = new BAS.PhongAnimationMaterial({
     flatShading: true,
-    vertexColors: THREE.VertexColors,
+    vertexColors: true,
     side: THREE.DoubleSide,
+    specular: new THREE.Color(0xff0000),
+    shininess: 20,
     // defines act as static, immutable values
     defines: {
       // we need integer representation of path length
@@ -160,10 +162,6 @@ function Animation(path) {
       // this is an optional argument for the spline interpolation function
       // 0.5, 0.5 is the default, 0.0, 0.0 will create a jagged spline, other values can make it go c r a z y
       uSmoothness: {value: new THREE.Vector2(0.5, 0.5)}
-    },
-    uniformValues: {
-      specular: new THREE.Color(0xff0000),
-      shininess: 20
     },
     vertexFunctions: [
       // catmull_rom_spline defines the catmullRomSpline and getCatmullRomSplineIndices functions used in the vertexPosition chunk

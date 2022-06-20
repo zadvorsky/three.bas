@@ -14,6 +14,9 @@ There is also a tutorial [here](https://medium.com/@Zadvorsky/into-vertex-shader
 ## Compatibility
 Because this project uses some Three.js internals, it may (or may not) break with each new Three.js release. The aim is to support the current release, so please let me know if anything breaks!
 
+Note: After version 3.0.0, three.js is treated as a peerDependency to mitigate some issues with multiple threejs versions in certrain build setups.
+You will need to manually install a version of THREE in your project (tested with r141).
+
 ## Usage
 Include `dist/bas.js` or `dist/bas.min.js` in your project. An npm package is also available:
 
@@ -33,4 +36,4 @@ import {
 ## Development
 This project relies or [npm](https://www.npmjs.com/) and [rollup](https://rollupjs.org/) for building the source.
 
-Run `$ npm install` to install dependencies and `npm run dev` to start building.
+Run `$ npm install` to install dependencies and `npm run dev` to start building. Then run any local server, like [live-server](https://www.npmjs.com/package/live-server) in the same directory to serve the examples.

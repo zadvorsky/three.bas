@@ -36,8 +36,6 @@ function Animation() {
   // any Geometry will do, but more complex ones can be repeated less often
   var prefabGeometry = new THREE.TetrahedronGeometry(1.0);
 
-  console.log(prefabGeometry)
-
   // the number of times the prefabGeometry will be repeated
   var prefabCount = 100000;
 
@@ -87,13 +85,13 @@ function Animation() {
 
   // calculate the stand and end positions for each prefab
   for (i = 0; i < prefabCount; i++) {
-    startPosition.x = THREE.Math.randFloatSpread(range) - range * 0.5;
-    startPosition.y = THREE.Math.randFloatSpread(range);
-    startPosition.z = THREE.Math.randFloatSpread(range);
+    startPosition.x = THREE.MathUtils.randFloatSpread(range) - range * 0.5;
+    startPosition.y = THREE.MathUtils.randFloatSpread(range);
+    startPosition.z = THREE.MathUtils.randFloatSpread(range);
 
-    endPosition.x = THREE.Math.randFloatSpread(range) + range * 0.5;
-    endPosition.y = THREE.Math.randFloatSpread(range);
-    endPosition.z = THREE.Math.randFloatSpread(range);
+    endPosition.x = THREE.MathUtils.randFloatSpread(range) + range * 0.5;
+    endPosition.y = THREE.MathUtils.randFloatSpread(range);
+    endPosition.z = THREE.MathUtils.randFloatSpread(range);
 
     // this data has to be stored per prefab as well
     // BAS.PrefabBufferGeometry.setPrefabData is a convenience method for this
@@ -117,13 +115,13 @@ function Animation() {
   // this is the most compact way of filling the buffer, but it's a little slower and less flexible than the others
   geometry.createAttribute('aAxisAngle', 4, function(data, i, total) {
     // get a random axis
-    axis.x = THREE.Math.randFloatSpread(2);
-    axis.y = THREE.Math.randFloatSpread(2);
-    axis.z = THREE.Math.randFloatSpread(2);
+    axis.x = THREE.MathUtils.randFloatSpread(2);
+    axis.y = THREE.MathUtils.randFloatSpread(2);
+    axis.z = THREE.MathUtils.randFloatSpread(2);
     // axis has to be normalized, or else things get weird
     axis.normalize();
     // the total angle of rotation around the axis
-    angle = Math.PI * THREE.Math.randFloat(4.0, 8.0);
+    angle = Math.PI * THREE.MathUtils.randFloat(4.0, 8.0);
 
     // copy the data to the array
     axis.toArray(data);
@@ -138,16 +136,13 @@ function Animation() {
   var material = new BAS.StandardAnimationMaterial({
     // material parameters/flags go here
     flatShading: true,
+    metalness: 0.5,
+    roughness: 0.5,
     // custom uniform definitions
     uniforms: {
       // uTime is updated every frame, and is used to calculate the current animation state
       // this is the only value that changes, which is the reason we can animate so many objects at the same time
       uTime: {value: 0}
-    },
-    // uniform *values* of the material we are extending go here
-    uniformValues: {
-      metalness: 0.5,
-      roughness: 0.5
     },
     // BAS has a number of functions that can be reused. They can be injected here.
     vertexFunctions: [

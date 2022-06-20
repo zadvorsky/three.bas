@@ -65,7 +65,7 @@ function Animation() {
 
   // calculate a delay and duration FOR EACH FACE
   for (var i = 0, offset = 0; i < geometry.faceCount; i++) {
-    var duration = THREE.Math.randFloat(minDuration, maxDuration);
+    var duration = THREE.MathUtils.randFloat(minDuration, maxDuration);
     var centroidLength = geometry.centroids[i].length();
     var delay = centroidLength * centroidDelayFactor;
 
